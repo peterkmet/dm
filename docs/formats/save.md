@@ -184,7 +184,7 @@ Frees the decoded copy and clears `s`.
 
 ### Header fields
 
-| Function | Work |
+| Function | Purpose |
 |---|---|
 | `savefile_init_header(h, game_id, dungeon_id, extra)` | Clears the header. Writes 16 keys with `random16`, then 127 chain words with `random16`, in the order of `save_game` and `save_write_header`. Writes the header byte 1, platform 5, dialog choice 1, the game ID, format 3, the dungeon ID, and the 134 extra bytes (CSB: 132). |
 | `savefile_get_game_id(h)`, `savefile_get_dungeon_id(h)`, `savefile_get_header_extra(h)` | Read the fields of a plain header. |
@@ -289,7 +289,7 @@ The port keeps the portrait pixels of each champion in `ChampionRuntime.portrait
 ## Limits
 
 - The tests have no save file of the original program. They use synthetic data, the port's own saves, and the original routines as the oracle. The original `load_dungeon` reads a file handle, so the tests do not run it on the dungeon part.
-- Deliberate deviation: the original quits the program after the credits of the endgame and after "THE GAME IS DAMAGED!". The port sets `g_return_to_entrance`, and `platform/app.c` shows the entrance.
+- Deviation: the original quits the program after the credits of the endgame and after "THE GAME IS DAMAGED!". The port sets `g_return_to_entrance`, and `platform/app.c` shows the entrance.
 - A restart does not check that the saved game has the same game ID ("THAT'S NOT THE SAME GAME").
 - The header byte at `0x12a` (`SAVE_HEADER_HEADER_BYTE`) is always written as 1 (`HEADER_BYTE_DEFAULT`). The original writes back the value of the last load.
 - `savefile_decode` does not check the dungeon part. A file that is cut inside the dungeon part decodes. The dungeon loader must check the part sizes and the byte sum.

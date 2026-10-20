@@ -46,7 +46,7 @@ Changed items (same index, different content):
 |---|---|---|
 | 2–5 | Entrance doors, entrance, credits | Same sizes, CSB art |
 | 10 | Action area | Same size, different content |
-| 11 | Entrance buttons, 14 × 39 | 14 × 26 (unverified: 2 buttons, not 3) |
+| 11 | Entrance buttons, 14 × 39 | 14 × 26 (UNVERIFIED: 2 buttons, not 3) |
 | 26 | Champion portraits, 256 × 87 | 24 CSB portraits, same size |
 | 42–45, 47 | Object icon sheets (icons 0–127, 160–191) | Same sizes, CSB icons |
 | 329–330 | Wall ornament 35 (fountain) | Different size |
@@ -85,7 +85,7 @@ Object names (item 694). The CSB engine reads 199 names at `0x108280` (graphic i
 
 33 of the 199 CSB names differ from DM. Examples: 23–24 STORM (DM BOLT BLADE), 25–26 RA BLADE (FURY), 38 SIDE SPLITTER (DELTA), 41 DRAGON FANG (THE INQUISITOR), 62–64 STAFF OF IRRA, CROSS OF NETA, SERPENT STAFF, 174 SHANK (DRUMSTICK).
 
-Action names and texts (items 699 and 700). CSB has no text in these items. The CSB engine has the texts in the `APPB.FTL` data area. Examples: the action names start near `0x1048c0` as one NUL-separated list. `WAKE UP` and `GAME FROZEN` are at `0x104680`. `GAME LOADED, READY TO PLAY.` is at `0x104d70`. A pointer table refers to some texts. `docs/csb/engine-diff.md` "Text" maps the CSB texts to the DM indices of item 700. The CSB engine does not push `0x2bb` (699). DM pushes it at `0x1220b8`.
+Action names and texts (items 699 and 700). CSB has no text in these items. The CSB engine has the texts in the `APPB.FTL` data area. Examples: the action names start near `0x1048c0` as one NUL-separated list. `WAKE UP` and `GAME FROZEN` are at `0x104680`. `GAME LOADED, READY TO PLAY.` is at `0x104d70`. A pointer table refers to some texts. [engine-diff.md "Text"](engine-diff.md#text) maps the CSB texts to the DM indices of item 700. The CSB engine does not push `0x2bb` (699). DM pushes it at `0x1220b8`.
 
 Layout (item 696). A check compares the zone records with `dmcsb.graphics.decode_lay1`. The range `400–438` becomes `400–436`. All other records are equal. `startend.c` uses zone 437 (`ZONE_RESTART_BUTTON`) and zone 438 (`ZONE_QUIT_BUTTON`) for THE END screen.
 
@@ -223,7 +223,7 @@ The `SO` chunks play `SD` sample 2 (graphic item 683) three times.
 
 ### Engine use
 
-1. A wall sensor of type 18 (endgame, C`0x123970`) sets the game-won flag (`-0x4f9c(A5)`) and calls `0x1285e8` through slot `0xb42(A5)`. There is no delay. DM waits the sensor delay, clears the saved-game flag, and calls `endgame(1)`.
+1. A wall sensor of type 18 (endgame, `0x123970`) sets the game-won flag (`-0x4f9c(A5)`) and calls `0x1285e8` through slot `0xb42(A5)`. There is no delay. DM waits the sensor delay, clears the saved-game flag, and calls `endgame(1)`.
 2. `0x1285e8` branches to `0x1285ee` (`quit_game_to_ending`). It waits until the pointer is hidden, closes `Graphics.DAT`, stops in an endless loop while the won flag is 0 (C`0x128600`), fills zones 401, 13, 11, and 9 with color 0, writes `'ENDA'` into the next-module field of the shared FTL block (`*(-4(A5)) + 4`, C`0x12863a`), and leaves `APPB` (`system_shutdown`, `rt_longjmp`).
 3. The launcher `APPA.FTL` (`APPA.c` line 355) reads the field. For `ANIM`, `TITL`, or `ENDA`, it starts `ANIM.FTL` with that tag.
 4. `ANIM.FTL` `0x100e96` builds the file name from the tag and `.DAT` (`0x2e444154`) and plays `ENDA.DAT`. After `ENDA`, it loops forever with a delay (`ANIM.c` line 579). The last frame stays on the screen. The player must reset the computer.

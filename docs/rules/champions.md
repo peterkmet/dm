@@ -41,7 +41,7 @@ The possessions stay in the wall square list until the player accepts the candid
 |---|---|
 | `PANEL_CANCEL` | Removes the candidate. When it was the only champion, the party has no leader and no caster. |
 | `PANEL_RESURRECT` | Unlinks the possessions from the wall square. Disables the mirror sensor (`rec_sensor_set_type` to `SENSOR_DISABLED`). Prints "<name> RESURRECTED." |
-| `PANEL_REINCARNATE` | As resurrect, then the name entry (below). After OK, the game clears all experience. It adds 1 to the current and maximum value of a random statistic 12 times. Prints "<name> REINCARNATED." The `turnbased` mode skips the name entry and keeps the old name. |
+| `PANEL_REINCARNATE` | As resurrect, then the name entry (below). After OK, the game clears all experience. It adds 1 to the current and maximum value of a random statistic 12 times. Prints "<name> REINCARNATED." The turn-based mode skips the name entry and keeps the old name. |
 
 With the first champion, the time of the last party move becomes the game time.
 
@@ -84,7 +84,7 @@ The name entry (`champion_start_rename` … `champion_rename_ok`) clears the nam
 
 | Function | Rule |
 |---|---|
-| `champion_get_maximum_load` | `stamina_adjusted(strength × 8 + 100)`. A wound removes 1/8 (1/4 with a leg wound). Elven Boots on the feet add 1/16. The result rounds up to a multiple of 10 (tenths of a kilogram). |
+| `champion_get_maximum_load` | `champion_adjust_by_stamina(strength × 8 + 100)`. A wound removes 1/8 (1/4 with a leg wound). Elven Boots on the feet add 1/16. The result rounds up to a multiple of 10 (tenths of a kilogram). |
 | `champion_get_movement_ticks` | Below the maximum load: 2, or 3 when the load is above 5/8 of the maximum. Otherwise `(load − max) × 4 / max + 4`. A feet wound adds 1 (2 when overloaded). Boots of Speed subtract 1. |
 | `champion_get_dexterity` | Dexterity + `random16() & 7`, minus `load × (dexterity / 2) / max_load`, at least 2, halved while sleeping, then `bounded(1 + (r & 7), value / 2, 100 − (r & 7))`. |
 | `champion_get_strength(index, hand)` | Strength + `random16() & 15`, adjusted by the weight of the hand object. A weapon adds its strength and 2 × the levels of swing (swing classes), throw (classes 1–15), and shoot (classes 16–111). Then stamina adjustment, halved by a wound of the hand, and `bounded(0, value / 2, 100)`. |
@@ -282,6 +282,6 @@ The influence roll is `random16() % (influence level + bonus)`. The bonus and th
 - Object weight and icon, skill level, maximum load, movement ticks, dexterity, strength, wound defense, pending damage, damage to all, stamina decrease, experience gain with level-ups, and time effects give the same champion records, random seed, and globals as the original functions in `dmtools.emu`.
 - Scenario tests in `Dungeon.DAT`: recruit the first mirror champion and accept it, eat food, and take damage until the party dies (objects and bones on the party square).
 
-`tests/port/test_actions.py` compares `action_is_action_performed` (stamina, experience, disabled ticks, heal, action damage, random seed) for all actions without a target, and `group_get_melee_action_damage` (hit and damage), with the original functions in `dmtools.emu`. Scenario tests: a sword attack hurts a skeleton and trains the skill, a back-row champion cannot reach, a throw creates a projectile and event 11 refills the hand from the quiver, event 11 ends the action defense, poison steps, event 12, and the vi altar rebirth.
+`tests/port/test_actions.py` compares `action_is_action_performed` (stamina, experience, disabled ticks, heal, action damage, random seed) for all actions without a target, and `group_get_melee_action_damage` (hit and damage), with the original functions in `dmtools.emu`. Scenario tests: a sword attack hurts a skeleton and trains the skill, a back-row champion cannot reach, a throw creates a projectile and event 11 refills the hand from the quiver, event 11 ends the action defense, poison steps, event 12, and the Vi altar rebirth.
 
 The tests skip when `game/KAOS.FTL` or `game/Dungeon.DAT` is missing.

@@ -67,8 +67,8 @@ After that, `save` writes `CSBGAME.DAT` (the old file becomes `CSBGAME.BAK`), an
 | `get_map` | none | `{ok, map}` |
 | `act` | `action`, `args` (object) | `{ok, ticks, stopped?, game_over, bumped?, action_damage?, health_lost?, look?, seen?, state, view}` |
 | `act_many` | `actions` (list) | `{ok, ticks, ran, stopped, error?, game_over, bumped?, action_damage? (list), health_lost?, seen?, state, view}` |
-| `wait` | `ticks` (1-5000, default 10) | `{ok, ticks, stopped, game_over, health_lost?, seen?, state, view}` |
-| `screenshot` | none | The screen as a 320 x 200 PNG image |
+| `wait` | `ticks` (1–5000, default 10) | `{ok, ticks, stopped, game_over, health_lost?, seen?, state, view}` |
+| `screenshot` | none | The screen as a 320 × 200 PNG image |
 | `save_game` | none | `{ok}` |
 | `load_game` | none | `{ok, state}` |
 | `new_game` | none | `{ok, state}` |
@@ -91,7 +91,7 @@ The server accepts one client at a time. While a turn runs, the server does not 
 | `get_map` | none | `map` |
 | `act` | `action`, `args` | After the turn: `ticks`, `stopped` (only after a [displacement](llm-playbook.md#displacement)), `game_over`, `bumped` (only after a bump), `action_damage` (only `choose_action`), `health_lost`, `look` (only `look`), `seen` (see [Seen](llm-playbook.md#seen)), `state`, `view` |
 | `act_many` | `actions` | After the last turn: `ticks` (all turns), `ran`, `stopped`, `error`, `game_over`, `bumped`, `action_damage` (a list, one value for each `choose_action`), `health_lost`, `seen`, `state`, `view`. See [Batches](llm-playbook.md#batches). |
-| `wait` | `ticks` (1-5000) | After the turn: `ticks` (the ticks that ran), `stopped`, `game_over`, `health_lost`, `seen`, `state`, `view`. See [Wait](llm-playbook.md#wait). |
+| `wait` | `ticks` (1–5000) | After the turn: `ticks` (the ticks that ran), `stopped`, `game_over`, `health_lost`, `seen`, `state`, `view`. See [Wait](llm-playbook.md#wait). |
 | `screenshot` | `path` | `path`. The game writes a PNG file to `path`. |
 | `save` | none | Nothing. The game writes `DMGAME.DAT` (CSB: `CSBGAME.DAT`) in the save directory. The old file becomes `DMGAME.BAK` (CSB: `CSBGAME.BAK`). |
 | `load` | none | `state`. The game loads `DMGAME.DAT` (or `DMGAME.BAK` when it is missing; CSB: `CSBGAME.DAT` or `CSBGAME.BAK`) from the save directory. |
@@ -361,8 +361,8 @@ The values of `action` for `act` and `act_many`.
 - `move_back`: one square back
 - `move_left`: one square left, same facing
 - `move_right`: one square right, same facing
-- `turn_left`: turn 90 degrees left
-- `turn_right`: turn 90 degrees right
+- `turn_left`: turn 90° left
+- `turn_right`: turn 90° right
 - `click_wall_ahead`: click the wall ahead (switch, lock, mirror)
 - `take_object`: take an object from the floor into the hand
 - `drop_object`: drop the object of the hand
@@ -459,6 +459,6 @@ The commands `save`, `load`, and `new_game` use `startend_save_dir()` and `gamel
 
 ## Known limits
 
-- In the `turnbased` mode the automap and the quick save keys do not work, because the keyboard does not control the game. `get_map` gives the automap.
+- In the turn-based mode the automap and the quick save keys do not work, because the keyboard does not control the game. `get_map` gives the automap.
 - Throwing objects has no action.
-- `recruit` with `reincarnate` keeps the old name and title: the `turnbased` mode has no name entry.
+- `recruit` with `reincarnate` keeps the old name and title: the turn-based mode has no name entry.

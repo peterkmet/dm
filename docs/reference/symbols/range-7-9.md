@@ -389,10 +389,10 @@ Heap order (`is_before`): earlier time (bits 0–23) first. On equal time, the l
 | 65 | Enable group generator | `timeline_process_event65_enable_group_generator` |
 | 70 | Light | `timeline_process_event70_light`, then `set_dungeon_view_palette` |
 | 71 | Invisibility end | Decrement `g_party_invisibility_count`. At 0 redraw all champions. |
-| 72 | Champion shield end | Subtract word 6 from champion +0x112, redraw. |
+| 72 | Champion shield end | Subtract word 6 from champion `+0x112`, redraw. |
 | 73 | Thieves eye end | Decrement `g_event73_count_thieves_eye`. |
 | 74 | Party shield end | Subtract word 6 from `g_party_shield_defense`. |
-| 75 | Poison | Decrement champion +0x2a, `champion_poison(champion, word6)`. |
+| 75 | Poison | Decrement champion `+0x2a`, `champion_poison(champion, word6)`. |
 | 77 | Spell shield end | Subtract word 6 from `g_party_spell_shield_defense`. |
 | 78 | Fire shield end | Subtract word 6 from the fire shield defense (`g_party` + 6). |
 | 79 | Footprints end | Decrement `g_event79_count_footprints`. |
@@ -409,7 +409,7 @@ Square event effects: 0 = set (open, activate), 1 = clear (close, deactivate), 2
 - Wall (6): text things in the event cell toggle. Counter sensors (6) count up (effect 0, max 511) or down, and trigger at 0. AND/OR gates (5) set or clear bit `cell` of the data, and compare bits 4–7 with bits 0–3. Launchers in the event cell call `timeline_trigger_projectile_launcher`. Sensor 18 waits `delay × 60` frames, sets `g_fade_display_on_exit` (the game is won), and calls `endgame(1)`.
 - `timeline_trigger_projectile_launcher(sensor, event)`: types 7, 8, 14 launch one projectile, types 9, 10, 15 launch two. Types 8 and 10 launch explosions (`data − 128`). Types 14 and 15 launch objects from the launcher square (cells in front). Types 7 and 9 create objects with `get_object_for_launcher_or_generator`. Kinetic energy is word 6 bits 4–11. Step energy is word 6 bits 12–15. The attack is 100. A single projectile picks a random side cell. The projectile starts on the adjacent square in direction `cell` with `g_create_launcher_projectile` set.
 - Move group (60/61): when the party or a group still blocks the square, retry at time + 5. Lord Chaos (creature type 23) can instead step to a random adjacent free square (1 in 4).
-- Enable champion action (11): clear the action event index (+0x2c) and the "action disabled" flag, remove the action defense, redraw the action hand. When the last action was SHOOT (32) and the ready hand is empty, move ammunition from the quiver (slot 12, then 7–9).
+- Enable champion action (11): clear the action event index (`+0x2c`) and the "action disabled" flag, remove the action defense, redraw the action hand. When the last action was SHOOT (32) and the ready hand is empty, move ammunition from the quiver (slot 12, then 7–9).
 - Vi altar rebirth (13): byte 9 is the step. Step 2 creates explosion thing `0xffe4` at the altar, step 1 removes the bones (icon 0x93) of the champion, step 0 resurrects the champion (`champion_resurrect` (`0x113a12`), range 5). Each step re-adds the event.
 - Light (70): word 6 holds the signed light power. The handler applies one step of `g_light_power_to_light_amount` (`0x100cb4`) to the magical light amount (`g_party` + 0) and re-adds the rest 4 ticks later.
 
@@ -478,13 +478,13 @@ Button codes from `input_event_handler`: 2 left press, 4 left release, 1 right p
 
 #### Dungeon view clicks
 
-`command_process_click_in_dungeon_view(x, y)` converts the click to viewport coordinates. Range 7 globals describe the front square: `g_square_ahead_element` (`0x101d2a`) (front element, 0x11 = door), `g_facing_alcove` (`0x101d2c`) (alcove), `g_facing_vi_altar` (`0x101d2e`) (vi altar), `g_facing_fountain` (`0x101d30`) (fountain), `g_dungeon_view_clickable_boxes` (`0x101d36`) (6 clickable boxes: 4 object cells, 1 unused, 1 wall ornament), `0x101d5e` (door button box), `g_pile_top_objects` (`0x101d66`) (top object of each cell).
+`command_process_click_in_dungeon_view(x, y)` converts the click to viewport coordinates. Range 7 globals describe the front square: `g_square_ahead_element` (`0x101d2a`) (front element, 0x11 = door), `g_facing_alcove` (`0x101d2c`) (alcove), `g_facing_vi_altar` (`0x101d2e`) (Vi altar), `g_facing_fountain` (`0x101d30`) (fountain), `g_dungeon_view_clickable_boxes` (`0x101d36`) (6 clickable boxes: 4 object cells, 1 unused, 1 wall ornament), `0x101d5e` (door button box), `g_pile_top_objects` (`0x101d66`) (top object of each cell).
 
 - Door button: `sensor_add_event(10, front, cell 0, toggle, time + 1)`.
 - Empty hand on an object cell: `command_grab_leader_hand_object`.
 - Empty hand on the wall ornament: drink from a fountain (water of the leader = 2048, sound 8), or `command_touch_front_wall`.
 - Hand object over zones `0x2e4`–`0x2e7`: `command_drop_leader_hand_object`. Over zones `0x2e9`/`0x2ea` (`0x2ec`/`0x2ed` with a door): throw (`champion_is_leader_hand_object_thrown`).
-- Hand object on an alcove: drop into the alcove (cell 4). On a vi altar, bones (icon 0x93) create event 13.
+- Hand object on an alcove: drop into the alcove (cell 4). On a Vi altar, bones (icon 0x93) create event 13.
 - Hand object on a fountain: fill a flask (icon 8 or 9 sets 3 charges) or a waterskin (icon 0xc3), then touch the wall.
 
 #### Highlight
@@ -517,11 +517,11 @@ Per-action tables (44 bytes each, indexed by action):
 
 `menus_is_group_frightened_by_action` (WAR CRY, BLOW HORN, CONFUSE, CALM, BRANDISH) compares `random16() % (skill + bonus)` with the creature fear resistance. A frightened group flees for `(16 − fear) × 4 / movement_ticks`.
 
-`menus_refresh_action_area` runs every tick from the game loop. It also turns idle champions to the direction stored at +0x28 (set by damage) when the flag at +0x29 is set.
+`menus_refresh_action_area` runs every tick from the game loop. It also turns idle champions to the direction stored at `+0x28` (set by damage) when the flag at `+0x29` is set.
 
 #### Spell area
 
-Symbols are characters `0x60 + step × 6 + n`. Champion record +0x21 holds the symbol step (0–3), +0x22 holds up to 4 symbols and a terminating zero.
+Symbols are characters `0x60 + step × 6 + n`. Champion record `+0x21` holds the symbol step (0–3), `+0x22` holds up to 4 symbols and a terminating zero.
 
 `menus_add_champion_symbol(n)` costs `g_symbol_base_mana_cost[step][n]` mana. For steps after the first, the cost is `base × g_symbol_mana_cost_multiplier[power] >> 3`. The power symbol is the first symbol.
 
@@ -690,7 +690,7 @@ The list is `{0,3,4,5,2,1, reserve 120K}`, `{0,3,4,5,1}`, `{3,4,5,1}`, `{3,4,1}`
 
 `check_memory_for_all_maps(is_last_set, reserve)` sets the flag at `0x10254e` (memory-check mode), calls `process_new_party_map` for every map, and takes the minimum of `0x102550 − reserve`. It keeps the best value in `g_best_free_memory` (`0x104154`, initial −10000000). When the last set still does not fit, it shows "OUT OF MEMORY. ~K NEEDED." (string `0x87`, value `(0x3ff − best) >> 10`) and calls `quit_game`. It returns true when the minimum is not negative.
 
-A C port with enough memory can use the first set and skip this search.
+A port with enough memory can use the first set and skip this search.
 
 #### Graphic data initialization
 

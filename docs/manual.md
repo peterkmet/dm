@@ -45,8 +45,8 @@ Usage: dm [options]
 - `--adventure` and `--mode` skip the start screens.
 - `--data DIR` selects the data folder of the selected adventure instead of `game/` or `game-csb/`.
 - `--saves DIR` puts the save files, the quick save, and `SETTINGS.TXT` in `DIR` instead of the data folder. The folder must exist.
-- `--control PATH` selects the socket of the `turnbased` mode. The default is `~/.dm/control.sock`.
-- `--filter` selects the pixel-art upscale filter. The `advanced` mode takes the filter of the options menu. The image is sharpest when the window scale is a multiple of the filter factor.
+- `--control PATH` selects the socket of the turn-based mode. The default is `~/.dm/control.sock`.
+- `--filter` selects the pixel-art upscale filter. The advanced mode takes the filter of the options menu. The image is sharpest when the window scale is a multiple of the filter factor.
 - `--frames N` quits after N frames (50 frames per second).
 - `--view` shows the dungeon view with free movement through walls; `--show N` shows one graphic. Both are developer tools.
 - The environment variable `DM_AUTO_ENTER=1` skips the start screens and the entrance. The tests use it.
@@ -104,7 +104,7 @@ The controls are the controls of the original Amiga game.
 | Delete, keypad 7 | Turn left |
 | Help, Insert, keypad 9 | Turn right |
 | F1 to F4 | Open or close the inventory of champion 1 to 4 |
-| Escape | Freeze the game. Escape again continues. The `advanced` mode opens the options menu instead. |
+| Escape | Freeze the game. Escape again continues. The advanced mode opens the options menu instead. |
 | Return | Wake up a sleeping party |
 | Click on the movement arrows | Move and turn |
 | Click on a mirror | Show the champion. Then click RESURRECT, REINCARNATE, or CANCEL. |
@@ -160,7 +160,7 @@ The game rules are the same in all modes.
 
 Escape in the dungeon view opens the menu; the game time stops. Rows: SOUND (volume 0 to 7), MUSIC VOLUME (0 to 7), MUSIC (ORIGINAL, SUPER NES, or FM-TOWNS), FILTER (NONE, SCALE2X, or SCALE3X), CONTINUE. Click `-` or `+` to change a volume. Click a row for its next value. Keys: Up and Down (W, S) select a row, Left and Right (A, D) change it. Escape closes the menu.
 
-The game writes the values to `SETTINGS.TXT` in the saves folder and reads them at each start of the `advanced` mode. The other modes play at full volume without music.
+The game writes the values to `SETTINGS.TXT` in the saves folder and reads them at each start of the advanced mode. The other modes play at full volume without music.
 
 Music (ORIGINAL plays no music):
 

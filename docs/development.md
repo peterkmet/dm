@@ -1,6 +1,6 @@
 # Development
 
-How to build, test, and release the C port. For the player side, see [manual.md](manual.md). For the structure of the code, see [architecture.md](architecture.md).
+How to build, test, and release the port. For the player side, see [manual.md](manual.md). For the structure of the code, see [architecture.md](architecture.md).
 
 ## Build
 
@@ -65,7 +65,7 @@ git config blame.ignoreRevsFile .git-blame-ignore-revs
 
 ## Layout
 
-- `src/`: the C port in five layers; see [architecture.md](architecture.md).
+- `src/`: the port in five layers; see [architecture.md](architecture.md).
 - `tools/dmtools/`: the Python tools. `tools/ghidra/`: the decompile scripts. `tools/dist/`: the release scripts.
 - `tests/`: see the table above.
 - `docs/`: the documentation.
@@ -73,7 +73,7 @@ git config blame.ignoreRevsFile .git-blame-ignore-revs
 
 ## Coding standard
 
-[coding-standard.md](coding-standard.md) is the coding standard of the C port. Follow it for every change in `src/`.
+[coding-standard.md](coding-standard.md) is the coding standard of the port. Follow it for every change in `src/`.
 
 - `make format` formats the C files. Run it before a commit.
 - `make check` runs `ruff`, `tests/standard` (with the format check), and the full suite.

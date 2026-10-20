@@ -102,7 +102,7 @@ Fatal errors call `fatal_system_error(code)`. It shows the code with `DisplayAle
 | `vblank_interrupt_handler` (`0x106374`) | `INTB_VERTB` (5) | Counts frames, writes pending palettes into the copper list or `COLOR00`–`COLOR15`, scrolls the message area with `copy_bytes`. |
 | `input_event_handler` (`0x105908`) | input.device handler chain | Mouse moves and buttons, keys through `RawKeyConvert`, disk change events. |
 
-The mouse position is kept at 640×400 (`g_mouse_x_hires`, `g_mouse_y_hires`) and halved into `g_mouse_x`, `g_mouse_y`. Button presses call `command_process_click`. Keys go into a 64-entry queue at `g_chip_block + 0x108` (`key_queue_put`, `key_queue_get`).
+The mouse position is kept at 640 × 400 (`g_mouse_x_hires`, `g_mouse_y_hires`) and halved into `g_mouse_x`, `g_mouse_y`. Button presses call `command_process_click`. Keys go into a 64-entry queue at `g_chip_block + 0x108` (`key_queue_put`, `key_queue_get`).
 
 ## Hardware usage
 

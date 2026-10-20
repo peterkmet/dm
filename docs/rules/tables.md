@@ -35,7 +35,7 @@ The image accessors read the loaded image at call time. They need `tables_load`.
 | `tables_get_replacement_change` | `0x102efa` (+12, +13) | uint8 | Replacement set, depth 2 or 3 |
 | `tables_get_creature_aspect` | `0x102e58` | 6-byte record × 27 (pointer) | Creature type |
 | `tables_get_object_aspect` | `0x102c68` | 4-byte record × 85 (pointer) | Object aspect |
-| `tables_get_projectile_aspect` | `0x102db8` | 4-byte record (pointer) | Projectile aspect 1-14 |
+| `tables_get_projectile_aspect` | `0x102db8` | 4-byte record (pointer) | Projectile aspect 1–14 |
 | `tables_get_field_aspect` | `0x102b26` | 8-byte record × 12 (pointer) | Field aspect |
 | `tables_get_creature_shift` | `0x102fd0` | int8 × 3 × 8 | Distance, shift index |
 | `tables_get_pile_shift` | `0x102e38` | uint8 × 16 × 2 | Pile pair, axis (x, y) |
@@ -45,7 +45,7 @@ The image accessors read the loaded image at call time. They need `tables_load`.
 | `tables_get_view_square` | `0x102a7e` + 24·n (7 tables) | int8 × 23 each | View square |
 | `tables_get_wall_layout_id` | `0x102a22` | int16 × 46 | Wall set entry |
 | `tables_get_wall_ornament_depth` | `0x102ba6` | uint8 × 14 | Wall ornament view |
-| `tables_get_plaque_height` | `0x102c57` (one byte before the table) | uint8 × 3 × 5 | Line count 1-3, depth |
+| `tables_get_plaque_height` | `0x102c57` (one byte before the table) | uint8 × 3 × 5 | Line count 1–3, depth |
 | `tables_get_floor_ornament_offset` | `0x102bb4` | uint8 × 11 | Floor ornament view |
 | `tables_get_alcove_ornament`, `tables_get_fountain_ornament` | `0x102bc0`, `0x102bc3` | uint8 × 3, × 1 | Alcove index, — |
 | `tables_get_wall_ornament_coords`, `tables_get_floor_ornament_coords`, `tables_get_door_ornament_coords`, `tables_get_door_button_coords` | `0x102bc4`, `0x102c00`, `0x102c0a`, `0x102c16` | uint8 | Ornament graphic, — |
@@ -59,7 +59,7 @@ The image accessors read the loaded image at call time. They need `tables_load`.
 | `tables_get_slot_box_border`, `tables_get_bar_shadow` | `0x102956`, `0x102980` | int16 | — |
 | `tables_get_champion_icon_width`, `tables_get_champion_icon_height` | `0x10295c`, `0x10295e` | int16 | — |
 | `tables_get_damage_splat_width`, `tables_get_damage_splat_height` | `0x10297c` (small), `0x102978` (large) | int16 × 2 | Large |
-| `tables_get_skill_level_text`, `tables_get_base_skill_text`, `tables_get_statistic_text`, `tables_get_direction_text` | `0x101e74`, `0x102472`, `0x101e9a`, `0x101e92` | int16 text index | Level 2-16, base skill, statistic, direction |
+| `tables_get_skill_level_text`, `tables_get_base_skill_text`, `tables_get_statistic_text`, `tables_get_direction_text` | `0x101e74`, `0x102472`, `0x101e9a`, `0x101e92` | int16 text index | Level 2–16, base skill, statistic, direction |
 | `tables_get_text` | `0x101ebe`, `0x101ec6`, `0x101eca`, `0x101ec8`, `0x10402c` | C string (pointer) | `TABLES_TEXT_*` |
 | `tables_get_message_line_pad`, `tables_get_message_color` | `0x102966`, `0x104026` | int16, int16 × 2 (low byte) | —, message |
 | `tables_get_button_border`, `tables_get_button_inner_border` | `0x102988`, `0x10298c` | int16 × 2 | `TABLES_AXIS_X`, `TABLES_AXIS_Y` |

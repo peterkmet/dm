@@ -19,7 +19,7 @@ not supported. The game identifies a disk by its content, not by its file name.
 - **Advanced mode:** Automap, in-game options menu (volume, music, upscale filter), 8 save slots, quick save/load,
   cheat screen, WASD movement, 8 simultaneous sounds, FM-Towns and Super NES soundtracks, and direct entry to
   Chaos Strikes Back from the prison stairs.
-- **LLM mode (macOS only):** A program plays the game over a Unix socket, one turn per request.
+- **LLM mode (macOS only, `--mode turnbased`):** A program plays the game over a Unix socket, one turn per request.
 - **Display scaling:** Window resizing with the `scale2x` and `scale3x` pixel-art filters.
 
 ## Play
@@ -46,13 +46,13 @@ Keys of the advanced mode (in the dungeon view):
 | Key | Action |
 |---|---|
 | W, A, S, D, Q, E | Move and turn |
-| M or Tab | Automap |
+| M, Tab | Automap |
 | Escape | Options menu (volume, music, upscale filter) |
 | C | Cheat screen |
 | F5, F9 | Quick save, quick load |
 | Ctrl+S | Save dialog with the 8 slots |
 
-See the [Player Manual](docs/manual.md) for all controls, game modes, and configuration.
+See the [Player manual](docs/manual.md) for all controls, game modes, and configuration.
 
 ## Let an LLM play
 
@@ -78,7 +78,7 @@ make windows    # Cross-compile build/dm.exe with MinGW-w64
 ```
 
 Run `build/dm` from the directory containing your `.adf` images. See [Development](docs/development.md) for
-build and release workflows, [Architecture](docs/architecture.md) and [Coding Standard](docs/coding-standard.md)
+build and release workflows, [Architecture](docs/architecture.md) and [Coding standard](docs/coding-standard.md)
 for codebase structure, and [CHANGELOG.md](CHANGELOG.md) for release history.
 
 ## Engineering

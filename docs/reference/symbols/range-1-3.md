@@ -1,4 +1,4 @@
-# KAOS ranges 1–3: notes for the C port
+# KAOS ranges 1–3
 
 The functions of `KAOS.FTL` from `0x104e6c` to `0x10a3a6` (ranges 1, 2, and 3 of the [function partition](../kaos-map.md#function-partition)). The symbols are in [kaos-symbols.csv](../kaos-symbols.csv). The names are the original KAOS names; the port names differ. For each group: what it does, the data structures, and the facts the port needs.
 
@@ -41,7 +41,7 @@ Errors:
 - `fatal_error(code)` shows `"... System Error NN"` (two decimal digits), waits for a key, and quits.
 - The alert texts are in the code section (`0x1054a8`, `0x105500`). `show_alert_*` writes the digits into them.
 
-The C port replaces this group with SDL init and `exit`.
+The port replaces this group with SDL init and `exit`.
 
 ## Interrupts (`0x105092`, `0x106374`)
 
@@ -88,7 +88,7 @@ The handler removes all events from the chain while the game view is active.
 
 Key queue: 64 words at `g_chip_block + 0x108`. `g_key_queue_head` and `g_key_queue_tail` wrap with `& 0x3f`. Access is inside `Forbid`/`Permit`. A full queue drops the key.
 
-The C port gets the same key words and click kinds from SDL events. A mutex is not necessary when input and game run on one thread.
+The port gets the same key words and click kinds from SDL events. A mutex is not necessary when input and game run on one thread.
 
 ## Disk detection (`0x105f20`–`0x106148`)
 
@@ -175,7 +175,7 @@ The pointer uses hardware sprites 4–7 as two attached pairs (32 pixels wide, 1
 - `update_mouse_pointer_sprites` runs in the copper interrupt. It changes and moves the sprites. The hot spot comes from `g_mouse_pointer_hotspots`.
 - `mouse_begin_change` and `mouse_end_change` are empty. The hardware sprites need no save and restore.
 
-The C port draws the pointer into the frame after the game image.
+The port draws the pointer into the frame after the game image.
 
 ## Sound (`0x10871a`–`0x109054`)
 
@@ -241,7 +241,7 @@ Functions that draw into the area busy-wait until the scroll ends. The port keep
 - `dos_send_packet` sends a `StandardPacket` to a dos handler. `dos_inhibit_drive` (`ACTION_INHIBIT`) and `dos_relabel_disk` (`ACTION_RENAME_DISK`) return non-zero on failure.
 - `trackdisk_format_disk(unit, name)` formats 160 tracks of `0x1600` bytes with `ETD_FORMAT`, reads each track back with `ETD_READ`, and compares. Each track tries 4 times. Then it writes an OFS root block (block 880) and a bitmap block (block 881). It returns the trackdisk error, 0 on success. `draw_format_progress` draws the progress bar.
 
-The C port does not need this group.
+The port does not need this group.
 
 ## Not called
 

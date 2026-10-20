@@ -62,7 +62,7 @@ Bits 0–3 of group word 14 hold the behavior.
 
 `visible_party_distance` returns the square distance to the party, or 0.
 
-1. A creature without side attack sees only into the 90 degree cone in front of it (`group_is_destination_visible`).
+1. A creature without side attack sees only into the 90° cone in front of it (`group_is_destination_visible`).
 2. The sight range comes from the creature info. Darkness reduces it by `palette index / 2`, unless the creature has night vision. An invisible party is hidden from a creature that does not see invisible.
 3. Outside the sight range the creature can still notice the party by a random roll. Next to the party, the roll also adds the hearing and smell ranges.
 4. A wall, a solid fake wall, or a closed door that is not see-through on the line from the party to the creature blocks the view.
@@ -197,7 +197,7 @@ Then the explosion disappears.
 
 `magic_click_cast_spell` casts for the magic caster and clears the symbols, except when a flask is missing.
 
-## Kept original quirks
+## Kept quirks
 
 - `wander_step` reads the party-blocked result of the last step test, also when it skips the test. The value survives between turns; `group_reset` does not clear it.
 - A group turn remembers its square and group thing (`last_turn` in `group.c`) until the next group turn. A group that becomes active plays its flip sound at this square, and a group off the party map tests teleporters with this thing.

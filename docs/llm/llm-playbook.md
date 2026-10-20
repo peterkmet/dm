@@ -1,4 +1,4 @@
-# Dungeon Master: player manual
+# LLM player instructions
 
 You play the original Dungeon Master (Amiga v3.60). Your goal is to win: find the Firestaff and the Power Gem, and fuse Lord Chaos with them.
 
@@ -24,7 +24,7 @@ Your files in `playthroughs/current/player/` are your memory. Keep each file sho
 - Champions can swap their places in the party. A champion in the back row is safer from attacks from the front.
 - The party turns as one. A creature attacks the champions on the side that faces it: a creature behind the party hits the back row.
 - The leader carries the object in the hand and uses it on walls and doors.
-- A dead champion leaves bones. A VI altar brings the champion back to life.
+- A dead champion leaves bones. A Vi altar brings the champion back to life.
 
 ## Health, stamina, mana
 
@@ -36,7 +36,7 @@ Your files in `playthroughs/current/player/` are your memory. Keep each file sho
 ## Food, water, sleep
 
 - The champions eat and drink all the time. Without food or water they lose stamina and then health.
-- The maximum of `food` and `water` is 2048. Estimates from an earlier run: about 1 water per 25 ticks awake; a sleep of 1500 ticks costs 200-300 food and 130-170 water. Half of the maximum is enough for about 4 long sleeps.
+- The maximum of `food` and `water` is 2048. Estimates from an earlier run: about 1 water per 25 ticks awake; a sleep of 1500 ticks costs 200–300 food and 130–170 water. Half of the maximum is enough for about 4 long sleeps.
 - Carry a food reserve in the packs. Take every food item that you find. Eat only when a champion is below half, and keep the rest. Kill creatures that drop food when you meet them, and note where they live.
 - Before you go down to a new level, each champion has food above a quarter (512), or the packs hold food for each champion below that. Otherwise find food on the known levels first: a new level may have no food near the stairs.
 - Food in the dungeon is finite, and the champions eat with game time. Save game time: sleep only for low health, stamina, or mana; do not wait long for one creature; go back to an earlier level only for a clear reason (water, food, a known key).
@@ -190,7 +190,7 @@ When a move action (`move_forward`, `move_back`, `move_left`, `move_right`) does
 The game reports a displacement; it does not react to it. After each `act` turn and each `act_many` step, the game compares the party facing, square, and map with what the action does:
 
 - A move action changes the square by one step in its direction, or nothing (a bump).
-- `turn_left` and `turn_right` change the facing by 90 degrees.
+- `turn_left` and `turn_right` change the facing by 90°.
 - All other actions change neither.
 
 When the dungeon changes the party in another way, the turn has a displacement:
@@ -239,8 +239,8 @@ When the party dies or the game is won during a turn, the turn ends. The respons
 | `move_forward`, `move_back`, `move_left`, `move_right` | none | Left and right move to the side. The inventory must be closed. |
 | `turn_left`, `turn_right` | none | |
 | `click_wall_ahead` | none | Touches the wall ahead: mirror, button, lever, door button, fountain. The inventory must be closed. |
-| `take_object` | `cell` 0-4 | The leader hand must be empty. The inventory must be closed. See `view.piles`. |
-| `drop_object` | `cell` 0-4, default 0 | 0-1: own square, 2-3: square ahead, 4: alcove ahead. The inventory must be closed. |
+| `take_object` | `cell` 0–4 | The leader hand must be empty. The inventory must be closed. See `view.piles`. |
+| `drop_object` | `cell` 0–4, default 0 | 0–1: own square, 2–3: square ahead, 4: alcove ahead. The inventory must be closed. |
 | `open_inventory` | `champion` | |
 | `close_inventory` | none | |
 | `put_in_slot`, `take_from_slot` | `champion`, `slot` | Swaps the leader hand with the slot. Slots other than 0 and 1 need the open inventory of the champion. See the slot numbers below and [Chest](#chest). |
@@ -248,7 +248,7 @@ When the party dies or the game is won during a turn, the turn ends. The respons
 | `choose_action` | `champion`, `index` | Index in the `actions` list of the champion. |
 | `pass` | none | Closes an open action menu. |
 | `set_caster` | `champion` | |
-| `add_rune` | `symbol` 0-5 | |
+| `add_rune` | `symbol` 0–5 | |
 | `delete_rune`, `cast` | none | |
 | `recruit` | `choice`: `resurrect`, `reincarnate`, `cancel` | Only while a candidate is shown. |
 | `set_leader` | `champion` | |
@@ -256,13 +256,13 @@ When the party dies or the game is won during a turn, the turn ends. The respons
 | `swap_champions` | `a`, `b` | Clicks the icon of champion `a`, then the icon of champion `b`. The two champions swap their cells. See `position` in the state. |
 | `look` | `champion`, `slot` (both optional) | Presses the eye of the open inventory and releases it. Without `slot`: the object in the leader hand. With `slot`: the empty leader hand takes the object of the slot (`champion`, default the open inventory), the eye looks, and the hand puts the object back. See [Look](#look). |
 
-Slot numbers: 0 ready hand, 1 action hand, 2 head, 3 torso, 4 legs, 5 feet, 6 pouch 2, 7-9 quiver 2-4, 10 neck, 11 pouch 1, 12 quiver 1, 13-29 backpack, 30-37 the open chest. `state.champions[].slots[]` lists only the slots that hold an object.
+Slot numbers: 0 ready hand, 1 action hand, 2 head, 3 torso, 4 legs, 5 feet, 6 pouch 2, 7–9 quiver 2–4, 10 neck, 11 pouch 1, 12 quiver 1, 13–29 backpack, 30–37 the open chest. `state.champions[].slots[]` lists only the slots that hold an object.
 
 While a candidate is shown, only `recruit` is accepted. While the party sleeps, only `wake` is accepted. `wait` is always accepted.
 
 ### Chest
 
-A chest in the action hand (slot 1) of the open inventory opens in the panel. `state.inventory.panel` is `chest`, and `state.inventory.chest` lists the chest slots that hold an object. The chest slots are 30-37: slot 30 is the first chest slot box, slot 37 the last. `take_from_slot`, `put_in_slot`, and `look` with `slot` use the same numbers. The action clicks the chest slot box in the panel, as a player does. The game rules apply: an object that does not fit in a chest (for example a sword) stays in the leader hand. Slot 38 and higher, or a chest slot without an open chest, gives `slot out of range`. When the chest leaves the action hand, or the inventory closes, the chest closes.
+A chest in the action hand (slot 1) of the open inventory opens in the panel. `state.inventory.panel` is `chest`, and `state.inventory.chest` lists the chest slots that hold an object. The chest slots are 30–37: slot 30 is the first chest slot box, slot 37 the last. `take_from_slot`, `put_in_slot`, and `look` with `slot` use the same numbers. The action clicks the chest slot box in the panel, as a player does. The game rules apply: an object that does not fit in a chest (for example a sword) stays in the leader hand. Slot 38 and higher, or a chest slot without an open chest, gives `slot out of range`. When the chest leaves the action hand, or the inventory closes, the chest closes.
 
 ### Look
 
@@ -304,7 +304,7 @@ An object is `{name, kind}`. A scroll that a champion holds also has `text`.
 
 ### View fields
 
-- `squares[]`: the visible squares, `depth` 0-3 and `side` `left`, `center`, `right`. Each has `x`, `y`, `element` (`wall`, `floor`, `door`, `pit`, `stairs_up`, `stairs_down`, `teleporter`). A door has `door` and `button`. A square that is not a wall has `objects[]` (`cell`, `name`), `flying[]` (projectiles and explosions), and `creatures` (`type`, `count`) when a group is there. From depth 1, a floor square has `floor_ornament` when the view draws one: `grate`, `pressure_pad`, `moss`, `round_grate`, `round_pressure_pad`, `flame_pit`, `crack`, `tiny_pressure_pad`, or `puddle` (the index of the floor ornament graphics of the game). Another ornament gives its index as a number. The view draws no floor ornament on the party row, and a floor sensor without an ornament shows nothing, as on the screen.
+- `squares[]`: the visible squares, `depth` 0–3 and `side` `left`, `center`, `right`. Each has `x`, `y`, `element` (`wall`, `floor`, `door`, `pit`, `stairs_up`, `stairs_down`, `teleporter`). A door has `door` and `button`. A square that is not a wall has `objects[]` (`cell`, `name`), `flying[]` (projectiles and explosions), and `creatures` (`type`, `count`) when a group is there. From depth 1, a floor square has `floor_ornament` when the view draws one: `grate`, `pressure_pad`, `moss`, `round_grate`, `round_pressure_pad`, `flame_pit`, `crack`, `tiny_pressure_pad`, or `puddle` (the index of the floor ornament graphics of the game). Another ornament gives its index as a number. The view draws no floor ornament on the party row, and a floor sensor without an ornament shows nothing, as on the screen.
 - A `flying` entry is `{kind, name}`. A projectile has `kind` `projectile` and the object name, or `spell`. An explosion has `kind` `explosion`, `type` (the number of the game), and `name`: `fireball`, `slime`, `lightning`, `harm_non_material`, `open_door`, `poison_bolt`, `poison_cloud`, `smoke`, `fluxcage`, or `rebirth`. Another type gives its number as `name`.
 - A wall has `front_face` (the side that faces the party) and `side_face` (the side that faces the lane of the party) when the face shows something. A face is `{facing, text?, mirror?, switch?, lock?, torch_holder?, alcove?, fountain?, vi_altar?, ornament?}`. `facing` is the direction that the face points to. `switch` is a button or a lever. `lock` takes or holds an object: a keyhole or a slot. Its value names the picture, for example `iron_lock`, `gold_lock`, `sun_lock`, `eye_socket`, `gem_hole`, or `coin_slot`; a picture without a name gives its index in the wall ornament graphics. `torch_holder` is a wall holder for a torch. `ornament` is another ornament, also named by its picture, for example `creeper` or `manacles`.
 - The faces are the faces that the dungeon view draws: the front face of a center wall from depth 1, the side face of a side wall from depth 1, and the front face of a side wall from depth 2. The side walls of depth 0 have no faces.

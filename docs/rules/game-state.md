@@ -156,7 +156,7 @@ A free slot keeps the index of the next free slot in `map_time`. The value `0xff
 
 ### Functions
 
-| C function | Original | Work |
+| C function | Original | Purpose |
 |---|---|---|
 | `timeline_init` | `0x11f16a` | New game only. Allocates the arrays, builds the free list, and adds the watchdog event. |
 | `timeline_get_index` | `0x11f26c` | Finds a slot in the heap. A missing slot is fatal error `0x46`. |
@@ -209,7 +209,7 @@ Projectiles (thing type 14) and explosions (thing type 15) are dungeon things. T
 
 ## Helpers
 
-| C function | Original | Work |
+| C function | Original | Purpose |
 |---|---|---|
 | `min16`, `max16` | `0x107652`, `0x107668` | Minimum and maximum of two words. |
 | `bounded_value(min, value, max)` | `0x10767e` | Returns `min` when `value <= min`, otherwise the lower of `value` and `max`. |

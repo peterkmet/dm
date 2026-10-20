@@ -1,6 +1,6 @@
-# C port coding standard
+# Coding standard
 
-The C port is a readable reimplementation of the game. It is not a cleaned-up decompiler listing. The tests
+The port is a readable reimplementation of the game. It is not a cleaned-up decompiler listing. The tests
 prove that the behavior matches the original.
 
 Every rule names its check in `tests/standard/test_standard.py` in brackets, or says "review only" when no
@@ -125,7 +125,7 @@ this document names.
 4. Predicates (`is_`, `has_`, `can_`), also static ones, return `bool`. [bool]
 5. Globals have the prefix `g_`. File-static variables have no `g_` and a descriptive name. A short name is
    allowed only for a loop index and for a variable used in a few adjacent lines. [global]
-6. Types: `PascalCase`. Constants: `UPPER_CASE`.
+6. Types: `PascalCase`. Constants: `UPPER_CASE`. [review only]
 7. No decompiler names (`uVar1`, `local_10`, `arg_8`, `param_1`). [decompiler]
 8. No ordinal (index + 1, 0 for none) in a name or in a variable; an index is -1 for none. An ordinal stays
    only where a game record stores it. [ordinal]

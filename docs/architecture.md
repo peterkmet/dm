@@ -196,7 +196,7 @@ The rules do not draw. They set redraw flags that `ui/` reads and draws:
 ## The control socket and the turn
 
 In turn-based mode a program player plays the game over a Unix domain socket. The protocol is in
-[the LLM mode guide](llm/llm-mode.md).
+[llm-mode.md](llm/llm-mode.md).
 
 1. In each frame `transport_poll` (`platform/transport.c`) first calls `control_end_turn` when a turn is
    pending. It advances the turn by one frame. When the turn ends, it returns true and the reply goes out on

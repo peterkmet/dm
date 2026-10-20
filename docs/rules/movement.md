@@ -30,7 +30,7 @@ All square and thing functions work on the current map (`g_current_map_index`). 
 
 Call `map_reset()` after `dungeon_load`. The current map pointers then point to the new buffers at the next `map_set_current_map`.
 
-| Function | Original | Work |
+| Function | Original | Purpose |
 |---|---|---|
 | `map_get_square(x, y)` | `0x10a8ac` | Square byte. Outside the map: a wall byte. The wall gets bit 1, 3, 2, or 0 when the adjacent square above, below, left, or right is a corridor or a pit. |
 | `get_square_type(x, y)` | — | `map_get_square(x, y) >> 5`. |
@@ -263,7 +263,7 @@ Movement rules that the event table does not cover:
 - Wall sensor type 12 creates an object (`projectile_get_launch_object`).
 - Wall sensor type 18 ends the game (`startend_run_endgame_sensor`).
 
-## Differences from the original
+## Deviations from the original
 
 - Event 65 stops at the end of the thing list. The original stops only at `0xffff`.
 - `sensor_process_rotation_effect` stops when the cell has no sensor. The original reads past the list.
