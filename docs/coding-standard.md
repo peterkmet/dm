@@ -109,14 +109,12 @@ this document names.
     only. [byteorder]
 11. The record layout belongs to `engine/record.h` and `engine/record.c`: no other file indexes a record
     (`REC(`) or `g_dungeon_map_data[`. [record]
-12. Read game data at run time; do not copy a game table into the source. Exception: a table that is not in
-    the game files (the soundtrack tables of the other versions) stays in the source, named in the allowlist
-    with this reason; the APPB address tables of the CSB image build (`data/csb_image.c`, `data/csb_text.c`) stay
-    in the source, named in the allowlist with this reason; the fixed CRC-32 table of a standard algorithm
-    (`data/crc32.c`) stays in the source, named in the allowlist with this reason; the port spell names of the
-    cheat screen (`ui/cheats.c`) stay in the source, because the game files have no spell names (the object names
-    of the potions are rune names, not effects) (no allowlist
-    line: the table has no plain numbers). [decimal, hex, allowlist]
+12. Read game data at run time; do not copy a game table into the source. Four tables stay in the source, each
+    named in the allowlist with its reason: the soundtrack tables of the other versions (not in the game files),
+    the APPB address tables of the CSB image build (`data/csb_image.c`, `data/csb_text.c`), the CRC-32 table of a
+    standard algorithm (`data/crc32.c`), and the spell names of the cheat screen (`ui/cheats.c`: the game files
+    have no spell names; the potion names are rune names, not effects). The spell names need no allowlist line:
+    the table has no plain numbers. [decimal, hex, allowlist]
 
 ## 4. Naming
 
@@ -270,7 +268,7 @@ this document names.
 before each commit. The check runs `clang-format --dry-run --Werror` with the `clang-format` of the `dev`
 dependency group (version 23). [format]
 
-## Check before a step is done
+## Checks before a commit
 
 `make` (clang) and `make windows` (MinGW-w64 GCC) build with 0 warnings under `-Wall -Wextra -Werror
 -Wshadow -Wmissing-prototypes -Wstrict-prototypes -Wvla -Wimplicit-fallthrough`.

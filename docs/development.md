@@ -88,22 +88,22 @@ git config blame.ignoreRevsFile .git-blame-ignore-revs
 5. `make dist-win` builds `build/DMMac-windows-x64.zip` (`dm.exe` and `SDL3.dll`).
 6. Commit `CHANGELOG.md`, `pyproject.toml`, and `uv.lock` with the message `docs: version X.Y.Z`.
 7. `git tag vX.Y.Z`.
-8. The owner pushes the branch and the tag.
+8. Push the branch and the tag.
 9. Write the notes file: the `CHANGELOG.md` section of the version.
-10. The owner creates the release:
+10. Create the release:
 
     ```sh
     gh release create vX.Y.Z build/DMMac-macos-arm64.zip build/DMMac-windows-x64.zip --notes-file <notes>
     ```
 
-### New zips of a released version
+### Replace the zips of a release
 
 A change that keeps the version number replaces the zips of its release:
 
 1. In `CHANGELOG.md`, add the entries to the section of the released version.
 2. `make check`, `make dist`, `make dist-win`.
 3. Commit `CHANGELOG.md`.
-4. The owner pushes the branch, moves the tag to the new commit, and replaces the zips and the notes:
+4. Push the branch, move the tag to the new commit, and replace the zips and the notes:
 
    ```sh
    git tag -f vX.Y.Z && git push -f origin vX.Y.Z

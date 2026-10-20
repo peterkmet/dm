@@ -76,7 +76,7 @@ Smell uses the smell range of the creature. A creature smells the party directly
 - `test_movement` blocks walls, stairs, open pits (except for levitating creatures), closed fake walls, the party square, other groups, and closed doors that are too low for the creature. A wary creature avoids a teleporter to a map that does not allow its type. Lord Chaos does not enter a fluxcage.
 - A creature never turns around at once. It turns left or right first.
 - Lord Chaos sometimes jumps two squares over a free square.
-- `move_get_move_result` moves a group through the one square chain of every mover (the rule table in [movement.md](movement.md)): teleporters with the creatures scope, pits (20 damage to each creature), and stairs. The group hooks are `group_turn_by_teleporter`, `group_is_killed_by_fall`, `group_remove_after_move`, and `group_enter_square`. A group that reaches a map that does not allow its creature type dies and drops its possessions. When the destination is occupied, the group waits with event 60 or 61 and tries again every 5 ticks.
+- `move_get_move_result` moves a group through the square chain of every mover (the rule table in [movement.md](movement.md)): teleporters with the creatures scope, pits (20 damage to each creature), and stairs. The group hooks are `group_turn_by_teleporter`, `group_is_killed_by_fall`, `group_remove_after_move`, and `group_enter_square`. A group that reaches a map that does not allow its creature type dies and drops its possessions. When the destination is occupied, the group waits with event 60 or 61 and tries again every 5 ticks.
 
 ### Attack
 
@@ -220,6 +220,6 @@ Each fix has a short comment in the code.
 - Differential tests against the original code in `dmtools.emu`: directions to a destination, sight cone, poison resistance, champion damage by a creature, projectile impact attack, launcher objects.
 - Scenario tests on the loaded dungeon: a group activates and comes next to the party, a group attacks the party, a skeleton dies and drops its possessions and smoke, a fireball flies and explodes on a wall, and spell casts (light, potion, meaningless spell, party shield, fireball).
 
-## Not ported in this step
+## Related rules
 
-- Champion actions and the events 11, 12, 13, and 75 are in [rules-champions.md](champions.md#actions).
+- Champion actions and the events 11, 12, 13, and 75 are in [champions.md](champions.md#actions).

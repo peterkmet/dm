@@ -78,7 +78,7 @@ The party position is in `dungeon.h`: `g_party_map_x` (`0x1001ec`), `g_party_map
 
 The first index of `statistics` is `STAT_LUCK`, `STAT_STRENGTH`, `STAT_DEXTERITY`, `STAT_WISDOM`, `STAT_VITALITY`, `STAT_ANTIMAGIC`, or `STAT_ANTIFIRE`. The second index is `STAT_MAXIMUM`, `STAT_CURRENT`, or `STAT_MINIMUM`.
 
-The portrait pointer (`0x114`) is not in the struct. Champion recruiting adds it in a later step.
+The portrait pointer (`0x114`) is not in the struct. The port keeps the portrait pixels in `ChampionRuntime.portrait`.
 
 ## Other globals
 
@@ -191,7 +191,7 @@ Note: [range-7-9.md](../reference/symbols/range-7-9.md) says that "any other new
 
 `ActiveGroup` has the 16-byte layout of the original: `group_index` (`int16_t`, −1 is a free entry), `directions`, `cells`, `last_move_time`, `delay_fleeing`, `target_x`, `target_y`, `prior_x`, `prior_y`, `home_x`, `home_y`, and `aspect[4]`. All fields after `group_index` are `uint8_t`.
 
-`group_init_active_groups` (`0x10cb76`) allocates 110 entries and sets `group_index` to −1 in each entry. The port has only the new-game path.
+`group_init_active_groups` (`0x10cb76`) allocates 110 entries and sets `group_index` to −1 in each entry. `savegame.c` fills the entries of a loaded game.
 
 ## Projectiles and explosions
 

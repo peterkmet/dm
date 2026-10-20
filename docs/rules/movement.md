@@ -228,31 +228,29 @@ Implemented event types:
 | 78 | Subtracts `b` from the fire shield defense. |
 | 79 | Decrements the footprints count. |
 
-Event types without effect in the port:
+Event types that other pages describe:
 
-| Type | Original handler | Step |
+| Type | Handler | Page |
 |---|---|---|
-| 11 | `enable_champion_action` | Champions |
-| 12 | `hide_damage_received` | Champions |
-| 13 | `process_vi_altar_rebirth` | Champions |
-| 25 | `explosion_process_step_event` | Projectiles |
-| 29–41 | `group_process_reaction_event` | Creatures |
-| 48, 49 | `projectile_process_move_event` | Projectiles |
-| 60, 61 | `group_process_move_event` | Creatures |
-| 75 | `champion_poison` | Champions |
+| 11 | `enable_champion_action` | [champions.md](champions.md) |
+| 12 | `hide_damage_received` | [champions.md](champions.md) |
+| 13 | `process_vi_altar_rebirth` | [champions.md](champions.md) |
+| 25 | `explosion_process_step_event` | [creatures.md](creatures.md) |
+| 29–41 | `group_process_reaction_event` | [creatures.md](creatures.md) |
+| 48, 49 | `projectile_process_move_event` | [creatures.md](creatures.md) |
+| 60, 61 | `group_process_move_event` | [creatures.md](creatures.md) |
+| 75 | `champion_poison` | [champions.md](champions.md) |
 | 0, 3, 4, 14–19, 21–23, 26–28, 42–47, 50–52, 54–59, 62–64, 66–69, 76, 80 and higher | None in the original | — |
 
-The redraw calls of events 70–79 (`set_dungeon_view_palette`, `status_draw_champion`) belong to the drawing step.
+The redraw calls of events 70–79 (`set_dungeon_view_palette`, `status_draw_champion`) belong to the drawing layer.
 
-## Also implemented
+Movement rules that the event table does not cover:
 
 - Groups move through `move_get_move_result`. A group that falls drops its dead creatures (`GroupFallDrops`).
 - Wall launchers (sensor types 7–10, 14, 15) launch in `projectile_trigger_launcher`. `projectile_is_killed_by_impact` runs in `move_get_move_result`.
 - A blocked move damages the two front champions (`bump_into_wall`, `group_get_target_champion_index`).
 - Wall sensor type 12 creates an object (`projectile_get_launch_object`).
 - Wall sensor type 18 ends the game (`startend_run_endgame_sensor`).
-
-The redraw calls of the events belong to the drawing layer.
 
 ## Differences from the original
 

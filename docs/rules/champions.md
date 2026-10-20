@@ -103,7 +103,7 @@ The name entry (`champion_start_rename` … `champion_rename_ok`) clears the nam
 
 `champion_add_pending_damage(index, attack, allowed_wounds, type)` adds damage that the main loop applies at the end of the tick. It returns the damage.
 
-1. No damage for no champion, the candidate, a dead champion, or an attack of 0 or less.
+1. Returns 0 for an invalid champion index, the candidate, a dead champion, or an attack of 0 or less.
 2. `ATTACK_RAW` adds the attack without defense and without wounds.
 3. Other types use the mean wound defense of the allowed body slots:
    - Fire: anti-fire reduces the attack, then the party fire shield.
@@ -216,7 +216,7 @@ The code is in `src/engine/action.c`. The rules follow `action_is_action_perform
 | Action | Effect |
 |---|---|
 | Chop, Kick, Swing, Hack, Berzerk, Bash on a closed door | Bashes the door with the action-hand strength (`event_is_door_destroyed`, destruction after 2 ticks). Disabled ticks become 6. |
-| Melee actions (the above without a door, Punch, Stab, Thrust, Jab, Parry, Disrupt, Melee, Slash, Cleave, Stun) | `is_melee_performed`. A miss of the target (no group, no creature in reach) halves the experience and the disabled ticks. |
+| Melee actions (the above without a door, Punch, Stab, Thrust, Jab, Parry, Disrupt, Melee, Slash, Cleave, Stun) | `is_melee_performed`. A miss (no group, no creature in reach) halves the experience and the disabled ticks. |
 | War Cry, Blow Horn, Calm, Brandish, Confuse | `is_group_frightened`. Confuse uses a charge. War Cry plays sound 17, Blow Horn sound 18. |
 | Flip | Prints heads or tails (text 0x45 or 0x46) by a random bit. |
 | Climb Down | With the rope, the party goes into the pit in front (no group there) without fall damage. Else no disabled ticks. |
@@ -235,7 +235,7 @@ Block, Hit, and the other actions only add the action defense, the disabled tick
 
 ### Melee
 
-`is_melee_performed` plays sound 13 and needs a group with a creature in reach of the champion cell (`group_get_melee_target`: the creature index, −1 for none). A champion in a back cell cannot reach when a living champion stands in the front cell before it: `g_session.action_damage = −1` ("can't reach"). Disrupt hits only non-material creatures. Disrupt and the weapon with icon 40 add bit 15 to the hit probability, so the hit can reach non-material creatures. `group_get_melee_action_damage` ([rules-creatures.md](creatures.md)) gives the damage, which goes into `g_session.action_damage` for the action area.
+`is_melee_performed` plays sound 13 and needs a group with a creature in reach of the champion cell (`group_get_melee_target`: the creature index, −1 for none). A champion in a back cell cannot reach when a living champion stands in the front cell before it: `g_session.action_damage = −1` ("can't reach"). Disrupt hits only non-material creatures. Disrupt and the weapon with icon 40 add bit 15 to the hit probability, so the hit can reach non-material creatures. `group_get_melee_action_damage` ([creatures.md](creatures.md)) gives the damage, which goes into `g_session.action_damage` for the action area.
 
 ### Fear
 
