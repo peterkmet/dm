@@ -7,7 +7,7 @@
 - The project name is DMMac: the window title, the release zips `DMMac-macos-arm64.zip` and `DMMac-windows-x64.zip`, and the repository `peterkmet/dmmac`.
 - The sound output passes a low-pass filter like the Amiga 500 output (the fixed RC filter and the LED filter).
 - The save dialog shows GAME SAVED in every mode, not only in the advanced mode.
-- Windows: no console window. The messages go to `dm.log` in the game folder, and a problem at the start shows a message box.
+- Windows: no console window. The messages go to `dm.log` in the game folder, and a problem on startup shows a message box.
 
 ### Fixed
 
@@ -18,13 +18,13 @@
 ### Added
 
 - `build/dm --help`; unknown options stop with an error.
-- The game extracts the Amiga disk images (`.adf`) in the current folder into `game/`, `game-csb/`, and `game-csb/disk-b/` at start.
+- The game extracts the Amiga disk images (`.adf`) in the current folder into `game/`, `game-csb/`, and `game-csb/disk-b/` on startup.
 - Before an adventure loads, the game checks the CRC32 of its required files against the Amiga disks and names the first wrong file.
 - Windows build: `make windows` (MinGW-w64) and `tools/dist/make-dist-win.sh` for a Windows zip. No LLM mode on Windows.
-- REINCARNATE asks for a new name and title, as the original (DM and CSB). The turn-based mode keeps the old name.
-- The entrance shows the credits; the entrance and the credits fade the palette as the original.
+- REINCARNATE asks for a new name and title, as in the original (DM and CSB). The turn-based mode keeps the old name.
+- The entrance shows the credits; the entrance and the credits fade the palette as in the original.
 - The view draws the Thieves Eye holes: the wall ahead, the door ahead, and the door frame of the party square.
-- A thing on a far square disappears when the records of its type run out, as the original.
+- A thing on a far square disappears when the records of its type run out, as in the original.
 - Advanced mode: the damage of a hit stays in the action area for two ticks; the action icons keep their colors in every light.
 - The upscale filter smooths the mouse pointer with the picture.
 - Advanced mode: Escape opens an options menu with the sound volume, the music volume (0 to 7), and the music choice. `SETTINGS.TXT` in the saves folder keeps the values.
@@ -32,7 +32,7 @@
 - Advanced mode: C opens a cheat screen with full light, immortality, food and water, and the new cheats one-hit kill, walk through walls, and reveal map; quick save and quick load; and a list of all spells with their runes. The save file keeps the cheats in a new extension block.
 - Advanced mode: 8 save slots (`DMGAME.DAT`, `DMGAME2.DAT` to `DMGAME8.DAT`; CSB `CSBGAME`). The save dialog shows LOAD, SAVE, CONTINUE, and QUIT in DM and CSB; SAVE opens a save list, LOAD and RESUME a load list with the level and the file time of each slot and the quick save; RESTART THIS GAME loads the slot of the last save or load.
 - Advanced mode, Chaos Strikes Back: the stairs down of the prison start the new adventure at once, without a save and without the utility disk. Two of the stairs are behind hidden passages, at (15, 6) and (8, 14) of the first level. The advanced prison does not show the text about the utility disk.
-- Advanced mode: a key or a click ends the CSB intro at once; vanilla waits for the shown picture as the original.
+- Advanced mode: a key or a click ends the CSB intro at once; vanilla waits for the shown picture, as in the original.
 - Advanced mode: the automap draws a wall that the party walks through (an imaginary wall) checkered.
 - Advanced mode: up to 8 sounds play at once (vanilla keeps the 2 of the Amiga).
 
@@ -53,7 +53,7 @@
 
 - The status box shows the damage splat of a hurt champion.
 - A door or a creature on another map than the party map makes no sound.
-- The dungeon view draws the footprints of the Footprints spell on the floor, as the original.
+- The dungeon view draws the footprints of the Footprints spell on the floor, as in the original.
 
 ### Removed
 
@@ -134,7 +134,7 @@
 
 ### Added
 
-- Advanced mode: music of the FM-Towns and Super NES versions from MP3 files in `music/` of the game folder. On the automap, 1 selects Original (no music, the default), 2 Super NES, 3 FM-Towns. FM-Towns DM plays a track per level, FM-Towns CSB a track per zone, Super NES a track per trigger square. A track plays one time. The choice is not saved. The music stops at the start screens. The MP3 decoder is `dr_mp3` (`port/src/dr_mp3.h`, public domain).
+- Advanced mode: music of the FM-Towns and Super NES versions from MP3 files in `music/` of the game folder. On the automap, 1 selects Original (no music, the default), 2 Super NES, 3 FM-Towns. FM-Towns DM plays a track per level, FM-Towns CSB a track per zone, Super NES a track per trigger square. A track plays once. The choice is not saved. The music stops at the start screens. The MP3 decoder is `dr_mp3` (`port/src/dr_mp3.h`, public domain).
 
 ## 0.9.0 - 2026-10-05
 
