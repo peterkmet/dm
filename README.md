@@ -8,26 +8,9 @@ SDL3. It compiles to a native program for macOS (Apple Silicon) and Windows (x86
   <img src="docs/images/screenshot-chaos.png" alt="Lord Chaos on level 12">
 </p>
 
-DMMac does not emulate the Amiga. Ghidra decompiled the original program, the game rules follow that code, and
-differential tests compare the port with the original running in a 68000 emulator. The Amiga hardware layer is
-not reproduced.
-
 This repository contains no game files. You need your own Amiga disk images (`.adf`): Dungeon Master v3.60
 (one disk) and, optional, Chaos Strikes Back (disks A and B). Other versions (DOS, Atari ST, other Amiga
 versions) do not work. The game recognizes the disks by their content, not by the file name.
-
-## Why one more port
-
-DMMac exists for two reasons. The author wanted
-
-- to play Dungeon Master natively on a modern Mac (Apple Silicon); no port did that;
-- to see how far Claude Code gets when it decompiles a complete game and ports its rules to C.
-
-[ReDMCSB](http://dmweb.free.fr/community/redmcsb/) is the reconstructed source code of the original program. It
-compiles to the same 68000 binary that FTL shipped, and that binary runs on an Amiga or an Atari ST, or in an
-emulator. DMMac takes from the original only the data files on the disk (graphics, dungeon, sounds). The rules
-are rewritten in C from the decompilation and tested against the original. ReDMCSB gave the names of functions
-and structures.
 
 ## Features
 
@@ -85,9 +68,18 @@ Run `build/dm` in the folder with the `.adf` images. The build, the tests and th
 [Development](docs/development.md); the structure of the code in [Architecture](docs/architecture.md) and the
 [coding standard](docs/coding-standard.md); the changes in the [changelog](CHANGELOG.md).
 
-## How it was made
+## Background
 
-The port was written with Claude Code.
+No Dungeon Master port ran natively on Apple Silicon; DMMac fills that gap. It is a C11 port written with Claude
+Code from a Ghidra decompilation of the Amiga program, and differential tests validate it against the original
+running in a 68000 emulator. DMMac takes from the original only the data files on the disk (graphics, dungeon,
+sounds); it does not emulate the Amiga.
+
+[ReDMCSB](http://dmweb.free.fr/community/redmcsb/) is a different kind of project: the reconstructed source
+code of the original program, which compiles to the same 68000 binary that FTL shipped and runs on an Amiga, an
+Atari ST or an emulator. ReDMCSB gave DMMac the names of functions and structures.
+
+## How it was made
 
 1. Ghidra decompiles the FTL code modules of the Amiga disk to C ([Decompiling](docs/decompiling.md)). The
    symbol tables in `docs/reference/` name the functions and the globals.
