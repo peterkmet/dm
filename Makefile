@@ -66,7 +66,8 @@ $(B)/libdm.dylib: $(call objects,$(OBJ),$(LIB_SOURCES))
 	$(CC) $(CFLAGS) $(LDFLAGS) -dynamiclib -o $@ $^
 
 # Windows: cross-build with MinGW-w64 (brew install mingw-w64) and the SDL3 MinGW package, fetched into build/.
-# Windows has no control socket: transport_none.c replaces transport.c.
+# Windows has no control socket: transport_none.c replaces transport.c. -mwindows: no console window; the
+# messages go to dm.log in the game folder.
 WIN_CC            = x86_64-w64-mingw32-gcc
 WIN_OBJ           = $(B)/obj-win
 SDL_MINGW_VERSION = 3.4.18
@@ -87,7 +88,7 @@ $(WIN_OBJ)/%.o: src/%.c Makefile $(WIN_OBJ)/flags.txt | $(SDL_MINGW)
 	$(WIN_CC) $(CPPFLAGS) $(call layer_inc,$<) -I$(SDL_MINGW)/include $(BASE_CFLAGS) -c -o $@ $<
 
 $(B)/dm.exe: $(call objects,$(WIN_OBJ),$(WIN_SOURCES))
-	$(WIN_CC) $(BASE_CFLAGS) -o $@ $^ -L$(SDL_MINGW)/lib -lSDL3
+	$(WIN_CC) $(BASE_CFLAGS) -mwindows -o $@ $^ -L$(SDL_MINGW)/lib -lSDL3
 
 $(SDL_MINGW):
 	@mkdir -p $(B)/sdl-mingw

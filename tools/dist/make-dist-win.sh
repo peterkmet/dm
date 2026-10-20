@@ -19,7 +19,8 @@ At the first start the game extracts them into game\ and game-csb\. Disks of oth
 versions (DOS, Atari ST, other Amiga versions) do not work: the game names the wrong file.
 
 Double-click dm.exe. Windows can warn about an unknown publisher: click "More info",
-then "Run anyway". The console window shows the messages of the game.
+then "Run anyway". A problem at the start shows a message box; dm.log in this folder
+holds the messages of the game.
 
 The LLM mode is not available on Windows.
 

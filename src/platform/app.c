@@ -31,6 +31,7 @@
 #include "transport.h"
 #include <SDL3/SDL.h>
 #include <limits.h>
+#include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -173,9 +174,28 @@ typedef struct {
     const char *data_dir;            /* the disk A folder of the running adventure */
     const char *csb_dir;             /* the CSB folder: --data with --adventure csb, else game-csb/ */
     char default_control[PATH_SIZE]; /* ~/.dm/control.sock when --control is not given */
+    FILE *log;                       /* dm.log of the Windows build, else NULL */
 } App;
 
 static App app;
+
+/* The startup failures, and the log file of the Windows build. */
+#define FAIL_TEXT_SIZE 512
+#define LOG_FILE       "dm.log"
+
+/* A startup failure: the message goes to the log and to a message box (the Windows build has no console). Returns
+   false for the caller to return. */
+static bool fail(const char *format, ...)
+{
+    char text[FAIL_TEXT_SIZE];
+    va_list args;
+    va_start(args, format);
+    vsnprintf(text, sizeof text, format, args);
+    va_end(args);
+    SDL_Log("%s", text);
+    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Dungeon Master", text, NULL);
+    return false;
+}
 
 /* Keys and clicks of the start screens. Ctrl+Q quits. */
 static void read_start_screen_event(const PlatEvent *event)
@@ -329,10 +349,8 @@ static bool run_entrance(const char *folder)
     }
     if (g_entrance_choice == ENTRANCE_NEW_GAME) {
         entrance_open_doors();
-        if (!gameloop_start_new_game(folder)) {
-            SDL_Log("cannot load %s/Dungeon.DAT", folder);
-            return false;
-        }
+        if (!gameloop_start_new_game(folder))
+            return fail("cannot load %s/Dungeon.DAT", folder);
         app.screen = SCREEN_GAME;
     }
     return true;
@@ -388,8 +406,7 @@ static bool load_font(void)
         if (gfx_open(path) && text_init())
             return true;
     }
-    SDL_Log("cannot load the font from Graphics.DAT");
-    return false;
+    return fail("cannot load the font from Graphics.DAT");
 }
 
 /* The window icon from the open Graphics.DAT in the colors of the interface. Without the graphic, SDL keeps its icon. */
@@ -420,10 +437,8 @@ static bool apply_mode(void)
         snprintf(app.default_control, sizeof app.default_control, "%s/%s", home ? home : ".", DEFAULT_CONTROL_SOCKET);
         socket = app.default_control;
     }
-    if (!transport_open(socket)) {
-        SDL_Log("cannot open the control socket %s", socket);
-        return false;
-    }
+    if (!transport_open(socket))
+        return fail("cannot open the control socket %s", socket);
     return true;
 }
 
@@ -439,15 +454,11 @@ static const char *get_adventure_dir(void)
 static bool load_game_files(void)
 {
     const char *bad = adventure_find_bad_file(g_adventure, app.data_dir);
-    if (bad) {
-        SDL_Log("%s/%s is missing or is not the file of %s for the Amiga", app.data_dir, bad,
-                adventure_get(g_adventure)->title);
-        return false;
-    }
-    if (!gameloop_load_data(app.data_dir)) {
-        SDL_Log("cannot load the game files in %s", app.data_dir);
-        return false;
-    }
+    if (bad)
+        return fail("%s/%s is missing or is not the file of %s for the Amiga", app.data_dir, bad,
+                    adventure_get(g_adventure)->title);
+    if (!gameloop_load_data(app.data_dir))
+        return fail("cannot load the game files in %s", app.data_dir);
     return true;
 }
 
@@ -495,10 +506,8 @@ static bool start_csb(void)
     if (choice == SELECT_CSB_NEW_ADVENTURE && !app.auto_enter)
         play_csb_intro();
     if (choice == SELECT_CSB_NEW_ADVENTURE) {
-        if (!gameloop_start_new_game(app.data_dir)) {
-            SDL_Log("cannot load %s/Dungeon.DAT", app.data_dir);
-            return false;
-        }
+        if (!gameloop_start_new_game(app.data_dir))
+            return fail("cannot load %s/Dungeon.DAT", app.data_dir);
     } else if (startend_load_saved_game()) {
         gameloop_start_loaded_game();
     } else if (app.turnbased) {
@@ -573,6 +582,17 @@ static void log_fatal(const char *message)
     SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "%s", message);
 }
 
+#ifdef _WIN32
+/* The SDL log output of the Windows build: a line of dm.log in the game folder, as the build has no console. */
+static void log_to_file(void *userdata, int category, SDL_LogPriority priority, const char *message)
+{
+    (void)category;
+    (void)priority;
+    fprintf(userdata, "%s\n", message);
+    fflush(userdata);
+}
+#endif
+
 /* Extracts the game disk images (.adf) of the current folder, then finds the CSB folder and starts the start
    screens. False when --adventure csb has no CSB data. */
 static bool install_disks(void)
@@ -582,10 +602,8 @@ static bool install_disks(void)
     const char *data = app.options.data_dir;
     app.csb_dir = data && app.options.adventure == ADVENTURE_CSB ? data : adventure_get(ADVENTURE_CSB)->dir;
     bool csb_present = adventure_is_csb_present(app.csb_dir);
-    if (app.options.adventure == ADVENTURE_CSB && !csb_present) {
-        SDL_Log("CSB data is missing in %s", app.csb_dir);
-        return false;
-    }
+    if (app.options.adventure == ADVENTURE_CSB && !csb_present)
+        return fail("CSB data is missing in %s", app.csb_dir);
     select_start(app.options.adventure, app.options.mode, csb_present, transport_is_available());
     app.data_dir = get_adventure_dir();
     return true;
@@ -637,6 +655,10 @@ bool app_open(const Options *options)
     /* DM_AUTO_ENTER, --show, and --view show no start screen: the mode is vanilla unless --mode says otherwise */
     if ((app.auto_enter || app.options.view || app.options.graphic >= 0) && app.options.mode < 0)
         app.options.mode = GAME_MODE_VANILLA;
+#ifdef _WIN32
+    if ((app.log = fopen(LOG_FILE, "w")))
+        SDL_SetLogOutputFunction(log_to_file, app.log);
+#endif
     g_os_log_hook = log_message;
     g_os_fatal_hook = log_fatal;
     g_os_make_folder_hook = make_folder;
@@ -655,6 +677,8 @@ void app_close(void)
     transport_close();
     gfx_close();
     tables_free();
+    if (app.log)
+        fclose(app.log);
     plat_quit();
 }
 
