@@ -10,7 +10,7 @@ Unpack a release (see the [README](../README.md)) or build the game (see [develo
 build/dm
 ```
 
-At start, the game extracts each `.adf` disk image in the current folder once: the Dungeon Master v3.60 disk to `game/`, CSB disk A to `game-csb/`, CSB disk B to `game-csb/disk-b/`. A folder that already has the files stays as it is. Before an adventure loads, the CRC32 of its required files must match the Amiga disks; else the game logs the first wrong file and exits.
+On startup, the game extracts each `.adf` disk image in the current folder once: the Dungeon Master v3.60 disk to `game/`, CSB disk A to `game-csb/`, CSB disk B to `game-csb/disk-b/`. A folder that already has the files stays as it is. Before an adventure loads, the CRC32 of its required files must match the Amiga disks; otherwise the game logs the first wrong file and exits.
 
 ### Extract the disks by hand
 
@@ -53,7 +53,7 @@ Usage: dm [options]
 - `--show N` shows graphic N of `Graphics.DAT`.
 - The environment variable `DM_AUTO_ENTER=1` skips the start screens and presses ENTER at the entrance. The tests use it.
 
-The entrance and its credits fade the palette, as the original; the dialogs and the endgame screens do not.
+The entrance and its credits fade the palette, as in the original; the dialogs and the endgame screens do not.
 
 ## Start screens
 
@@ -74,7 +74,7 @@ After DUNGEON MASTER, the game shows the FTL logo (`SWSH.FTL`, about 1 second), 
 | `--adventure` and `--mode` | None. CSB shows its third screen. In `turnbased` mode, the game selects NEW ADVENTURE. |
 | `--show`, `--view`, or `DM_AUTO_ENTER=1` | None. The adventure is Dungeon Master unless `--adventure` selects CSB. The mode is `vanilla` unless `--mode` selects another mode. With `DM_AUTO_ENTER=1` and `--adventure csb`, the game selects NEW ADVENTURE. |
 
-The game font comes from `Graphics.DAT` in the `--data` folder, else in `game/`, else in `game-csb/`.
+The game font comes from `Graphics.DAT` in the `--data` folder, otherwise in `game/`, otherwise in `game-csb/`.
 
 ## Entrance
 
@@ -192,7 +192,7 @@ The advanced features are not in the original game:
 
   Mouse: click a row to switch the cheat, to run the item, or to cast the spell. Keys: Up and Down (also W and S) select a row; Return switches or runs it; F5 and F9 run the quick save and the quick load; C and Escape close. The save file of the `advanced` mode keeps the cheats (see below). A new game turns them off.
 - Settings file: at each change of a value in the menu, the port writes the values to `SETTINGS.TXT` in the saves folder (the data folder of the adventure, or `--saves DIR`). Each game start in the `advanced` mode reads the file again. The lines are `sound_volume=0..7`, `music_volume=0..7`, `music=original|super-nes|fm-towns`, and `filter=none|scale2x|scale3x`. A missing file, a file above 1 KiB, or a line that the port cannot read gives the default of that value: volume 7, ORIGINAL, and NONE. When the write fails, the message area shows UNABLE TO SAVE OPTIONS and the new values stay in use until the next game start. The `vanilla` and `turnbased` modes do not read the file: they play at full volume without music, with the filter of `--filter` or no filter.
-- Music: a track plays one time and does not loop, as in the original versions:
+- Music: a track plays once and does not loop, as in the original versions:
   - FM-Towns DM: each level has a track. A new level stops the current track and starts its track. Game over and game won have a track.
   - FM-Towns CSB: each square of a zone has a track. A new zone requests its track; it starts when the current track ends. A level change stops the music. The prison and game over have a track.
   - Super NES (DM only; in CSB the menu skips it, and `music=super-nes` gives ORIGINAL): a step on one of 22 trigger squares stops the current track and starts its track. Game won plays the end credits.

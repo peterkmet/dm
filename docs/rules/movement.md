@@ -52,7 +52,7 @@ Call `map_reset()` after `dungeon_load`. The current map pointers then point to 
 
 1. Set the next word of `thing` to `0xfffe`.
 2. When `x < 0`, append `thing` to the list that starts at `list`.
-3. When the square has no list, set bit 4 of the square. Add 1 to the first-thing index of every later column of the dungeon. Insert `thing` into `g_square_first_things`. The last entry must be `0xffff`, else the function stops with system error 72 (`0x48`).
+3. When the square has no list, set bit 4 of the square. Add 1 to the first-thing index of every later column of the dungeon. Insert `thing` into `g_square_first_things`. The last entry must be `0xffff`, otherwise the function stops with system error 72 (`0x48`).
 4. Else append `thing` to the end of the square list.
 
 `map_unlink_thing_from_list` is the inverse. It compares things without the cell bits. When the list becomes empty, it clears bit 4, removes the entry, writes `0xffff` to the last entry, and subtracts 1 from the later column indices.
@@ -83,7 +83,7 @@ Call `map_reset()` after `dungeon_load`. The current map pointers then point to 
 
 `take_stairs(up)` removes the party from its square, sets `g_session.new_party_map` and the party square with `map_get_level_change_location` (−1 for up, +1 for down), and turns the party to the stairs exit direction of the new map.
 
-`rotate_party(direction)` adds the direction change to the cell and the direction of each champion. The loop runs one time also without champions, as in the original.
+`rotate_party(direction)` adds the direction change to the cell and the direction of each champion. The loop runs once also without champions, as in the original.
 
 ### `move_get_move_result`
 
@@ -171,7 +171,7 @@ The trigger rule: XOR the value with the revert bit (byte 5 bit 5). Effect 3 (ho
 `sensor_trigger_effect(sensor, effect, x, y, cell)`:
 
 1. A once-only sensor (byte 5 bit 2) sets its type to 0.
-2. A local sensor (byte 4 bit 3) calls `trigger_local_effect(word 6 >> 4, ...)`. Local effect 10 gives 300 experience in skill 8: to the leader for a wall sensor, else shared by the living champions. Local effects 1 and 2 rotate the sensors of the cell (`sensor_process_rotation_effect`): the first sensor moves behind the last sensor of the cell.
+2. A local sensor (byte 4 bit 3) calls `trigger_local_effect(word 6 >> 4, ...)`. Local effect 10 gives 300 experience in skill 8: to the leader for a wall sensor, otherwise shared by the living champions. Local effects 1 and 2 rotate the sensors of the cell (`sensor_process_rotation_effect`): the first sensor moves behind the last sensor of the cell.
 3. A remote sensor adds a square event at the target (word 6 bits 6–10: X, bits 11–15: Y) after the delay (word 4 bits 7–10). The target square type selects the event type (`0x100d4a`): wall 6, corridor 5, pit 9, stairs 0, door 10, teleporter 8, fake wall 7. Only a wall target keeps the target cell (word 6 bits 4–5).
 
 `sensor_add_event(type, at, cell, effect, time)` adds the event on the current map. The priority is 1 for effect 0, 3 for effect 1, 2 for effect 2, and 0 for other effects. Example: a door button click adds `sensor_add_event(10, at, 0, 2, g_game_time + 1)`.
@@ -180,7 +180,7 @@ The trigger rule: XOR the value with the revert bit (byte 5 bit 5). Effect 3 (ho
 
 The door state is bits 0–2 of the door square: 0 open, 1–3 partly closed, 4 closed, 5 destroyed.
 
-- Event 10 (door): no effect on a destroyed door. Toggle (2) becomes 1 for an open door, else 0. Effect 0 on an open door and effect 1 on a closed door do nothing. Else the event becomes event 1 at the same time.
+- Event 10 (door): no effect on a destroyed door. Toggle (2) becomes 1 for an open door, otherwise 0. Effect 0 on an open door and effect 1 on a closed door do nothing. Otherwise the event becomes event 1 at the same time.
 - Event 1 (door animation): one step per tick. Effect 0 decrements the state, effect 1 increments it. Each step plays sound 2 and adds the event again at time + 1, until the state is 0 or 4.
 - A closing door on the party square (state not 0) opens fully when the party has champions, damages the party (`champion_damage_all(5, 4, 2)`, sound 15), and tries again at time + 2.
 - A closing door with a group that is not non-material (creature attribute bit 6) goes back one step when the creature height is at most the state, plays sound 4, and tries again at time + 2. The height is 1, or creature attribute bits 7–8 for a door with bit 5 of byte 3.
@@ -189,9 +189,9 @@ The door state is bits 0–2 of the door square: 0 open, 1–3 partly closed, 4 
 
 ## Pits, teleporters, and fake walls
 
-- Event 8 (teleporter) and event 9 (pit): toggle becomes 1 for an open square (bit 3), else 0. Effect 0 sets bit 3 and calls `reenter_square_things`. Other effects clear bit 3.
+- Event 8 (teleporter) and event 9 (pit): toggle becomes 1 for an open square (bit 3), otherwise 0. Effect 0 sets bit 3 and calls `reenter_square_things`. Other effects clear bit 3.
 - `reenter_square_things(x, y)` moves the party, the group, and each object of the square again with a move from the square to the same square. It updates the events of moved projectiles and explosions from the `MoveDestination`.
-- Event 7 (fake wall): bit 2 is open. Toggle becomes 1 for an open wall, else 0. Effect 1 closes the wall. It waits (time + 1) while the party or a material group is on the square. Other effects open it.
+- Event 7 (fake wall): bit 2 is open. Toggle becomes 1 for an open wall, otherwise 0. Effect 1 closes the wall. It waits (time + 1) while the party or a material group is on the square. Other effects open it.
 
 ## Square events on corridors and walls
 

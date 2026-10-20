@@ -19,7 +19,7 @@ data/       file formats, the engine image (KAOS.FTL, APPB.FTL) and its tables, 
 ```
 
 A file includes only headers of its own layer and of the layers below it in the diagram. The public headers of a
-layer stand in `src/<layer>/include/`, and the include path of a layer holds only its own and the lower layers,
+layer are in `src/<layer>/include/`, and the include path of a layer holds only its own and the lower layers,
 so the compiler rejects an include of a higher layer. This page names a header with its layer: `engine/game.h`
 is `src/engine/include/game.h`. The rules are in [the coding standard](coding-standard.md), section 1.
 
@@ -221,7 +221,7 @@ A global holds state that lives across calls. These are the globals of the game:
 - `g_screen` (`ui/video.h`): the frame buffer and the two palettes.
 - The redraw flags: `g_redraw` and the `CHAMPION_ATTR_*` bits of `Champion.attributes`.
 
-The state of one module is `static` in its `.c` file. A result does not travel through a global: it travels
+The state of one module is `static` in its `.c` file. A result does not pass through a global: it passes
 through the return value or a struct out-parameter ([the coding standard](coding-standard.md), rule 6.6).
 
 ## Hooks between layers

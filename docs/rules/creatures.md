@@ -51,7 +51,7 @@ Bits 0–3 of group word 14 hold the behavior.
 
 | Value | Behavior | Rule on event 37 |
 |---|---|---|
-| 0 | Wander | Sees the party: attacks when the party is in attack range and in line, else approaches. Does not see the party: moves toward the smell of the party, else moves randomly or stays. |
+| 0 | Wander | Sees the party: attacks when the party is in attack range and in line, otherwise approaches. Does not see the party: moves toward the smell of the party, otherwise moves randomly or stays. |
 | 2 | Wander, no approach | Like wander, but does not follow the smell and does not approach. |
 | 3 | Wander, no smell | Like wander, but does not follow the smell. |
 | 5 | Flee | Moves away from the party. Without sight of the party, it sometimes moves home. The flee ends after the flee delay. |
@@ -86,7 +86,7 @@ An attacking creature (events 38–41) turns to the party, moves to the front ce
 
 - Attack range 1, or a party next to the group (half of the time): a melee hit on the champion in the cells that the creature reaches first. A creature with "attack any champion" picks a random living champion.
 - A Giggler steals objects from random slots of the champion while the champion fails a dexterity and luck check. Then the Giggler often flees.
-- Longer range: the creature shoots a spell projectile with step energy 8. The creature type selects the spell: slime for a Swamp Slime, lightning or open door for a Wizard Eye, a random spell for a Vexirk or Lord Chaos, poison cloud or fireball for a Materializer, else a fireball.
+- Longer range: the creature shoots a spell projectile with step energy 8. The creature type selects the spell: slime for a Swamp Slime, lightning or open door for a Wizard Eye, a random spell for a Vexirk or Lord Chaos, poison cloud or fireball for a Materializer, otherwise a fireball.
 
 `group_get_champion_damage(group, champion)` gives the melee damage:
 

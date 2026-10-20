@@ -15,8 +15,8 @@ this document names.
    audio output), `control/` (the turn-based protocol for a program player), `platform/` (SDL, the control
    socket, options, the application, `main`). A file includes only headers of its own layer and of the layers
    before it. [layer]
-2. The public headers of a layer stand in `src/<layer>/include/` (`src/engine/include/game.h`); a private
-   `<module>_internal.h` stands next to its `.c` files. The include path of a layer holds only the `include/`
+2. The public headers of a layer are in `src/<layer>/include/` (`src/engine/include/game.h`); a private
+   `<module>_internal.h` is next to its `.c` files. The include path of a layer holds only the `include/`
    folders of its own layer and of the layers before it, and `-isystem src/third_party`, so the compiler rejects
    an include of a later layer. An include names only the file: `#include "game.h"`. Header names are unique
    across the layers. [layer]
@@ -61,7 +61,7 @@ this document names.
    order and alphabetical inside a layer; third-party headers; system headers. `.clang-format` sorts them.
    The include categories of `.clang-format` name the headers of each layer. There is no umbrella header
    per layer. [format, include]
-4. The one-line comment of a public function stands in the header above its prototype. [comment]
+4. The one-line comment of a public function is in the header above its prototype. [comment]
 5. A symbol that exists only for the tests carries `/* exported for the tests */` on its declaration.
    [dead-api]
 
@@ -71,9 +71,9 @@ this document names.
    value. Every other number is a named constant, also in an array size and in a loop bound. The base
    argument of `strtol` and its siblings is a plain number.
    [hex, decimal]
-2. A constant is `#define NAME value` with the value written out; a negative value stands in parentheses:
+2. A constant is `#define NAME value` with the value written out; a negative value is in parentheses:
    `#define COLOR_NONE (-1)`. No `enum` for constants; `enum` names a result type only (rule 6.1). [enum]
-3. Related constants stand in one block without blank lines, with one comment line above the block that
+3. Related constants are in one block without blank lines, with one comment line above the block that
    names the set; `clang-format` aligns the values. [block]
 4. Notation is per block: a block of bit flags, masks, packed layouts, image addresses and file format bytes
    is hex in every line, with the same digit width; a block of counts, ids, sizes, ticks, coordinates,
@@ -174,12 +174,12 @@ this document names.
    returns `NULL`. A count returns the count. No `0/-1`, no `1/0/-1`, no value encoded in a return value
    (`index + 2`). [result]
 2. At most five parameters; a function that needs more takes a struct. [params]
-3. A square travels as `Location {int16_t x, y;}`, a square with its map as `Position {int16_t map, x, y;}`.
+3. A square passes as `Location {int16_t x, y;}`, a square with its map as `Position {int16_t map, x, y;}`.
    [review only]
 4. No flags packed into a parameter (`skill | flags`), no mode number that means two things (a mode and a
    tick count). [review only]
 5. Two or more output parameters become one returned struct. [review only]
-6. A result does not travel through a global; it travels through the return value or a struct out-parameter.
+6. A result does not pass through a global; it passes through the return value or a struct out-parameter.
    [review only]
 
 ## 7. State
@@ -195,7 +195,7 @@ this document names.
 ## 8. File order
 
 1. A `.c` file has this order: includes; constants; types; file-static state; functions. [order]
-2. The public functions stand in the order of the header. The header lists them by topic: setup and reset
+2. The public functions are in the order of the header. The header lists them by topic: setup and reset
    first, then queries, then commands; a one-line section comment names each topic in the header and in the
    `.c` file. [order]
 3. A static helper stands directly above the first function that calls it; a helper that several sections

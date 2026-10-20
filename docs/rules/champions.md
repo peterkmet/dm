@@ -27,7 +27,7 @@ The port reads all game tables from the KAOS image at run time ([tables.md](tabl
 5. The text on the party square gives the name, title, sex, health, stamina, mana, statistics, and experience (`recruit_parse`, [recruit.h](../../src/engine/include/recruit.h)).
 6. The champion becomes the candidate (`g_session.candidate_champion_index`: index, −1 for none). The first champion becomes leader and magic caster.
 7. The objects in the cell of the wall square that faces the party become the possessions:
-   - Armour goes to the first body slot (head to feet) that accepts it, else to the neck.
+   - Armour goes to the first body slot (head to feet) that accepts it, otherwise to the neck.
    - A weapon goes to the action hand.
    - A scroll or potion goes to pouch 1, then pouch 2.
    - Other objects, and objects whose slot is full, go to the neck (when the object fits there and the neck is empty) or to the next backpack slot.
@@ -221,7 +221,7 @@ The code is in `src/engine/action.c`. The rules follow `action_is_action_perform
 | Flip | Prints heads or tails (text 0x45 or 0x46) by a random bit. |
 | Climb Down | With the rope, the party goes into the pit in front (no group there) without fall damage. Else no disabled ticks. |
 | Freeze Life | A blue magical box adds 30 freeze ticks, a green box 125; the box is used up. Other objects add 70 and use a charge. The maximum is 200. |
-| Fireball (150), Dispell (harm non-material, 150), Lightning (180), Spit (fireball, 250), Invoke | Shoots the explosion with the attack as kinetic energy. Invoke: attack `100 + random(128)`, spell by `random % 6`: 0 poison bolt, 1 poison cloud, 2 harm non-material, else fireball. With less mana than the cost, attack becomes `max(2, mana × attack / cost)` and all mana is used. A failed cast halves the experience. Each uses a charge. |
+| Fireball (150), Dispell (harm non-material, 150), Lightning (180), Spit (fireball, 250), Invoke | Shoots the explosion with the attack as kinetic energy. Invoke: attack `100 + random(128)`, spell by `random % 6`: 0 poison bolt, 1 poison cloud, 2 harm non-material, otherwise fireball. With less mana than the cost, attack becomes `max(2, mana × attack / cost)` and all mana is used. A failed cast halves the experience. Each uses a charge. |
 | Shoot | The bow (class 16–31) or sling (class 32–47) in the action hand shoots the arrow (class 10) or stone (class 11) of the ready hand. Kinetic energy is the sum of both weapons. Attack is `(shoot level + launcher attributes low byte) × 2`. Step energy is the launcher class minus 16 or 32. Without ammunition: `g_session.action_damage = −2`, no experience. |
 | Spellshield, Fireshield | `magic_cast_party_spell` for 280 ticks with mana. Success uses a charge. Failure quarters the experience and halves the disabled ticks. |
 | Fluxcage | `projectile_fluxcage_action` on the square in front. |
