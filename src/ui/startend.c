@@ -315,8 +315,8 @@ void startend_save_game(void)
         message = NULL;
         int16_t choice = dialog_get_choice(3);
         if (choice == SAVE_CHOICE_SAVE) {
-            if (save_with_dialog(0) && g_advanced_features)
-                message = "GAME SAVED";
+            if (save_with_dialog(0))
+                message = "GAME SAVED"; /* the original shows the save disk prompt here */
             continue;
         }
         if (choice == SAVE_CHOICE_QUIT) {
