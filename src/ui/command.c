@@ -36,6 +36,8 @@
 #define NO_TABLE            (-1)
 #define MOUTH_BLINK_COUNT   4 /* the mouth blinks when it eats an object up */
 #define MOUTH_BLINK_FRAMES  8
+#define RUNE_FLASH_FRAMES   2 /* the clicked rune or delete box inverts for two frames, as the original */
+#define CAST_FLASH_FRAMES   1 /* the cast box inverts for one frame */
 
 /* View cells 0-1 are on the party square, 2-3 ahead. */
 #define VIEW_CELL_FRONT_FIRST 2
@@ -627,14 +629,17 @@ static void click_in_spell_area(int16_t x, int16_t y)
         if (!g_champions[g_magic_caster_champion_index].symbols[0])
             return;
         highlight_zone(ZONE_SPELL_CAST_BOX);
+        frame_wait_count(CAST_FLASH_FRAMES);
         command_highlight_disable(); /* before the redraw, as the original: a redraw in the highlight inverts */
         g_stop_waiting_for_input = magic_click_cast_spell();
     } else if (command >= COMMAND_SPELL_SYMBOL_FIRST && command < COMMAND_SPELL_SYMBOL_FIRST + SYMBOL_COUNT) {
         highlight_zone(ZONE_SPELL_SYMBOL_BOX_FIRST + command - COMMAND_SPELL_SYMBOL_FIRST);
+        frame_wait_count(RUNE_FLASH_FRAMES);
         command_highlight_disable();
         add_champion_symbol(command - COMMAND_SPELL_SYMBOL_FIRST);
     } else if (command == COMMAND_DELETE_SYMBOL) {
         highlight_zone(ZONE_SPELL_DELETE_BOX);
+        frame_wait_count(RUNE_FLASH_FRAMES);
         command_highlight_disable();
         delete_champion_symbol();
     }
