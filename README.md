@@ -71,7 +71,8 @@ Run `build/dm` in the folder with the `.adf` images. The build, the tests and th
 
 ## Engineering
 
-DMMac is a native C11 engine for the Amiga data of Dungeon Master and Chaos Strikes Back; it needs no emulator.
+DMMac is a native C11 engine that runs the Amiga releases of Dungeon Master and Chaos Strikes Back; it requires no
+emulator.
 The port was developed with Claude Code in four stages:
 
 1. Ghidra decompiled the FTL code modules of the Amiga disk to C ([Decompiling](docs/decompiling.md)). The
@@ -79,8 +80,8 @@ The port was developed with Claude Code in four stages:
 2. The game rules were rewritten in C11 from this decompilation only; no code of another port was used.
 3. Differential tests run a ported function and its original in a 68000 emulator with identical inputs and
    compare the resulting state. Golden snapshots verify the save file, the dungeon view and the game rules.
-4. Several cleanup passes kept the game behavior and introduced named constants, typed accessors, five layers,
-   a coding standard with a check per rule, and an audit of the tests.
+4. Subsequent refactoring preserved game behavior while introducing named constants, typed accessors, a
+   five-layer architecture, automated coding-standard checks, and an audit of the test suite.
 
 [ReDMCSB](http://dmweb.free.fr/community/redmcsb/) is the reconstruction of the original source code; it
 recompiles to the shipped 68000 binary for Amiga and Atari ST hardware and emulators. It gave DMMac the names of
