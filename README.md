@@ -41,7 +41,7 @@ Download the [latest release](https://github.com/peterkmet/dmmac/releases/latest
   then "Run anyway". (The Windows binary is tested under Wine only.)
 
 On first launch, the engine extracts the disk images into `game/` and `game-csb/`. Save files are stored in the
-same folders using the original Amiga binary format. See the [player manual](docs/manual.md) for controls,
+same folders using the original Amiga binary format. See the [Player Manual](docs/manual.md) for controls,
 game modes, and configuration.
 
 ## Let an LLM play
@@ -54,8 +54,8 @@ DM_CONTROL=/tmp/dm.sock uv run dm-play act move_forward
 
 The `dm-mcp` server exposes the control socket over the Model Context Protocol (MCP) for clients such as Claude
 Code. Protocol specifications, available actions, and setup instructions are covered in
-[LLM mode](docs/llm/llm-mode.md). Multi-agent playthroughs (using coordinator and player agents) are documented
-in [LLM runs](docs/llm/llm-runs.md).
+[LLM Mode](docs/llm/llm-mode.md). Multi-agent playthroughs (using coordinator and player agents) are documented
+in [LLM Runs](docs/llm/llm-runs.md).
 
 ## Build
 
@@ -111,4 +111,5 @@ Additional technical documentation covers [FTL file formats](docs/formats/ftl.md
 ## License
 
 GPL-3.0-or-later ([LICENSE](LICENSE)). Dungeon Master and Chaos Strikes Back are properties of FTL Games. This
-project is not affiliated with or endorsed by FTL Games. Original game data is not included and is not covered by this license.
+project is not affiliated with or endorsed by the rights holders. Original game data is not included and is not
+covered by this license.
