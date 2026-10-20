@@ -1,7 +1,7 @@
 # DMMac: Dungeon Master for macOS and Windows
 
-DMMac is a native C11/SDL3 port of **Dungeon Master v3.60** and **Chaos Strikes Back** for the Amiga, for macOS
-(Apple Silicon) and Windows (x86-64).
+DMMac is the Amiga version of **Dungeon Master v3.60** and **Chaos Strikes Back**, written again in C11 and
+SDL3. It compiles to a native program for macOS (Apple Silicon) and Windows (x86-64).
 
 <p align="center">
   <img src="docs/images/screenshot.png" alt="Dungeon Master in the port: a corridor that ends in a door">
