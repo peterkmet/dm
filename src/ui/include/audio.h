@@ -12,6 +12,7 @@
 /* Output format of the mixer. */
 #define AUDIO_OUTPUT_RATE    44100   /* frames per second, stereo int16 */
 #define AUDIO_PAL_CLOCK      3546895 /* Paula clock, Hz */
+#define FILTER_CUTOFF_HZ     3300    /* the Amiga LED low-pass filter, on at boot; the original never turns it off */
 /* Segments of the intro music. */
 #define AUDIO_MUSIC_SEGMENTS 128
 
@@ -43,5 +44,7 @@ void audio_music_set_volume(uint8_t volume);
 /* Renders interleaved stereo int16 at AUDIO_OUTPUT_RATE, scaled by g_audio_volume. Paula has no interpolation: each sample
    holds for one period. Runs on the game thread. */
 void audio_mix(int16_t *samples, int frames);
+/* Passes the mix through the low-pass filter of the Amiga output. Runs on the game thread. */
+void audio_filter(int16_t *samples, int frames);
 
 #endif

@@ -3,6 +3,7 @@
 #include "settings.h"
 #include "sound.h"
 #include "advanced.h"
+#include <math.h>
 #include <stdbool.h>
 #include <string.h>
 
@@ -37,7 +38,11 @@ static const int pair_channels[PAIR_COUNT][SOUND_SIDE_COUNT] = {
     {0xC, 0xD},
     {0xE, 0xF}
 }; /* pair A, pair B, then the extra pairs: left, right */
+/* The output filter: y += alpha * (x - y) with alpha = dt / (RC + dt). */
+#define FILTER_ALPHA (1.0f / (1.0f + AUDIO_OUTPUT_RATE / (6.2831853f * FILTER_CUTOFF_HZ)))
+
 int16_t g_audio_volume = SETTINGS_VOLUME_FULL;
+static float filter_state[SOUND_SIDE_COUNT]; /* the filter output of each side */
 static struct {
     Voice voices[VOICE_COUNT]; /* Amiga channels: 0, 3 left; 1, 2 right; 4 and up: the extra pairs */
     uint8_t pair_volumes[PAIR_COUNT][SOUND_SIDE_COUNT];
@@ -168,4 +173,14 @@ void audio_mix(int16_t *samples, int frames)
                                                                                             : sum[side])
                                                         : (int16_t)sum[side];
     }
+}
+
+void audio_filter(int16_t *samples, int frames)
+{
+    for (int f = 0; f < frames; f++)
+        for (int side = 0; side < SOUND_SIDE_COUNT; side++) {
+            float *y = &filter_state[side];
+            *y += FILTER_ALPHA * ((float)samples[2 * f + side] - *y);
+            samples[2 * f + side] = (int16_t)lroundf(*y);
+        }
 }

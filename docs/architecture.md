@@ -99,7 +99,7 @@ paragraph. A module with several `.c` files has one `<module>_internal.h` for it
 |---|---|---|
 | `ui/advanced.h` | `advanced_` | Game modes and the advanced features (not in the original game): the viewport screen state (`g_advanced_screen`: automap, options menu, cheat screen; at most one open, the game time stops), automap, quick save and quick load, WASD/QE keys, rune symbols on scrolls, coloured action icons, item stat meters, and more. |
 | `ui/anim.h` | `anim_` | The animation player of ANIM.FTL for the chunk files (CSB ENDA.DAT). |
-| `ui/audio.h` | `audio_` | The audio output: four Paula voices in two stereo pairs, the CSB intro music, and the mixer that platform/ calls on the game thread; it scales the mix by the sound volume. |
+| `ui/audio.h` | `audio_` | The audio output: four Paula voices in two stereo pairs, the CSB intro music, and the mixer that platform/ calls on the game thread; it scales the mix by the sound volume and passes it through a low-pass filter like the Amiga LED filter. |
 | `ui/automap.h` | `automap_` | Automap (not in the original game): draws the squares the party has seen (engine/explored owns them) as a top-down map. |
 | `ui/cheats.h` | `cheats_` | The cheat screen of the advanced mode (not in the original game): it switches the cheats, offers quick save and quick load, and lists the spells of the loaded game with their runes; a spell line casts its spell. |
 | `ui/command.h` | `command_` | Player input as the command table of the original: clicks and keys become queued commands; command_process_queue runs them. |

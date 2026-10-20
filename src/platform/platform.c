@@ -252,6 +252,7 @@ static void pump_audio(void)
         return;
     while (SDL_GetAudioStreamQueued(plat.stream) < (int)sizeof buf * AUDIO_QUEUED_TICKS) {
         audio_mix(buf, AUDIO_TICK_FRAMES);
+        audio_filter(buf, AUDIO_TICK_FRAMES);
         music_mix(buf, AUDIO_TICK_FRAMES);
         if (!SDL_PutAudioStreamData(plat.stream, buf, sizeof buf))
             return;
