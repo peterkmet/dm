@@ -16,6 +16,20 @@ This repository contains no game files. You need your own Amiga disk images (`.a
 (one disk) and, optional, Chaos Strikes Back (disks A and B). Other versions (DOS, Atari ST, other Amiga
 versions) do not work. The game recognizes the disks by their content, not by the file name.
 
+## Why one more port
+
+There are many Dungeon Master ports and clones. DMMac exists for two reasons:
+
+- The author wanted to play Dungeon Master as a native program on a modern Mac (Apple Silicon) and found no
+  port that does this. DMMac runs on macOS and Windows without an emulator.
+- The project was an experiment: can an LLM (Claude Code) decompile a complete game from its binary and write
+  it again? The decompilation and the port were the exercise, not a shortcut around it.
+
+DMMac is not [ReDMCSB](http://dmweb.free.fr/community/redmcsb/). ReDMCSB is the reconstructed source code of
+the original: it compiles to the original program for the Amiga and the Atari ST. DMMac is a new program with
+its own decompilation, its own code and its own tests against the original; it adds the advanced mode and the
+LLM mode. ReDMCSB served as a reference for the names of functions and structures.
+
 ## Features
 
 - The complete Dungeon Master and Chaos Strikes Back. Dungeon Master is fully playable and tested in a complete
