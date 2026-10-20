@@ -28,7 +28,7 @@ Corrected names:
 | `0x115768` | `derived_cache_add` | `cache_lru_insert` | Inserts a block into the LRU list. |
 | `0x115858` | `derived_cache_lookup` | `cache_touch` | Increments the usage count and moves the block in the LRU list. |
 
-Global correction: `g_creature_info` starts at `0x10192e`, not `0x101930`. The table entry is `0x1a` bytes and the attributes word is at offset 2. The code reads `0x10192e + type * 0x1a` (for example in `group_process_events_29_to_41`). Remove the `0x101930` entry when you merge.
+Global correction: `g_creature_info` starts at `0x10192e`, not `0x101930`. The table entry is `0x1a` bytes and the attributes word is at offset 2. The code reads `0x10192e + type * 0x1a` (for example in `group_process_events_29_to_41`).
 
 ## Method
 
@@ -225,7 +225,7 @@ ordinal = allowed && index < count ? index + 1 : 0;
 - `unblocked_distance` walks a line from the group to the party with fixed point slope (`* 64`). It calls `is_view_party_blocked` or `is_smell_party_blocked` for each square.
 - `is_creature_attacking` has a jump table at `0x10d75a` for creature types below 25 that cast spells. Ghidra cannot recover it. Read the disassembly when you port that switch.
 
-Several callees are in range 7 and have no names yet: `0x11cefe` (distance), `0x11cf42` (creature sees party in a direction), `0x11cfba` (primary direction to a square), `0x11d10a` (creature attack damage), `0x11c4e8` (fluxcage/move test).
+Several callees are in range 7 ([range-7-9.md](range-7-9.md)): `get_square_distance` (`0x11cefe`), `group_is_destination_visible` (`0x11cf42`), `group_get_directions_to` (`0x11cfba`), `group_get_champion_damage` (`0x11d10a`), and `projectile_get_impact_count` (`0x11c4e8`).
 
 ## String table (range 4)
 

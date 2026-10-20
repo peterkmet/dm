@@ -44,7 +44,7 @@ Not traced: what command `0xc9` is bound to, and the `Dungeon.FTL` fallback at `
 The menu handler is at `0x107d0a`. CEDT keeps two slots of `0x3a6` bytes at `*(A5-0x4030)`. Slot 0 is the loaded saved game. Slot 1 is the new adventure.
 
 1. `0x105ba2` checks slot 0. The game must be loaded (`slot+0x20`), the champion count (`A5-0x4032`) must not be 0, and `0x10a31c(slot, 3)` must accept the game: format 3 and dungeon ID 10 (Dungeon Master) or 12 (prison). Otherwise CEDT shows "THE NEW ADVENTURE CAN ONLY BE MADE AFTER A SAVED GAME IS LOADED." or "CAN'T MAKE NEW ADVENTURE FROM THIS SAVED GAME.".
-2. `0x1053ec` checks the champion names. Each first name must be not empty and unique.
+2. `0x1053ec` checks the champion names. Each first name must not be empty and must be unique.
 3. When slot 1 is empty, `0x108030(1)` asks for the utility disk (`0x1053aa`) and loads `DF0:MINI.DAT` (`A5-0x59c`) into slot 1. It stores `DF0:CSBGAME.DAT` as the output name of the slot.
 4. `0x105c7e` merges slot 0 into slot 1. See [Merge](#merge).
 5. `0x1085da(1)` asks for a save disk (`0x105462`: MAKE NEW ADVENTURE, FORMAT, CANCEL) and writes slot 1 as `DF0:CSBGAME.DAT`.
@@ -69,7 +69,7 @@ LOAD CHAMPIONS (`0x108030(0)`) tries `DF0:DMGAME.DAT`, `DF0:DMGAME.BAK`, `DF0:CS
 
 ### Header
 
-The header has the structure of the DM header: 32 groups of 4 noise words, then a payload of 128 words at `0x100`. The differences:
+The header has the same structure as the DM header: 32 groups of 4 noise words, then a payload of 128 words at `0x100`. The differences:
 
 - The payload key is word 29 (offset `0x3a`). DM uses word 10 (offset `0x14`).
 - The payload fields from `0x12a` on are 2 bytes later than in DM.

@@ -1,6 +1,6 @@
 # CSB engine compared with the DM engine
 
-This page lists the differences between the Chaos Strikes Back (CSB) engine and the Dungeon Master v3.60 (DM) engine that matter to the C port in `src/`. Read it before you add CSB support to the port.
+This page lists the differences between the Chaos Strikes Back (CSB) engine and the Dungeon Master v3.60 (DM) engine that matter to the C port in `src/`.
 
 - DM engine: `game/KAOS.FTL`. Image `reference/decomp/dm/KAOS.bin`, base `0x100000`, data base (A5) `0x104160`. Names: [kaos-symbols.csv](../reference/kaos-symbols.csv).
 - CSB engine: `game-csb/APPB.FTL`. Image `reference/decomp/csb-a/APPB.bin`, base `0x100000`, data base (A5) `0x10511e`, code base `0x105ede`. Names: [csb-appb-symbols.csv](../reference/csb-appb-symbols.csv).
@@ -43,7 +43,7 @@ DM has 752 functions, CSB has 756. The classes are a heuristic:
 - Most "constants" pairs differ only in code generation: bit-field masks (DM `lsr #6; and #31`, CSB `and #$7c0; lsr #6`), sign extension (`-1` against `0xffff`), and two word pushes that DM merges into one long push.
 - Many "logic" pairs differ only because DM calls `get_string` and CSB uses inline text, or because DM calls `mouse_begin_change` (an empty stub in DM, K`0x108702`) where CSB hides the pointer (C`0x109128`).
 
-The [differences that need port changes](#differences-that-need-port-changes) section lists the real differences. Three code readings checked every rule-relevant pair that the mapping did not classify as identical.
+The [differences and the port](#differences-and-the-port) section lists the real differences. Three code readings checked every rule-relevant pair that the mapping did not classify as identical.
 
 ### Parts of APPB that are not the game engine
 
@@ -137,11 +137,11 @@ CSB `Graphics.DAT` has 728 items. DM has 749. The item numbers up to 727 have th
 - Item 696 is 16 bytes shorter (9160 against 9176). Zones 437 and 438 (the endgame buttons) are missing. All other 554 zones that `layout_get_zone` resolves give the same boxes (`tests/differential/test_csb_engine.py`).
 - The header width of raw (non-bitmap) items 671–711 is 1–3 smaller in CSB. The port must use the decompressed size for raw items, not the header width. UNVERIFIED: whether the port reads that width.
 
-## Differences that need port changes
+## Differences and the port
 
 ### Engine selection and table addresses
 
-Implemented in Step 2 of the CSB plan:
+Port:
 
 - `kaos_load` (`src/data/kaos.c`) loads `APPB.FTL` when `g_adventure` is CSB. `csb_image_build` (`src/data/csb_image.c`) then makes a KAOS-layout image: each table that the port reads is at its DM address. The `KAOS_*` names of `src/data/include/kaos_addresses.h` do not change.
 - `g_csb_copies` in `src/data/csb_image.c` is the single address table: KAOS address (its `KAOS_*` name), APPB address, size. The APPB addresses of the converted tables have the prefix `CSB_APPB_`. Strided and split tables have one row per part.
@@ -174,7 +174,7 @@ Addresses that the tables above do not list. Each is verified by a code referenc
 
 Not in the CSB image:
 
-- `KAOS_ENDGAME_BUTTON_BORDER`, `KAOS_ENDGAME_BUTTON_INNER_BORDER` (K`0x102988`, `0x10298c`): only DM `endgame_draw_button` reads them. CSB has no such function. Step 8 (end of the game) decides the CSB endgame buttons.
+- `KAOS_ENDGAME_BUTTON_BORDER`, `KAOS_ENDGAME_BUTTON_INNER_BORDER` (K`0x102988`, `0x10298c`): only DM `endgame_draw_button` reads them. CSB has no such function. `startend.c` draws RESTART THIS GAME in the CSB boxes (`csb_draw_restart_button`).
 - The string index tables `KAOS_SKILL_LEVEL_STRING_INDICES`, `KAOS_BASE_SKILL_STRING_INDICES`, `KAOS_STATISTIC_STRING_INDICES`, `KAOS_DIRECTION_STRING_INDICES`: CSB has pointer tables. `csb_text_build` fills them with the text indices of the built strings (see [Text](#text)).
 
 ### Text
@@ -210,7 +210,7 @@ Text that differs:
 - Correction: " NEEDS A MAGIC MAP IN ACTION HAND FOR THIS SPELL." (C`0x104bea`) and "NO CREATURE" (C`0x102654`) are not new. DM item 700 has them as texts 60 and 107, and the creature names as texts 108–134. The port uses these texts (`TEXT_NO_CREATURE` in `panel.c`, `SPELL_FAILURE_NEEDS_MAGIC_MAP` in `magic.c`).
 - Correction: the CSB direction table C`0x102578` is in direction order (NORTH, EAST, SOUTH, WEST). DM texts 22–25 are NORTH, SOUTH, EAST, WEST.
 
-Code references (Step 3 verified each address: a `pea` or `lea` with A5 = C`0x10511e` in the function, found in the APPB code bytes):
+Code references (each address verified: a `pea` or `lea` with A5 = C`0x10511e` in the function, found in the APPB code bytes):
 
 | CSB address | Function |
 |---|---|
@@ -232,7 +232,7 @@ Code references (Step 3 verified each address: a `pea` or `lea` with A5 = C`0x10
 
 The pointer table C`0x104d08` has 26 entries. Entry n gives DM text: 78, 94, 79, 80, 81, 82, 95, 92, 84, 90, 85, 86, 97, 96, 98, 87, 88, 89, 83, 91, 101, 102 (SAVE AND PLAY), 103 (SAVE AND QUIT), 105, 106, 104.
 
-Port implementation (Step 3):
+Port:
 
 - `src/data/csb_text.c` `csb_text_build` (called by `csb_image_build`): builds DM texts 0–134 as one block of NUL-terminated strings (item 700 order) and the 44 action names (item 699). The spell failure and level gained texts join prefix, class name, and suffix. Each string index table entry k of the KAOS image gets text index first + k, so the class names (0–3) and directions (22–25) are in the CSB table order: text 2 is PRIEST, 3 is WIZARD, 23 is EAST, 24 is SOUTH. Only the index tables read these texts.
 - `src/ui/ui.c` `load_strings`: for CSB, takes items 699 and 700 from `csb_text_get_item`, and ends each object name (item 694) at the byte with bit 7 set.
@@ -247,7 +247,7 @@ Port implementation (Step 3):
 - All other actions are the same as DM, including FIREBALL, DISPELL, LIGHTNING, SPIT, door bash, coin flip, shields, HEAL, LIGHT, WINDOW, FREEZE LIFE, THROW, SHOOT, and CLIMB DOWN.
 - `menus_is_group_frightened_by_action`, `menus_decrement_charges`, and `menus_get_action_hand_charge_count` are the same as DM.
 
-Port change: `src/engine/action.c` `action_is_action_performed` (INVOKE, FLUXCAGE, FUSE do nothing in CSB), `src/data/tables.c` (experience gain table).
+Port: `src/engine/action.c` `action_is_action_performed` (INVOKE, FLUXCAGE, FUSE do nothing in CSB), `src/data/tables.c` (experience gain table).
 
 ### Magic map
 
@@ -270,7 +270,7 @@ Cast (`menus_get_champion_spell_cast_result`, C`0x126e0e`, case kind 4 at C`0x12
 4. Type 3 (C`0x1270de`): delete the first event 83 of this champion. Byte `0x11b` = party direction + 1. Word `0x11c` = x << 11 | y << 6 | map. Action disabled ticks = D6² >> 1, event duration = 4 × that value.
 5. C`0x1272d4`: the event time is game time + duration, on the party map. `timeline_add_event`. The event priority byte holds the champion index.
 
-Step 7 checks of the cast (APPB disassembly):
+Checks of the cast (APPB disassembly):
 
 - The switch on the spell type is `rt_switch_range` 0–3 after C`0x127094`: type 0 C`0x1270a6`, 1 C`0x1270bc`, 2 C`0x1270ca`, 3 C`0x1270de`.
 - D6 is a 16-bit word. Types 0–2: duration = 2·D6² (`muls`, `add`). The action disabled ticks of types 0–2 come from the spell record, as for the other spells.
@@ -281,7 +281,7 @@ Timeline (`timeline_process`, C`0x12411e`): events 80, 81, 82 decrement champion
 
 Magic map object: a scroll whose decoded text equals "MAGICMAP" (pointer C`0x102564` → C`0x102640`). `is_magic_map_in_hand` (C`0x111080`) decodes the whole text (mode `0x8002`: scroll, any visibility) and compares it with `str_compare`.
 
-The CSB dungeon (Step 7 search of every scroll, also in chests and group possessions, with the port loading `disk-b/MINI.DAT`):
+The CSB dungeon (a search of every scroll, also in chests and group possessions, with the port loading `disk-b/MINI.DAT`):
 
 | Text | Map | x | y | Thing |
 |---|---|---|---|---|
@@ -323,7 +323,7 @@ Correction: `draw_panel_scroll` writes the drawn panel content `g_panel_content_
 
 Port changes: `src/engine/magic.c` (spell kind 4, failure message 11), `src/data/spells.c` (29 spells), `src/engine/event.c` (events 80–83), `src/engine/include/game.h` `Champion` (bytes `0x118`–`0x11d`, also in the save block), `src/ui/panel.c` (scroll panel, CREANAME, MAGICMAP), `src/ui/view.c` (square aspect for the map).
 
-Port (Step 7): `magic.c` `cast_magic_map`, `event.c` events 80–83, `panel.c` (`insert_creature_name`, `show_magic_map`, `panel_redraw_scroll`), `view.c` `view_draw_magic_map`, `gameloop.c` (the redraw each tick). CSB only: spells 25–28 exist only in CSB, and the scroll panel checks `g_adventure`.
+Port: `magic.c` `cast_magic_map`, `event.c` events 80–83, `panel.c` (`insert_creature_name`, `show_magic_map`, `panel_redraw_scroll`), `view.c` `view_draw_magic_map`, `gameloop.c` (the redraw each tick). CSB only: spells 25–28 exist only in CSB, and the scroll panel checks `g_adventure`.
 
 ### Sensors and timeline
 
@@ -336,7 +336,7 @@ Port (Step 7): `magic.c` `cast_magic_map`, `event.c` events 80–83, `panel.c` (
 ### Creatures
 
 - `group_init_active_groups` (C`0x10e990`): a new game has 60 active group slots (C`0x10e998`). DM has 110 (K`0x10cb80`). CSB allocates exactly the stored count. DM allocates at least 110. CSB `load_game` (C`0x129efc`) restores the saved count without a minimum. The count limits the creature generators (`group_get_generated`, C`0x10de76`). Port: `ACTIVE_GROUP_MAX_COUNT` in `src/engine/include/game.h`; `src/engine/savegame.c` applies it as the DM minimum.
-- `steal_from_champion` (C`0x10e7e2`–`0x10e7f2`): a new rule takes the action hand when the panel content is 10 and `random_bit` is set. No code writes 10 to the panel content variable C`0x1024ca`, so the rule never runs. No port change. Step 7 check: the APPB code writes C`0x1024ca` only at C`0x112120` (7), C`0x112180` (6), C`0x112188` (5), C`0x112190` (1), and C`0x116324` (8). The magic map writes 10 to the drawn panel content C`0x1024cc`, a different variable. The rule stays unreachable.
+- `steal_from_champion` (C`0x10e7e2`–`0x10e7f2`): a new rule takes the action hand when the panel content is 10 and `random_bit` is set. No code writes 10 to the panel content variable C`0x1024ca`, so the rule never runs. No port change. APPB check: the code writes C`0x1024ca` only at C`0x112120` (7), C`0x112180` (6), C`0x112188` (5), C`0x112190` (1), and C`0x116324` (8). The magic map writes 10 to the drawn panel content C`0x1024cc`, a different variable. The rule stays unreachable.
 
 ### Champions
 
@@ -396,7 +396,7 @@ Port: `src/ui/startend.c`, `src/ui/gameloop.c`. UNVERIFIED: the labels of the tw
 
 DM: wall sensor type 18 waits, clears the saved-game flag, and calls `endgame(1)`: the victory screen with champion portraits and skills, then the credits.
 
-CSB (Step 8 checked each address in the APPB, APPA, and ANIM disassembly):
+CSB (each address checked in the APPB, APPA, and ANIM disassembly):
 
 1. Wall sensor type 18 (C`0x123970`) sets the game-won flag `-0x4f9c(A5)` (C`0x100182`) to 1 and calls `quit_game` (C`0x1285e8`) through slot `0xb42`. There is no delay, and the saved-game flag stays.
 2. `quit_game_to_ending` (C`0x1285ee`) waits until the pointer is hidden, closes `Graphics.DAT`, fills zones 401, 13, 11, 9 with color 0, and writes the module tag `ENDA` (`0x454e4441`) into the module arguments (C`0x12863a`). Then `system_shutdown` and `rt_longjmp` leave the engine.

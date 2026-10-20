@@ -4,7 +4,7 @@ This page shows how to run an LLM playthrough of the game with a coordinator and
 
 ## Goal of the runs
 
-Each run measures how much the LLM player gets better: from session to session in the run, and against the earlier runs. To finish the game is the long-term goal, not the measure of one run.
+Each run measures how much the LLM player improves: from session to session in the run, and against the earlier runs. To finish the game is the long-term goal, not the measure of one run.
 
 - Measure each run with `coordinator/level_stats.md`: the game time, the calls, and the tokens at the arrival on each level. Compare the run with the earlier runs.
 - Between sessions and between runs, you may change the player instructions: `docs/llm/llm-playbook.md` and the headers in `playthroughs/template/`. Change them in small steps. Write each change, its reason, and the session where it starts in `coordinator/instruction_changes.md`, so that you can compare its effect.

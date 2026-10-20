@@ -22,7 +22,7 @@ Three functions do all rectangle copies in KAOS. `blit_bitmap` is the entry poin
 
 #### `blit_bitmap` and `blit_raw`
 
-Signature: `blit_bitmap(src, dst, box, src_x, src_y, src_width, dst_width, transparent_color, src_height, dst_height)`. The old CSV signature had no `src_height` and `dst_height`.
+Signature: `blit_bitmap(src, dst, box, src_x, src_y, src_width, dst_width, transparent_color, src_height, dst_height)`.
 
 Semantics for a chunky 8-bit port:
 
@@ -47,7 +47,7 @@ Hardware details that a port can ignore:
 
 #### `blit_box_filled_with_masked_bitmap`
 
-Signature: `(units, dst, mask, temp, box, last_unit_index, first_unit_index, dst_width, transparent_color, src_x, src_y, dst_height, unit_plane_words)`. The function was named `blit_setup`. `draw_field` and `draw_objects_creatures_projectiles_explosions` call it. ReDMCSB calls the same function `F0133_VIDEO_BlitBoxFilledWithMaskedBitmap`.
+Signature: `(units, dst, mask, temp, box, last_unit_index, first_unit_index, dst_width, transparent_color, src_x, src_y, dst_height, unit_plane_words)`. `draw_field` and `draw_objects_creatures_projectiles_explosions` call it. ReDMCSB calls the same function `F0133_VIDEO_BlitBoxFilledWithMaskedBitmap`.
 
 1. The box gives `W = ((x2 - x1) >> 4) + 1` words and `H = y2 - y1 + 1` rows. `temp` gets a bitmap of `W * 16` by `H` pixels.
 2. The function fills `temp` word by word, in row order. Each 16-pixel word takes the next unit of `units`. A unit is one word per plane. The planes of `units` are `unit_plane_words` words apart. The unit index starts at `first_unit_index`. When it reaches `last_unit_index`, it restarts at 0.
@@ -199,7 +199,7 @@ ReDMCSB `GROUP.C` tail and `MOVESENS.C` head.
 
 - `group_is_fluxcage_on_square(x, y)`: true when an explosion of type 50 is on the square.
 - `group_get_lord_chaos_on_square(x, y)`: the group thing when creature type 23 (Lord Chaos) is there, else 0.
-- `group_fluxcage_action(x, y)` (was unnamed): creates a fluxcage (type 50) and event 24 after 100 ticks, which removes it. When Lord Chaos is on an adjacent square and 3 fluxcages surround him, it sends event −3 to his group. The existing CSV name `group_fluxcage_action` at `0x11cda2` was wrong.
+- `group_fluxcage_action(x, y)`: creates a fluxcage (type 50) and event 24 after 100 ticks, which removes it. When Lord Chaos is on an adjacent square and 3 fluxcages surround him, it sends event −3 to his group.
 - `group_fuse_action(x, y)` (`0x11cda2`): creates a harm non-material explosion. When Lord Chaos is on the square and 4 fluxcages surround him, it starts the fuse endgame sequence (`0x125132`). Otherwise Lord Chaos moves to a random free adjacent square.
 - `get_square_distance`: Manhattan distance.
 - `group_is_destination_visible(direction, sx, sy, dx, dy)`: true when the destination is in the 90° cone in that direction.
@@ -862,7 +862,7 @@ Stop after `size` output bytes. `decompress_get_bits` is the internal bit reader
 #### Disk helpers
 
 - `build_save_prompt(dest, text, kind)` replaces `~` in the text with a drive name. It uses the name at `0x100106` when the flag at `0x100104` is set or `kind` is 1, else the name at `0x10010a`.
-- `ensure_master_disk(force)` returns 1 at once when the master disk is present and `force` is not 2. Otherwise it freezes the game and shows "PUT THE DUNGEON MASTER DISK IN ~" with OK until the disk is present (next prompts add "THAT'S NOT THE MASTER DISK!"). It returns 0 when it showed a prompt. The old name `check_save_disk` was wrong.
+- `ensure_master_disk(force)` returns 1 at once when the master disk is present and `force` is not 2. Otherwise it freezes the game and shows "PUT THE DUNGEON MASTER DISK IN ~" with OK until the disk is present (next prompts add "THAT'S NOT THE MASTER DISK!"). It returns 0 when it showed a prompt.
 - `format_save_disk_dialog`: "PUT A BLANK DISK IN ~" with FORMAT FLOPPY and CANCEL. A save disk asks "FORMAT DISK ANYWAY?". Shows "FORMATTING DISK . . ." and calls `format_save_disk`. On error "UNABLE TO FORMAT DISK!".
 
 #### Other globals

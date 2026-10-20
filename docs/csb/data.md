@@ -1,6 +1,6 @@
 # Chaos Strikes Back data files
 
-This page compares the data files of Chaos Strikes Back (CSB) for the Amiga with the files of Dungeon Master (DM) v3.60. It also states which port loaders read the CSB files and which loaders need changes.
+This page compares the data files of Chaos Strikes Back (CSB) for the Amiga with the files of Dungeon Master (DM) v3.60. It also names the port module that reads each CSB file.
 
 Inputs:
 
@@ -12,14 +12,14 @@ All addresses in this page are image addresses after `dm-ftl` with base `0x10000
 
 ## Summary
 
-| Area | Difference | Port status |
+| Area | Difference | Port module |
 |---|---|---|
-| `Graphics.DAT` | 728 items, not 749. Same container format. Text items 699 and 700 are empty. Item 694 uses another string encoding. | `gfx_open` and `gfx_expand` read and decode all items. The text and layout users need changes. |
+| `Graphics.DAT` | 728 items, not 749. Same container format. Text items 699 and 700 are empty. Item 694 uses another string encoding. | `gfx_open` and `gfx_expand` read and decode all items. `csb_text.c` builds the text items from `APPB.FTL`. |
 | `Dungeon.DAT` | A 2-level start dungeon with 24 champion mirrors, dungeon ID 12. Same format. | `dungeon_load` loads it. |
-| Save file | `CSBGame.dat`. Header fields move 2 bytes up. The payload key is at another offset. Blocks, cipher, and dungeon part are the same. | `savefile_decode` rejects a CSB save. |
-| Endgame | `ENDA.DAT`, an animation file that `ANIM.FTL` plays. No credits screen. | Not supported. |
+| Save file | `CSBGame.dat`. Header fields move 2 bytes up. The payload key is at another offset. Blocks, cipher, and dungeon part are the same. | `savefile.c` reads and writes the CSB header when `g_adventure` is `ADVENTURE_CSB`. |
+| Endgame | `ENDA.DAT`, an animation file that `ANIM.FTL` plays. No credits screen. | `anim.c` plays `ENDA.DAT`. |
 | Sounds | Same 35 sounds, same graphic items, same sound table. | `sound.c` works with the CSB items. |
-| Engine tables | No `KAOS.FTL`. `APPB.FTL` holds the tables at other addresses. | All `kaos_*` reads use DM addresses. |
+| Engine tables | No `KAOS.FTL`. `APPB.FTL` holds the tables at other addresses. | `csb_image.c` builds a KAOS-layout image from the `APPB.FTL` tables. |
 
 ## Graphics.DAT
 
@@ -40,19 +40,19 @@ An alignment by content hash matched the items (`difflib.SequenceMatcher` on MD5
 
 Removed items (DM 727–747): the empty item 727 and the French and German items (entrance, THE END label, rename panel, food, water, and poisoned labels, resurrect panel, object names, action names, texts).
 
-Changed items (same index, other content):
+Changed items (same index, different content):
 
 | Index | DM content | CSB content |
 |---|---|---|
 | 2–5 | Entrance doors, entrance, credits | Same sizes, CSB art |
-| 10 | Action area | Same size, other content |
+| 10 | Action area | Same size, different content |
 | 11 | Entrance buttons, 14 × 39 | 14 × 26 (unverified: 2 buttons, not 3) |
 | 26 | Champion portraits, 256 × 87 | 24 CSB portraits, same size |
 | 42–45, 47 | Object icon sheets (icons 0–127, 160–191) | Same sizes, CSB icons |
-| 329–330 | Wall ornament 35 (fountain) | Other size |
+| 329–330 | Wall ornament 35 (fountain) | Different size |
 | 371–378 | Wall ornaments 56–59 (amalgam, Lord Order) | 6-byte placeholders, 16 × 13 |
-| 504, 550 | Objects 6 (drumstick), 52 (conduit) | Other size |
-| 588–602, 607–608, 627–650, 653–662, 664 | Creature graphics | Other sizes. 600–602, 649 are 3 × 3 placeholders. |
+| 504, 550 | Objects 6 (drumstick), 52 (conduit) | Different size |
+| 588–602, 607–608, 627–650, 653–662, 664 | Creature graphics | Different sizes. 600–602, 649 are 3 × 3 placeholders. |
 | 669 | Creature 25 (Lord Order) | 3 × 3 placeholder |
 | 671–693, 701–711 | Sound samples | Same size. Only the first word differs (see [Sounds](#sounds)). |
 | 694 | Object names, NUL-terminated | Object names, last character has bit 7 set |
@@ -95,7 +95,7 @@ Layout (item 696). A check compares the zone records with `dmcsb.graphics.decode
 |---|---|---|---|
 | `GFX_ENTRANCE_LEFT_DOOR`, `GFX_ENTRANCE_RIGHT_DOOR`, `GFX_ENTRANCE` | 2, 3, 4 | `ids.h` | CSB entrance art. Button zones not checked. |
 | `GFX_CREDITS` | 5 | `startend.c` | CSB credits art. The CSB engine does not show credits at the end. |
-| `GFX_ACTION_AREA_NAMES` | 10 | `ids.h` | Other content, same size. |
+| `GFX_ACTION_AREA_NAMES` | 10 | `ids.h` | Different content, same size. |
 | `GFX_CHAMPION_PORTRAITS` | 26 | `ids.h` | CSB portraits. `savegame.c` matches saved portraits against this sheet (see [Save file](#save-file)). |
 | `GFX_OBJECT_ICONS_BEFORE_FIRST` + 1–4, 6 | 42–45, 47 | `ids.h` | CSB icons. The `ICON_*` names of DM items now name CSB items, for example `ICON_BOLT_BLADE`, `ICON_FURY`, `ICON_DELTA`, `ICON_INQUISITOR`. |
 | `GFX_OBJECT_NAMES` | 694 | `ids.h`, `ui.c` | TXT1 encoding. |
@@ -302,22 +302,21 @@ The port reads all rule and view tables from the `KAOS.FTL` image. CSB has no `K
 
 The other tables of `tables.md`, the view tables, the input tables, and the escape tables of `dungeon_decode_text` are not checked.
 
-## Loader changes
+## Loaders
 
-| File | Function | Change | Reason |
+| File | Function | CSB behavior | Reason |
 |---|---|---|---|
-| `src/ui/ui.c` | `load_strings`, `ui_init` | Read item 694 in TXT1 encoding for CSB. | CSB object names end with bit 7, not NUL. |
-| `src/ui/ui.c`, `src/engine/champion.c` | `ui_init`, the `GFX_STRINGS` reader | Read the texts and action names from `APPB.FTL` for CSB, with an index map to the DM text indices. | Items 699 and 700 are empty in CSB. |
-| `src/ui/startend.c` | THE END screen | Done (Step 8): CSB draws RESTART THIS GAME in the two boxes of APPB `0x100dcc` (image address `0x104248`) and keeps the click box of the CSB endgame mouse table. | The CSB layout has no zones 437 and 438. |
-| `src/engine/savefile.c` | `savefile_decode`, `savefile_encode`, `savefile_init_header`, header accessors | Add a CSB header variant: key at `0x3a`, fields 2 bytes up, 132 extra bytes. Check the block 2 checksum. | A CSB save fails the DM header check. |
-| `src/engine/savegame.c` | `savegame_save`, `savegame_load`, portrait functions | Use `CSBGAME.DAT` and `CSBGAME.BAK`. Keep the saved portrait bitmaps. | CSB parties come from DM saves or the champion editor. Their portraits are not in graphic 26. |
-| `src/data/kaos.c` and every `kaos_*` user (`tables.c`, `sound.c`, `view.c`, `dungeon.c`, and others) | `kaos_load`, address constants | Load `APPB.FTL` and translate the addresses. | CSB has no `KAOS.FTL`. Most tables are identical at other addresses. |
-| New `src/ui/anim.c` | Animation player | Done (Step 8): plays the chunks of `ENDA.DAT`. | The CSB endgame plays `ENDA.DAT`. |
+| `src/data/graphics.c` | `load_strings` | Ends each CSB object name at a byte with bit 7 set. | CSB object names end with bit 7, not NUL. |
+| `src/data/csb_text.c` | `csb_text_build`, `csb_text_get_item` | Builds the text items from `APPB.FTL`, with a map to the DM text indices. | Items 699 and 700 are empty in CSB. |
+| `src/ui/startend.c` | `csb_draw_restart_button` | Draws RESTART THIS GAME in the two boxes of APPB `0x100dcc` (image address `0x104248`) and keeps the click box of the CSB endgame mouse table. | The CSB layout has no zones 437 and 438. |
+| `src/engine/savefile.c` | `savefile_decode`, `savefile_encode`, `savefile_init_header`, header accessors | Reads and writes the CSB header: key at `0x3a`, fields 2 bytes up, 132 extra bytes. | A CSB save fails the DM header check. |
+| `src/engine/savegame.c` | `savegame_save`, `savegame_load`, portrait functions | Uses `CSBGAME.DAT` and `CSBGAME.BAK`. Keeps the saved portrait bitmaps. | CSB parties come from DM saves or the champion editor. Their portraits are not in graphic 26. |
+| `src/data/kaos.c`, `src/data/csb_image.c` | `kaos_load`, `csb_image_build` | Loads `APPB.FTL` and builds a KAOS-layout image: each table is at its DM address. | CSB has no `KAOS.FTL`. Most tables are identical at other addresses. |
+| `src/ui/anim.c` | Animation player | Plays the chunks of `ENDA.DAT`. | The CSB endgame plays `ENDA.DAT`. |
 
-No change is needed in `layout.c` or `dungeon.c` (`dungeon_load`). Step 8 added `gfx_expand_over` (`graphics.c`, a decode over an existing bitmap for the delta frames) and `audio_play_data` (`audio.c`, plays sample data that is not in `Graphics.DAT`).
+`layout.c` and `dungeon.c` (`dungeon_load`) have no CSB code. The animation player uses `gfx_expand_over` (`graphics.c`, a decode over an existing bitmap for the delta frames) and `audio_play_data` (`audio.c`, plays sample data that is not in `Graphics.DAT`).
 
 ## Open points
 
-- The order of the CSB texts in `APPB.FTL` against the DM text indices.
 - The meaning of the `AN` count (the player skips `AN`). The music chunks (`MI`, `MD`, `MF`) and `SF` of `ANIM.DAT`.
 - The CSB rule differences for renamed objects (for example STORM, RA BLADE).

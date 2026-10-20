@@ -26,7 +26,7 @@ In turn-based mode, a program or an LLM plays the game through a Unix socket. Th
 
    The game creates the directory of the socket when it does not exist. `--control` is optional; the default is `~/.dm/control.sock`. The game enters the dungeon at the start. The keyboard and the mouse do not control the game. Closing the window quits.
 
-3. Register the MCP server in Claude Code. Do this one time. Run it from the repository root.
+3. Register the MCP server in Claude Code. Do this once. Run it from the repository root.
 
    ```sh
    claude mcp add dm -- uv --directory "$(pwd)" run dm-mcp
@@ -54,7 +54,7 @@ The game selects NEW ADVENTURE at the start. `new_game` starts it again. `state.
 
 1. The game starts in the prison (map 0, square 9,0). Recruit up to four champions at the mirrors, as in Dungeon Master.
 2. Send `save`. In the prison, the save makes the adventure: the save merges the party with `disk-b/MINI.DAT`, writes `CSBGAME.DAT`, and continues at the start of the CSB dungeon (map 4).
-3. The answer of `save` is `{"ok":true}` only. Send `get_state` to see the new position.
+3. The response of `save` is `{"ok":true}` only. Send `get_state` to see the new position.
 
 After that, `save` writes `CSBGAME.DAT` (the old file becomes `CSBGAME.BAK`), and `load` loads it. The save directory is the folder of `--saves`, else the CSB data folder.
 
@@ -450,7 +450,7 @@ With champions, each champion has one line, for example `0 <name> (front_left): 
 |---|---|
 | `bool transport_is_available(void)` | True where the control socket exists (macOS). |
 | `bool transport_open(const char *path)` | Listens on the socket. Replaces an old socket file. Returns false on an error. |
-| `void transport_poll(void)` | Call one time per frame. Advances a pending turn, accepts a client, answers requests. |
+| `void transport_poll(void)` | Call once per frame. Advances a pending turn, accepts a client, answers requests. |
 | `void transport_close(void)` | Closes the sockets and removes the socket file. |
 
 The commands `save`, `load`, and `new_game` use `startend_save_dir()` and `gameloop_get_data_dir()`. `gameloop_load_data` sets both directories.

@@ -122,7 +122,7 @@ For a new game the loader changes the header in memory:
 - It adds extra records to each thing count. The byte table at KAOS `0x101058` (`g_new_game_extra_thing_count`) gives the extra record count of each type. The loader reads it from the KAOS image. The count is limited to 1024 (768 for explosions). The first word of each new record is `0xffff` (free record).
 - It sets `g_timeline.capacity` to 100 plus the counts of types 4, 14, and 15.
 
-The original writes all extra records, also past a limited count. The port stops at the limit. The DM dungeons never reach the limit.
+The original writes all extra records, even past the limit. The port stops at the limit. The DM dungeons never reach the limit.
 
 ## Validation
 
@@ -143,7 +143,7 @@ The original writes all extra records, also past a limited count. The port stops
 
 ## Text decoding
 
-`dungeon_decode_text(dst, dst_size, text_thing, mode)` ports `0x10b312`. The port adds `dst_size`. It returns 1 on success. It returns 0 when the text offset is not in the text data, when the text has no end code, or when the text does not fit in `dst_size` bytes. It then cuts the text and still writes the end byte. The text string record has a word at offset 2: bit 0 is the visible flag, bits 3–15 are the word offset into the text data.
+`dungeon_decode_text(dst, dst_size, text_thing, mode)` ports `0x10b312`. The port adds `dst_size`. It returns 1 on success. It returns 0 when the text offset is outside the text data, when the text has no end code, or when the text does not fit in `dst_size` bytes. A text that does not fit is cut; the end byte is written. The text string record has a word at offset 2: bit 0 is the visible flag, bits 3–15 are the word offset into the text data.
 
 The function decodes only a visible text, or any text when bit 15 of `mode` is set. Modes:
 
@@ -192,8 +192,7 @@ The function reads all three tables from the KAOS image. The single characters f
 - The spell experience squares the required level of the spell (`magic.c`); the original squares an undefined register.
 - The endgame screens show the credits without the palette fade; the original fades the palette.
 
-## Not ported
+## Structure differences from the original
 
-- Loading a dungeon from a saved game (no new-game extras) and the restart path that reuses buffers.
-- `timeline_init` and `group_init_active_groups` at the end of `load_dungeon`.
-- The current-map functions (`get_square`, `get_square_first_thing` on `g_current_map_data`). The port uses functions with a map argument for now.
+- `dungeon_load` loads a new game; `dungeon_load_saved` loads the dungeon of a save file (no new-game extras). The port has no restart path that reuses the buffers.
+- `game_start_new` calls `timeline_init` and `group_init_active_groups`, not the end of `load_dungeon`.

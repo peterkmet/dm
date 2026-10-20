@@ -222,7 +222,7 @@ random_2bits = (seed >> 8) & 3;
 
 ## Function partition
 
-The linker keeps the source file order. The export numbers form groups that follow file boundaries. The table splits the 749 functions into nine ranges for Step 3b.
+The linker keeps the source file order. The export numbers form groups that follow file boundaries. The table splits the 749 functions into nine ranges.
 
 | # | Start | End | Count | Subsystems | Confidence | Key evidence |
 |---|---|---|---|---|---|---|
@@ -240,5 +240,3 @@ The linker keeps the source file order. The export numbers form groups that foll
 
 - The exact meaning of several flags is not known, for example `0x104024`, `0x10254e`, and `0x10415c`.
 - The roles of `Dungeon~.FTL` and `DungeonB~.dat` are not traced.
-- The champion record layout needs a full field list.
-- The dungeon view has 16 square drawing functions (`0x11a05a`–`0x11b536`). ReDMCSB has 12. The extra functions need checking.

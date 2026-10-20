@@ -7,7 +7,7 @@ The C code has two layers:
 - `src/engine/savefile.c` handles the container: the header, the cipher, and the checksums.
 - `src/engine/savegame.c` copies the game state into the blocks and back. `src/engine/dungeon.c` writes and reads the dungeon part.
 
-The English version replaces `~` in the file name with nothing. The port writes `DMGAME.DAT` and `DMGAME.BAK`. The save slots of the advanced mode use the same format: slot 1 is `DMGAME.DAT`, slots 2 to 8 are `DMGAME2.DAT` to `DMGAME8.DAT` with the backups `DMGAME2.BAK` to `DMGAME8.BAK` (CSB: `CSBGAME`). The slot list reads each file without a load: it strips the extension blocks with the rules of `savegame_load_from`, decodes the rest, checks the byte sum word after the dungeon parts with the rule of the load (only when two or more bytes follow the parts), and reads the level of the party map (`savegame_read_slot_info`). A file that fails these checks shows DAMAGED.
+The English version removes `~` from the file name. The port writes `DMGAME.DAT` and `DMGAME.BAK`. The save slots of the advanced mode use the same format: slot 1 is `DMGAME.DAT`, slots 2 to 8 are `DMGAME2.DAT` to `DMGAME8.DAT` with the backups `DMGAME2.BAK` to `DMGAME8.BAK` (CSB: `CSBGAME`). The slot list reads each file without a load: it strips the extension blocks with the rules of `savegame_load_from`, decodes the rest, checks the byte sum word after the dungeon parts with the rule of the load (only when two or more bytes follow the parts), and reads the level of the party map (`savegame_read_slot_info`). A file that fails these checks shows DAMAGED.
 
 ## Byte order
 
@@ -221,7 +221,7 @@ The random header words come after the copy of the globals. Thus the saved rando
 6. Clear `g_session.party_dead` and the sleep flag. Set `g_session.saved_game_exists`.
 7. When the file was the backup, rename it to `DMGAME.DAT`.
 
-After a damaged file, the dungeon is not loaded and the globals can be partly changed. The entrance starts a new game from `Dungeon.DAT`, which sets all state again.
+When a file is damaged, the dungeon does not load and some globals can change. The entrance starts a new game from `Dungeon.DAT`, which sets all state again.
 
 `gameloop_start_loaded_game` then does the rest of `start_game`: it makes the party map current (`group_remove_all_active_groups`, `map_set_party_map`, `group_add_all_active_groups`), shows "GAME LOADED, READY TO PLAY.", draws the interface, and runs `champion_reset_for_new_game`: the hand object goes back into the hand, `champion_set_leader` adds its weight to the leader load again, and the magic caster comes back.
 
@@ -246,11 +246,11 @@ The port adds extension blocks after the original save data outside the vanilla 
 | Cheat block | `advanced` | `CHTS`, version 1, one byte of cheat bits: bit 0 full light, 1 immortal, 2 food and water, 3 one-hit kill, 4 walk through walls, 5 reveal map (`CHEAT_*`, `engine/game.h`) |
 | Automap block | `advanced`, `turnbased` | `AMAP`, version 1, map count, width and height of each map, one byte per square (`explored_save`) |
 
-`savegame_load_from` reads the blocks from the end. It strips a block when its length fits the file and its magic is `AMAP` or `CHTS`, in any order; for a magic found twice, the last block in the file counts. The scan stops at the first block that does not fit; the bytes before it go to `savefile_decode`. After a successful load, the automap block sets the explored squares (else an empty automap), and in the `advanced` mode the cheat block sets the cheats. Without the cheat block, with a damaged one (size, version, or an unknown bit), or in the other modes, all cheats are off. A failed load keeps the cheats of the running game.
+`savegame_load_from` reads the blocks from the end. It strips a block when its length fits the file and its magic is `AMAP` or `CHTS`, in any order; for a magic found twice, the last block in the file counts. The scan stops at the first block that does not fit; the bytes before it go to `savefile_decode`. After a successful load, the automap block sets the explored squares (without the block, the automap is empty), and in the `advanced` mode the cheat block sets the cheats. Without the cheat block, with a damaged one (size, version, or an unknown bit), or in the other modes, all cheats are off. A failed load keeps the cheats of the running game.
 
 ### Portraits
 
-The port does not keep portrait bitmaps. It keeps the index of each portrait in graphic 26 (`g_champion_portrait_indices`). The save writes the portrait of each party champion in the interleaved form: per row and per 16-pixel column, one word for each of the 4 bit planes (`champion_portraits_to_interleaved`). The other portraits are 0. The load encodes each portrait of graphic 26 in the same form and takes the index of the equal one. A portrait that has no equal gets index 0.
+The port keeps the portrait pixels of each champion in `ChampionRuntime.portrait`. The save writes the portrait of each party champion in the interleaved form: per row and per 16-pixel column, one word for each of the 4 bit planes (`champion_portraits_to_interleaved`). The other portraits are 0. The load decodes each portrait of the file into `ChampionRuntime.portrait`.
 
 ### Dungeon part (`dungeon.c`)
 

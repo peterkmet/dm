@@ -105,7 +105,7 @@ The C port replaces this group with a save directory. These functions can return
 
 - `file_open_read` and `file_open_write` return a dos file handle (`BPTR`), or 0.
 - `file_seek(fh, pos)` seeks from the start and always returns −1.
-- `file_tell(fh)` (`0x10625a`, before: `file_rewind`) returns the current position. It does not move. No code calls it.
+- `file_tell(fh)` (`0x10625a`) returns the current position. It does not move. No code calls it.
 - `file_size` seeks to the end and back.
 - `file_read`, `file_write` return 1 when all bytes transfer. Note the parameter order: handle, size, buffer.
 
@@ -172,8 +172,8 @@ The pointer uses hardware sprites 4–7 as two attached pairs (32 pixels wide, 1
 - `build_mouse_pointer_sprite(bitmap, shape)` converts a 4-plane bitmap to the sprite format.
 - `build_mouse_pointer_bitmap` adds a shadow. It offsets the recolored copy by `g_pointer_shadow_dx`, `g_pointer_shadow_dy` and swaps colors 0 and 12 (`g_pointer_swap_colors_0_12`).
 - `get_mouse_pointer_shape_for_position(x, y)` returns −1 (hidden), or the shape. It checks the 16 entries of `g_mouse_pointer_zones` (`x, y, width, height, shape, champion`). A champion value of 1–4 selects a champion; values 9–12 also select the champion name area.
-- Tracking box: `mouse_set_tracking_box(box, command)` (before: `set_mouse_pointer_shape`) stores a box and a command. When the pointer leaves the box, the next shape check calls `command_process_click(x, y, command)`.
-- `mouse_process_champion_icon_click(cell)` (before: `set_mouse_pointer_to_champion`) starts or ends the drag of a champion icon. The first click picks the icon up. The second click swaps the champions of the two cells. `mouse_cancel_champion_icon_drag` drops the icon on its start cell.
+- Tracking box: `mouse_set_tracking_box(box, command)` stores a box and a command. When the pointer leaves the box, the next shape check calls `command_process_click(x, y, command)`.
+- `mouse_process_champion_icon_click(cell)` starts or ends the drag of a champion icon. The first click picks the icon up. The second click swaps the champions of the two cells. `mouse_cancel_champion_icon_drag` drops the icon on its start cell.
 - `update_mouse_pointer_sprites` runs in the copper interrupt. It changes and moves the sprites. The hot spot comes from `g_mouse_pointer_hotspots`.
 - `mouse_begin_change` and `mouse_end_change` are empty. The hardware sprites need no save and restore.
 
@@ -202,8 +202,8 @@ The sample data starts 2 bytes after the graphic start. The length is the graphi
 
 - `sound_get_volume(map_x, map_y, volumes)` rotates the offset from the party into party space. It returns 0 when the source is more than 12 squares away. Otherwise it reads left and right volumes from `g_sound_volume_table` (25 × 25).
 - `sound_request_play(sound, x, y, mode)`: mode 0 plays now, mode 1 queues the sound for `sound_play_pending` (two slots, louder or higher priority wins), mode ≥ 2 adds timeline event type 20 at `g_game_time + mode − 1`.
-- `audio_play_sample(sound, volumes)` (before: `sound_play_sample`; high byte left, low byte right) picks a free pair. When both pairs play, it replaces the quieter pair (`sound_compare_loudness`). It stops the pair, writes both channels, and starts them together.
-- `sound_compare_loudness(a, b)` (before: `sound_select_channel`) puts each left+right sum in a class (< 15, < 26, else) and returns 1, 0, or −1.
+- `audio_play_sample(sound, volumes)` (high byte left, low byte right) picks a free pair. When both pairs play, it replaces the quieter pair (`sound_compare_loudness`). It stops the pair, writes both channels, and starts them together.
+- `sound_compare_loudness(a, b)` puts each left+right sum in a class (< 15, < 26, else) and returns 1, 0, or −1.
 - `sound_disable_unloaded` disables the sound groups (19, 9, 7 entries) whose flag at `0x1001d7`–`0x1001d9` is 0.
 
 ## Text (`0x109116`–`0x109b4e`)
@@ -219,7 +219,7 @@ Other functions:
 
 - `text_get_zone_size` returns width `n * g_text_char_width − g_text_char_gap` and height `g_text_line_height − g_text_baseline_gap`.
 - `text_get_next_word_line` copies words up to `max_width` pixels and returns the width.
-- `text_print_to_bitmap_zone`, `text_print_padded_to_bitmap`, and `text_print_padded_to_bitmap_zone` were named `text_print_centered_in_zone`, `text_print_padded_to_viewport`, and `text_print_padded_to_screen`. They take any bitmap. The padded forms add spaces up to `length` (buffer of 80 bytes).
+- `text_print_to_bitmap_zone`, `text_print_padded_to_bitmap`, and `text_print_padded_to_bitmap_zone` take any bitmap. The padded forms add spaces up to `length` (buffer of 80 bytes).
 
 The text metric globals at `0x102962`–`0x102976` come from the layout data. Their names are provisional.
 
