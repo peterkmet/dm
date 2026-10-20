@@ -10,11 +10,15 @@
 #include <stdint.h>
 
 /* Output format of the mixer. */
-#define AUDIO_OUTPUT_RATE    44100   /* frames per second, stereo int16 */
-#define AUDIO_PAL_CLOCK      3546895 /* Paula clock, Hz */
-#define FILTER_CUTOFF_HZ     3300    /* the Amiga LED low-pass filter, on at boot; the original never turns it off */
+#define AUDIO_OUTPUT_RATE      44100   /* frames per second, stereo int16 */
+#define AUDIO_PAL_CLOCK        3546895 /* Paula clock, Hz */
+/* The Amiga 500 output filters: the fixed RC low-pass (6 dB per octave) and the LED filter (12 dB per octave, on at
+   boot; the original never turns it off), each as one-pole stages. */
+#define FILTER_FIXED_CUTOFF_HZ 4500
+#define FILTER_LED_CUTOFF_HZ   3300
+#define FILTER_LED_POLES       2
 /* Segments of the intro music. */
-#define AUDIO_MUSIC_SEGMENTS 128
+#define AUDIO_MUSIC_SEGMENTS   128
 
 /* One segment of the intro music: sample data and its length in bytes. */
 typedef struct {

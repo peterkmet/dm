@@ -38,11 +38,14 @@ static const int pair_channels[PAIR_COUNT][SOUND_SIDE_COUNT] = {
     {0xC, 0xD},
     {0xE, 0xF}
 }; /* pair A, pair B, then the extra pairs: left, right */
-/* The output filter: y += alpha * (x - y) with alpha = dt / (RC + dt). */
-#define FILTER_ALPHA (1.0f / (1.0f + AUDIO_OUTPUT_RATE / (6.2831853f * FILTER_CUTOFF_HZ)))
+/* The filter stages: the fixed RC stage, then the LED stages; each is y += alpha * (x - y), alpha = dt / (RC + dt). */
+#define FILTER_STAGES        (1 + FILTER_LED_POLES)
+#define FILTER_ALPHA(cutoff) (1.0f / (1.0f + AUDIO_OUTPUT_RATE / (6.2831853f * (cutoff))))
 
 int16_t g_audio_volume = SETTINGS_VOLUME_FULL;
-static float filter_state[SOUND_SIDE_COUNT]; /* the filter output of each side */
+static const float filter_alpha[FILTER_STAGES] = {
+    FILTER_ALPHA(FILTER_FIXED_CUTOFF_HZ), FILTER_ALPHA(FILTER_LED_CUTOFF_HZ), FILTER_ALPHA(FILTER_LED_CUTOFF_HZ)};
+static float filter_state[SOUND_SIDE_COUNT][FILTER_STAGES]; /* the output of each stage of each side */
 static struct {
     Voice voices[VOICE_COUNT]; /* Amiga channels: 0, 3 left; 1, 2 right; 4 and up: the extra pairs */
     uint8_t pair_volumes[PAIR_COUNT][SOUND_SIDE_COUNT];
@@ -179,8 +182,12 @@ void audio_filter(int16_t *samples, int frames)
 {
     for (int f = 0; f < frames; f++)
         for (int side = 0; side < SOUND_SIDE_COUNT; side++) {
-            float *y = &filter_state[side];
-            *y += FILTER_ALPHA * ((float)samples[2 * f + side] - *y);
-            samples[2 * f + side] = (int16_t)lroundf(*y);
+            float x = samples[2 * f + side];
+            for (int stage = 0; stage < FILTER_STAGES; stage++) {
+                float *y = &filter_state[side][stage];
+                *y += filter_alpha[stage] * (x - *y);
+                x = *y;
+            }
+            samples[2 * f + side] = (int16_t)lroundf(x);
         }
 }
