@@ -88,9 +88,10 @@ emulation. The port was developed with Claude Code in four stages:
 4. **Refactoring:** Subsequent passes preserved exact runtime behavior while introducing named constants, typed
    accessors, a five-layer architecture, automated coding-standard checks, and a test suite audit.
 
-[ReDMCSB](http://dmweb.free.fr/community/redmcsb/) is a separate project that reconstructed the original 68000
-source code to compile back into bit-identical Amiga and Atari ST binaries. DMMac adopts its function and
-structure naming conventions.
+A note on [ReDMCSB](http://dmweb.free.fr/community/redmcsb/), since the question comes up: it is Christophe
+Fontanel's reconstruction of the original 68000 source code, which compiles back into bit-identical Amiga and
+Atari ST binaries. DMMac does not use its code; the game logic comes from DMMac's own decompilation (stage 2).
+DMMac does adopt ReDMCSB's function and structure names, which keeps the two code bases easy to compare.
 
 Additional technical documentation covers [FTL file formats](docs/formats/ftl.md),
 [game state rules](docs/rules/game-state.md), [Chaos Strikes Back internals](docs/csb/data.md), and the
