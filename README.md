@@ -47,7 +47,7 @@ Keys of the advanced mode (in the dungeon view):
 
 | Key | Action |
 |---|---|
-| W, A, S, D, Q, E | Move and turn (the cursor keys and the keypad also work) |
+| W, A, S, D, Q, E | Move and turn |
 | M or Tab | Automap |
 | Escape | Options menu (volume, music, upscale filter) |
 | C | Cheat screen |
