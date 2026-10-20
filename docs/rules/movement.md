@@ -53,7 +53,7 @@ Call `map_reset()` after `dungeon_load`. The current map pointers then point to 
 1. Set the next word of `thing` to `0xfffe`.
 2. When `x < 0`, append `thing` to the list that starts at `list`.
 3. When the square has no list, set bit 4 of the square. Add 1 to the first-thing index of every later column of the dungeon. Insert `thing` into `g_square_first_things`. The last entry must be `0xffff`, otherwise the function stops with system error 72 (`0x48`).
-4. Else append `thing` to the end of the square list.
+4. Otherwise append `thing` to the end of the square list.
 
 `map_unlink_thing_from_list` is the inverse. It compares things without the cell bits. When the list becomes empty, it clears bit 4, removes the entry, writes `0xffff` to the last entry, and subtracts 1 from the later column indices.
 
@@ -77,9 +77,9 @@ Call `map_reset()` after `dungeon_load`. The current map pointers then point to 
 3. The target square is the party square plus the step counts of the arrow (`0x103c56`: forward 1, 0, −1, 0; `0x103c5e`: right 0, 1, 0, −1), relative to the party direction.
 4. A stairs target: the party leaves its square, moves onto the stairs square, and takes the stairs.
 5. These targets block the move: a wall, a door with state 2, 3, or 4, and a fake wall with bit 2 (open) and bit 0 (imaginary) clear. With champions, a group on the target also blocks the move.
-6. Else the party moves with `move_get_move_result`. On stairs, the party only enters the new square. `g_disabled_movement_ticks` becomes the maximum of 1 and `champion_get_movement_ticks` of each living champion. `g_projectile_disabled_movement_ticks` becomes 0.
+6. Otherwise the party moves with `move_get_move_result`. On stairs, the party only enters the new square. `g_disabled_movement_ticks` becomes the maximum of 1 and `champion_get_movement_ticks` of each living champion. `g_projectile_disabled_movement_ticks` becomes 0.
 
-`move_turn_party(command)` takes the stairs when the party is on stairs. Else the party leaves the floor sensors of its square, turns (`rotate_party`), and enters the floor sensors again.
+`move_turn_party(command)` takes the stairs when the party is on stairs. Otherwise the party leaves the floor sensors of its square, turns (`rotate_party`), and enters the floor sensors again.
 
 `take_stairs(up)` removes the party from its square, sets `g_session.new_party_map` and the party square with `map_get_level_change_location` (−1 for up, +1 for down), and turns the party to the stairs exit direction of the new map.
 
@@ -93,7 +93,7 @@ One square chain (`follow_square_chain`) serves every mover kind (`MOVER_PARTY`,
 
 | Square | Mover | Rule |
 |---|---|---|
-| Teleporter | party | Needs scope bit 2. Plays sound 14 (`SOUND_BUZZ`) now when audible. The party turns. The port counts the teleport. |
+| Teleporter | party | Needs scope bit 2. Plays sound 14 (`SOUND_BUZZ`) now when audible. The party turns. The port counts the teleports in `g_party_teleport_count` for the turn-based mode. |
 | Teleporter | group | Needs scope bit 1 (creatures). Plays sound 14 (`SOUND_BUZZ`) after the tick when audible. `group_turn_by_teleporter` turns the creature directions and cells. |
 | Teleporter | object | Any scope except 1 (creatures only). The object rotates its cell, unless `keeps_cell`. |
 | Teleporter | projectile | Any scope except 1 (creatures only). The projectile rotates its flight direction and its cell. |
@@ -117,7 +117,7 @@ After the loop:
 
 ### Champion functions
 
-Movement calls these functions of `src/engine/champion.c` and `src/engine/inventory.c` (see `docs/rules/champions.md`): `champion_decrement_stamina`, `champion_get_maximum_load`, `champion_get_movement_ticks`, `champion_damage_all`, `champion_fall_damage`, `party_delete_scent`, `champion_add_skill_experience`, `champion_add_candidate_to_party`, `inventory_put_hand_object`, `inventory_take_hand_object`, and `object_get_type`. `object_get_type` needs `tables_load()`.
+Movement calls these functions of `src/engine/champion.c` and `src/engine/inventory.c` (see [champions.md](champions.md)): `champion_decrement_stamina`, `champion_get_maximum_load`, `champion_get_movement_ticks`, `champion_damage_all`, `champion_fall_damage`, `party_delete_scent`, `champion_add_skill_experience`, `champion_add_candidate_to_party`, `inventory_put_hand_object`, `inventory_take_hand_object`, and `object_get_type`. `object_get_type` needs `tables_load()`.
 
 ## Sensors
 
@@ -133,7 +133,7 @@ Movement calls these functions of `src/engine/champion.c` and `src/engine/invent
 |---|---|---|
 | 1 | Party not on the square, no objects, no group. | `add` |
 | 2 | The party or a group (type ≤ 4), party not on the square, no group. | `add` |
-| 3 | The party, with champions. Data 0: party not on the square. | Data 0: `add`. Else: `add` and party direction + 1 equals the data. |
+| 3 | The party, with champions. Data 0: party not on the square. | Data 0: `add`. Otherwise: `add` and party direction + 1 equals the data. |
 | 4 | An object of the data type, no other object of this type. | `add` |
 | 5 | The party on a stairs square. | `add` |
 | 7 | A group (type ≤ 4, not the party), no other group. | `add` |
@@ -185,7 +185,7 @@ The door state is bits 0–2 of the door square: 0 open, 1–3 partly closed, 4 
 - A closing door on the party square (state not 0) opens fully when the party has champions, damages the party (`champion_damage_all(5, 4, 2)`, sound 15), and tries again at time + 2.
 - A closing door with a group that is not non-material (creature attribute bit 6) goes back one step when the creature height is at most the state, plays sound 4, and tries again at time + 2. The height is 1, or creature attribute bits 7–8 for a door with bit 5 of byte 3.
 - Event 2 (door destruction): the state becomes 5.
-- `event_is_door_destroyed(at, attack, magic, ticks)` (`0x11d5e0`): force (`magic` false) needs door word bit 8. Magic needs door word bit 7. The attack must reach the door defense (low byte of `g_current_map_door_info[door type]`). The door must be closed (state 4). `ticks` 0 destroys the door at once. Else event 2 destroys it after `ticks`. Returns 1 when the door breaks.
+- `event_is_door_destroyed(at, attack, magic, ticks)` (`0x11d5e0`): force (`magic` false) needs door word bit 8. Magic needs door word bit 7. The attack must reach the door defense (low byte of `g_current_map_door_info[door type]`). The door must be closed (state 4). `ticks` 0 destroys the door at once. Otherwise event 2 destroys it after `ticks`. Returns 1 when the door breaks.
 
 ## Pits, teleporters, and fake walls
 

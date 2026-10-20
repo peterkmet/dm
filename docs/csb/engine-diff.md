@@ -124,7 +124,7 @@ DM pads each byte array to an even length. CSB does not. The content is equal, b
 | `KAOS_CREDITS_PALETTE` | `0x100a46` | `0x100f18` | All colors differ (CSB credits picture) |
 | `KAOS_KEYS_ENTRANCE` | `0x10393c`, 2 entries | `0x1043bc`, 1 entry | CSB has only command `0xc8` |
 | `KAOS_DIALOG_VERSION_TEXT` | `0x10402c` "V3.6" | `0x104c24` "V3.1" | Text |
-| `KAOS_DIALOG_MOUSE_INPUTS` | `0x103bd4` | `0x104650` (read in `dialog_get_choice` at C`0x127b06`) | Other pointer values. The 8 tables they point to (C`0x104500`, 336 bytes) have the same bytes as the DM tables (K`0x103a84`). |
+| `KAOS_DIALOG_MOUSE_INPUTS` | `0x103bd4` | `0x104650` (read in `dialog_get_choice` at C`0x127b06`) | Different pointer values. The 8 tables they point to (C`0x104500`, 336 bytes) have the same bytes as the DM tables (K`0x103a84`). |
 | String index tables `KAOS_SKILL_LEVEL_STRING_INDICES`, `KAOS_BASE_SKILL_STRING_INDICES`, `KAOS_STATISTIC_STRING_INDICES`, `KAOS_DIRECTION_STRING_INDICES` | indices into graphic 700 | pointer tables | See [Text](#text) |
 
 ### Graphics.DAT
@@ -208,7 +208,7 @@ Text that differs:
 - Texts 99, 100 ("A:", "B:") and 135–139 (memory errors) do not exist.
 - Creature names (pointer table C`0x102164`[27], DM texts 108–134): 12 names differ, for example 109 SLIME DEVIL (DM SWAMP SLIME), 111 GAZER (WIZARD EYE), 127 ZYTAZ (MATERIALIZER).
 - " NEEDS A MAGIC MAP IN ACTION HAND FOR THIS SPELL." (C`0x104bea`) and "NO CREATURE" (C`0x102654`) are not new. DM item 700 has them as texts 60 and 107, and the creature names as texts 108–134. The port uses these texts (`TEXT_NO_CREATURE` in `panel.c`, `SPELL_FAILURE_NEEDS_MAGIC_MAP` in `magic.c`).
-- the CSB direction table C`0x102578` is in direction order (NORTH, EAST, SOUTH, WEST). DM texts 22–25 are NORTH, SOUTH, EAST, WEST.
+- The CSB direction table C`0x102578` is in direction order (NORTH, EAST, SOUTH, WEST). DM texts 22–25 are NORTH, SOUTH, EAST, WEST.
 
 Code references (each address verified: a `pea` or `lea` with A5 = C`0x10511e` in the function, found in the APPB code bytes):
 
@@ -264,7 +264,7 @@ New spells (records 25–28 of `g_spells`, C`0x1046c2`, kind 4, skill 12):
 
 Cast (`menus_get_champion_spell_cast_result`, C`0x126e0e`, case kind 4 at C`0x12705c`):
 
-1. `is_magic_map_in_hand` (C`0x111080`) must be true for the object in the action hand (champion slot word `0xd6`). Else the spell fails with message 11 and the function returns 3.
+1. `is_magic_map_in_hand` (C`0x111080`) must be true for the object in the action hand (champion slot word `0xd6`). Otherwise the spell fails with message 11 and the function returns 3.
 2. `D6 = (power + 1) × 4`, power = power symbol − `0x5f`.
 3. Type 0: byte `0x118` += 1, duration 2·D6². Type 1: byte `0x119` += 1, D6 −= 2, duration 2·D6². Type 2: byte `0x11a` += 1, D6 −= (D6 >> 2) − 1, duration 2·D6².
 4. Type 3 (C`0x1270de`): delete the first event 83 of this champion. Byte `0x11b` = party direction + 1. Word `0x11c` = x << 11 | y << 6 | map. Action disabled ticks = D6² >> 1, event duration = 4 × that value.
@@ -296,8 +296,8 @@ The party starts on map 4. The prison (`Dungeon.DAT`, dungeon ID 12) has no scro
 
 Scroll panel (`draw_panel_scroll`, C`0x111764`):
 
-- `scroll_text_insert_creature_name` (C`0x1116a0`) replaces each "CREANAME" (C`0x102636`) in the scroll text with the name of the creature group in front of the party, or with "NO CREATURE". The name is the text of `group_get_thing` (C`0x10d7f0`) on the square one step ahead in the party direction: "NO CREATURE" (C`0x102654`) for no group, else the creature name pointer of the group creature type (table C`0x102164`, port texts 108 + type). The first match sets the drawn panel content to 9.
-- When the first line (after the replacement) is "MAGICMAP": drawn panel content 10, graphic `0x18` in zone `0x65` with transparent color 8. Rune characters `0x72`–`0x75` (KU, ROS, DAIN, NETA) print in zones `0x267`–`0x26a` with `text_print_to_viewport_zone_color`: color 8 when the byte (`0x11a`, `0x119`, `0x118`, `0x11b`) is not 0, else color 0, background 15.
+- `scroll_text_insert_creature_name` (C`0x1116a0`) replaces each "CREANAME" (C`0x102636`) in the scroll text with the name of the creature group in front of the party, or with "NO CREATURE". The name is the text of `group_get_thing` (C`0x10d7f0`) on the square one step ahead in the party direction: "NO CREATURE" (C`0x102654`) for no group, otherwise the creature name pointer of the group creature type (table C`0x102164`, port texts 108 + type). The first match sets the drawn panel content to 9.
+- When the first line (after the replacement) is "MAGICMAP": drawn panel content 10, graphic `0x18` in zone `0x65` with transparent color 8. Rune characters `0x72`–`0x75` (KU, ROS, DAIN, NETA) print in zones `0x267`–`0x26a` with `text_print_to_viewport_zone_color`: color 8 when the byte (`0x11a`, `0x119`, `0x118`, `0x11b`) is not 0, otherwise color 0, background 15.
 - A 7 × 7 grid. `get_zone_size(0x266)` (C`0x119616`) gives the top left point of the first square. The first row is 3 squares ahead of the party, the first column 3 squares to the left (`update_map_coordinates_after_relative_movement(dir, 3, −3)`). Columns step to the right (direction + 1), rows step back (direction + 2). With byte `0x11b` set, the grid uses the stored map (`set_current_map`), position, and direction (byte − 1), and `set_current_map(party map)` follows.
 - The party square is drawn last, when the grid map is the party map. `magic_map_draw_square` (C`0x111140`, args x, y, direction, pixel x, pixel y) draws each square from tiles of graphic 12 (`magic_map_draw_cell`, C`0x1110e0`: tile & 15 and tile >> 4 select the 7 × 7 source, transparent color 10).
 - Tile size and gap (C`0x1032e6`–`0x1032ec`): width 7, height 7, gap x 1, gap y 1 in the APPB data. The code only reads them. Graphic 12 is 112 × 42 (16 × 6 tiles).
@@ -305,9 +305,9 @@ Scroll panel (`draw_panel_scroll`, C`0x111764`):
 `magic_map_draw_square` (C`0x111140`), verified in the disassembly (the decompiler stops at the `rt_switch_word` table C`0x111218`):
 
 1. `set_square_aspect` of the square in the map direction. The aspect words are element, square byte, first thing, then 4 words (wall sides, or door state, door thing index, floor ornament ordinal with the footprints bit `0x8000`).
-2. Border fill (`fill_viewport_box`, 1 pixel around the tile): color 8 when x and y are the party x and y (also on a stored map), else color 4 when DAIN (`0x118`) is set, the element is not a wall, and the footprints bit is set.
+2. Border fill (`fill_viewport_box`, 1 pixel around the tile): color 8 when x and y are the party x and y (also on a stored map), otherwise color 4 when DAIN (`0x118`) is set, the element is not a wall, and the footprints bit is set.
 3. Blink flag: square type 6 (fake wall) with bit 0 (imaginary).
-4. The element: wall: tile 1 when ROS and blink and game time bit 1, else tile 0 and for each side k with a wall ornament: tile `0x1a`+k for the vi altar ornament (C`0x10220c`), `0x16`+k for an alcove, `0x1e`+k for a fountain. Corridor: tile 2, then tile `0x4e` + the global floor ornament index (C`0x1021e4`) of the floor ornament ordinal. Teleporter: tile 6 + `random_2bits`. Door (16 side, 17 front): tile `0xb` or `0xa`, + 2 without a door button (door byte 3 bit 6), + 4 when the door state is open or destroyed. Stairs (18, 19): tile `0x12` + ((stairs exit direction − direction) & 3), turned by 2 for stairs up. Pit: tile 3, tile 4 when invisible, tile 5 when invisible and ROS and game time bit 0.
+4. The element: wall: tile 1 when ROS and blink and game time bit 1, otherwise tile 0 and for each side k with a wall ornament: tile `0x1a`+k for the vi altar ornament (C`0x10220c`), `0x16`+k for an alcove, `0x1e`+k for a fountain. Corridor: tile 2, then tile `0x4e` + the global floor ornament index (C`0x1021e4`) of the floor ornament ordinal. Teleporter: tile 6 + `random_2bits`. Door (16 side, 17 front): tile `0xb` or `0xa`, + 2 without a door button (door byte 3 bit 6), + 4 when the door state is open or destroyed. Stairs (18, 19): tile `0x12` + ((stairs exit direction − direction) & 3), turned by 2 for stairs up. Pit: tile 3, tile 4 when invisible, tile 5 when invisible and ROS and game time bit 0.
 5. Only with DAIN or KU: the thing list from the first thing. A group with KU becomes the group of the square. With DAIN: the first projectile, the first explosion, and each junk of object type 197 (ZOKATHRA SPELL): tile `0x22` + ((cell − direction) & 3), + 4 when the element is a wall and the square does not blink.
 6. A group whose creature attributes have bit `0x4000` clear: tile `0x4c` + game time bit 0.
 7. From the first projectile on: each projectile with `get_projectile_aspect` of its slot: −11 tile `0x32`, −12 `0x36`, −14 `0x3e`, −13 `0x3a`, −4 `0x2a` (+ 4 when bit 0 of the projectile event direction, event byte 9 bits 4–5, differs from bit 0 of the map direction), other negative values none; an aspect ≥ 0 with object type 197: `0x22`. The tile adds (cell − direction) & 3.
@@ -409,7 +409,7 @@ CSB `endgame` (C`0x128374`) is only the death screen and the quit screen:
 - THE END: graphic 6 in zone 5, palette with 16 × `0x004` and color 15 `0xfff` (C`0x12842e`–`0x128464`), 300 frames (only the first time).
 - With a saved game (`-0xe0(A5)`): RESTART THIS GAME. `fill_screen_box` of the box at C`0x100dcc` (x 103, y 145, width 115, height 15) with color 1 and of the box at C`0x100dd4` (105, 147, 111, 11) with color 0, `text_print_to_screen`(110, 154, color 4, color 0, text 77). Colors 1 = `0x86f` and 4 = `0xfff`. The endgame mouse table (C`0x103c60`) has RESTART only, with the outer box. No QUIT button, no champion list.
 - 900 frames, or RESTART: `load_game`, then `start_game`. When the load fails, the credits.
-- The credits: graphic 5, palette C`0x100f18`, wait for input. Then, with a saved game and a dead party, THE END again (without the 300 frames); else `quit_game`.
+- The credits: graphic 5, palette C`0x100f18`, wait for input. Then, with a saved game and a dead party, THE END again (without the 300 frames); otherwise `quit_game`.
 
 Port (`src/ui/startend.c`): `startend_run_endgame_sensor` plays `ENDA.DAT` with `src/ui/anim.c` for CSB, waits for a key or a click, and shows the CSB screen. `show_the_end` draws the CSB button from the boxes, which the image copies to `0x104248` (`CSB_RESTART_BOXES`). After the credits, the port shows the CSB screen (deliberate deviation, as for DM); it does not go back to THE END.
 

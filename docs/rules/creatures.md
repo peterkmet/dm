@@ -67,12 +67,12 @@ Bits 0–3 of group word 14 hold the behavior.
 3. Outside the sight range the creature can still notice the party by a random roll. Next to the party, the roll also adds the hearing and smell ranges.
 4. A wall, a solid fake wall, or a closed door that is not see-through on the line from the party to the creature blocks the view.
 
-Smell uses the smell range of the creature. A creature smells the party directly within half the smell range when only walls do not block the line. Else it follows the scent trail of the party (`g_party.scents`).
+Smell uses the smell range of the creature. A creature smells the party directly within half the smell range when only walls do not block the line. Otherwise it follows the scent trail of the party (`g_party.scents`).
 
 ### Movement
 
-- The creature moves when half its movement ticks have passed since the last move. Else the group waits.
-- `group_get_directions_to` returns a `DirectionPair`: a primary direction and a second direction. Random numbers select between equal choices. This function matches the original exactly (differential test).
+- The creature moves when half its movement ticks have passed since the last move. Otherwise the group waits.
+- `group_get_directions_to` returns a `DirectionPair`: a primary direction and a second direction. Random numbers select between equal choices.
 - `test_movement` blocks walls, stairs, open pits (except for levitating creatures), closed fake walls, the party square, other groups, and closed doors that are too low for the creature. A wary creature avoids a teleporter to a map that does not allow its type. Lord Chaos does not enter a fluxcage.
 - A creature never turns around at once. It turns left or right first.
 - Lord Chaos sometimes jumps two squares over a free square.
@@ -96,7 +96,6 @@ An attacking creature (events 38–41) turns to the party, moves to the front ce
 4. `champion_add_pending_damage` applies armour by the attack type of the creature. A hit plays the damage sound of the champion.
 5. A poison attack poisons the champion half of the time.
 
-This function matches the original exactly (differential test).
 
 ## Damage and death
 
@@ -148,7 +147,7 @@ Event 48 or 49 (`projectile_process_move_event`) moves a projectile one cell for
 
 - Party: the champion in the cell takes `projectile_get_impact_attack` damage on the head or torso. Poison can follow.
 - Creature: damage `impact attack × 64 / creature defense` plus poison. A non-material creature takes damage only from Harm Non-Material. A Black Flame gains health from a fireball. Some creatures catch a thrown dagger, arrow, slayer, poison dart, or throwing star.
-- Door: an Open Door spell toggles a door with a button. A door grate can let a projectile pass. Else the projectile bashes the door.
+- Door: an Open Door spell toggles a door with a button. A door grate can let a projectile pass. Otherwise the projectile bashes the door.
 - A Ful bomb or Ven bomb flask explodes into a fireball or a poison cloud.
 - A spell projectile becomes an explosion of its type. A lightning bolt keeps half its kinetic energy as attack, a poison bolt a quarter.
 
@@ -182,7 +181,7 @@ Then the explosion disappears.
 ### Fluxcage and fuse
 
 - `projectile_fluxcage_action(x, y)` puts a fluxcage (type 50) on a square that is not a wall or stairs. Event 24 removes it after 100 ticks. When this fluxcage is the third one around Lord Chaos on an adjacent square, Lord Chaos senses danger.
-- `projectile_fuse_action(x, y)` creates a Harm Non-Material explosion with attack 255. Lord Chaos in 4 fluxcages sets `g_fuse_sequence_requested`. Else Lord Chaos escapes through a free side to an open square.
+- `projectile_fuse_action(x, y)` creates a Harm Non-Material explosion with attack 255. Lord Chaos in 4 fluxcages sets `g_fuse_sequence_requested`. Otherwise Lord Chaos escapes through a free side to an open square.
 
 ## Spells
 

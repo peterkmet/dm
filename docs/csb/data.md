@@ -14,12 +14,12 @@ All addresses in this page are image addresses after `dm-ftl` with base `0x10000
 
 | Area | Difference | Port module |
 |---|---|---|
-| `Graphics.DAT` | 728 items, not 749. Same container format. Text items 699 and 700 are empty. Item 694 uses another string encoding. | `gfx_open` and `gfx_expand` read and decode all items. `csb_text.c` builds the text items from `APPB.FTL`. |
+| `Graphics.DAT` | 728 items, not 749. Same container format. Text items 699 and 700 are empty. Item 694 uses a different string encoding. | `gfx_open` and `gfx_expand` read and decode all items. `csb_text.c` builds the text items from `APPB.FTL`. |
 | `Dungeon.DAT` | A 2-level start dungeon with 24 champion mirrors, dungeon ID 12. Same format. | `dungeon_load` loads it. |
-| Save file | `CSBGame.dat`. Header fields move 2 bytes up. The payload key is at another offset. Blocks, cipher, and dungeon part are the same. | `savefile.c` reads and writes the CSB header when `g_adventure` is `ADVENTURE_CSB`. |
+| Save file | `CSBGame.dat`. Header fields move 2 bytes up. The payload key is at a different offset. Blocks, cipher, and dungeon part are the same. | `savefile.c` reads and writes the CSB header when `g_adventure` is `ADVENTURE_CSB`. |
 | Endgame | `ENDA.DAT`, an animation file that `ANIM.FTL` plays. No credits screen. | `anim.c` plays `ENDA.DAT`. |
 | Sounds | Same 35 sounds, same graphic items, same sound table. | `sound.c` works with the CSB items. |
-| Engine tables | No `KAOS.FTL`. `APPB.FTL` holds the tables at other addresses. | `csb_image.c` builds a KAOS-layout image from the `APPB.FTL` tables. |
+| Engine tables | No `KAOS.FTL`. `APPB.FTL` holds the tables at different addresses. | `csb_image.c` builds a KAOS-layout image from the `APPB.FTL` tables. |
 
 ## Graphics.DAT
 
@@ -89,7 +89,7 @@ Action names and texts (items 699 and 700). CSB has no text in these items. The 
 
 Layout (item 696). A check compares the zone records with `dmcsb.graphics.decode_lay1`. The range `400–438` becomes `400–436`. All other records are equal. `startend.c` uses zone 437 (`ZONE_RESTART_BUTTON`) and zone 438 (`ZONE_QUIT_BUTTON`) for THE END screen.
 
-### Hard-coded indices with other CSB content
+### Hard-coded indices with different CSB content
 
 | Port constant | Index | File | CSB effect |
 |---|---|---|---|
@@ -102,7 +102,7 @@ Layout (item 696). A check compares the zone records with `dmcsb.graphics.decode
 | `GFX_ACTION_NAMES` | 699 | `ids.h`, `ui.c` | Empty. |
 | `GFX_STRINGS` | 700 | `ids.h`, `ui.c`, `champion.c` | Empty. |
 | `GFX_LAYOUT` zones 437, 438 | 696 | `startend.c` | Zones are not present. |
-| `GFX_CREATURE_FIRST` + aspect | 584–670 | `ids.h`, `view.c` | Other bitmaps and sizes. `view.c` reads the size from the bitmap. |
+| `GFX_CREATURE_FIRST` + aspect | 584–670 | `ids.h`, `view.c` | Different bitmaps and sizes. `view.c` reads the size from the bitmap. |
 | Wall ornaments 56–59 | 371–378 | `view.c` | Placeholders. CSB maps must not use them. |
 
 Unchanged indices that the port uses: 0, 6, 7–9, 12–25, 27–41, 46, 48–328, 346, 379–503, 695 (font).
@@ -239,14 +239,14 @@ Port: `startend_run_endgame_sensor` in `src/ui/startend.c` sets `g_session.won`,
 
 The port plays `ANIM.DAT` after NEW ADVENTURE (`play_csb_intro` in `src/platform/app.c`). It does not read `TITL.DAT` of disk B.
 
-`ANIM.FTL` of disk B is another build than disk A (all addresses below are disk B addresses). Dispatcher `0x100c76`, table at `0x100c8e`. Handlers:
+`ANIM.FTL` of disk B is a different build from disk A (all addresses below are disk B addresses). Dispatcher `0x100c76`, table at `0x100c8e`. Handlers:
 
 | Tag | Handler | Meaning |
 |---|---|---|
 | `SF` | `0x100920` | Payload: a file name (`SOUND/TELE2.amg`). The file is a sample: length word, signed 8-bit data. It goes into the `SD` sample table; a file that cannot be read keeps its number. AmigaDOS ignores the case of the name; the files on disk are `Sound/tele2.amg`. |
 | `MF` | `0x100a1a` | Payload: a music file name (`MIDI/NAKED.amg`), into the music table. `MD` (`0x100866`) puts its payload into the same table. |
 | `MI` | `0x1008f6` | Plays music number parameter (1-based) at once (`0x101424`). |
-| `SO` | `0x1008a2` | As disk A (period 650, volumes `(byte + 1) >> 2`). The word after the two volume bytes (`0x1388`) is not read. While the music plays, a sample goes to pair A (channels 3 and 2), and a new sample stops the sample before. |
+| `SO` | `0x1008a2` | As on disk A (period 650, volumes `(byte + 1) >> 2`). The word after the two volume bytes (`0x1388`) is not read. While the music plays, a sample goes to pair A (channels 3 and 2), and a new sample stops the previous sample. |
 | `DO` | `0x100c4c` | Ends the samples after their cycle. It does not stop the music. |
 
 `ANIM.DAT` has 851 frames, 10808 vertical blanks (216 s). After the last frame or a stop (`BR` 1), the cleanup fades the music: volume 29 down to 1, one step every 3 ticks (`0x102e4c`), then the music stops.
@@ -257,7 +257,7 @@ and sets the counter to its time. After a stop the loop waits for the counter ag
 music. So a click keeps the shown frame for the rest of its time, shows one more frame for its full time, and then
 fades the music for 87 ticks (1.7 s). `ANIM.DAT` has frames of up to 536 ticks (10.7 s; the title pictures of the
 first minute). The port stops after the rest of the shown frame and does not show the next frame; then it fades
-the music as the original. Measured in the port (2026-10-17): a click 8.6 s before the end of a long frame starts
+the music as in the original. Measured in the port (2026-10-17): a click 8.6 s before the end of a long frame starts
 the prison 10.3 s later; a click in a short frame, 1.9 s later. Loading the prison takes 30 ms. In the advanced mode the port stops at once (`anim_set_stop_at_once`), then fades the music.
 
 `NAKED.AMG` is not a tracker or MIDI file. All words are big-endian:
@@ -311,7 +311,7 @@ The other tables of `tables.md`, the view tables, the input tables, and the esca
 | `src/ui/startend.c` | `csb_draw_restart_button` | Draws RESTART THIS GAME in the two boxes of APPB `0x100dcc` (image address `0x104248`) and keeps the click box of the CSB endgame mouse table. | The CSB layout has no zones 437 and 438. |
 | `src/engine/savefile.c` | `savefile_decode`, `savefile_encode`, `savefile_init_header`, header accessors | Reads and writes the CSB header: key at `0x3a`, fields 2 bytes up, 132 extra bytes. | A CSB save fails the DM header check. |
 | `src/engine/savegame.c` | `savegame_save`, `savegame_load`, portrait functions | Uses `CSBGAME.DAT` and `CSBGAME.BAK`. Keeps the saved portrait bitmaps. | CSB parties come from DM saves or the champion editor. Their portraits are not in graphic 26. |
-| `src/data/kaos.c`, `src/data/csb_image.c` | `kaos_load`, `csb_image_build` | Loads `APPB.FTL` and builds a KAOS-layout image: each table is at its DM address. | CSB has no `KAOS.FTL`. Most tables are identical at other addresses. |
+| `src/data/kaos.c`, `src/data/csb_image.c` | `kaos_load`, `csb_image_build` | Loads `APPB.FTL` and builds a KAOS-layout image: each table is at its DM address. | CSB has no `KAOS.FTL`. Most tables are identical at different addresses. |
 | `src/ui/anim.c` | Animation player | Plays the chunks of `ENDA.DAT`. | The CSB endgame plays `ENDA.DAT`. |
 
 `layout.c` and `dungeon.c` (`dungeon_load`) have no CSB code. The animation player uses `gfx_expand_over` (`graphics.c`, a decode over an existing bitmap for the delta frames) and `audio_play_data` (`audio.c`, plays sample data that is not in `Graphics.DAT`).

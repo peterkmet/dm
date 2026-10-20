@@ -38,7 +38,7 @@ Your files in `playthroughs/current/player/` are your memory. Keep each file sho
 - The champions eat and drink all the time. Without food or water they lose stamina and then health.
 - The maximum of `food` and `water` is 2048. Estimates from an earlier run: about 1 water per 25 ticks awake; a sleep of 1500 ticks costs 200-300 food and 130-170 water. Half of the maximum is enough for about 4 long sleeps.
 - Carry a food reserve in the packs. Take every food item that you find. Eat only when a champion is below half, and keep the rest. Kill creatures that drop food when you meet them, and note where they live.
-- Before you go down to a new level, each champion has food above a quarter (512), or the packs hold food for each champion below that. Else find food on the known levels first: a new level may have no food near the stairs.
+- Before you go down to a new level, each champion has food above a quarter (512), or the packs hold food for each champion below that. Otherwise find food on the known levels first: a new level may have no food near the stairs.
 - Food in the dungeon is finite, and the champions eat with game time. Save game time: sleep only for low health, stamina, or mana; do not wait long for one creature; go back to an earlier level only for a clear reason (water, food, a known key).
 - Food and water containers feed the champion who uses them. Fountains fill water containers.
 - Sleep gives back health, stamina, and mana, but time goes on: food and water go down and creatures move. Damage, a creature near the party, or `wake` wakes the party. The party does not wake by itself.
@@ -198,14 +198,14 @@ When the dungeon changes the party in another way, the turn has a displacement:
 
 | `stopped` | Reason |
 |---|---|
-| `moved` | The square or the map changed in another way: a teleporter, a pit, stairs. Also a teleporter that sends the party back to the square where the turn started: this is not `bumped`. |
+| `moved` | The square or the map changed in another way: a teleporter, a pit, stairs. A teleporter that sends the party back to the start square of the turn also counts as `moved`, not as `bumped`. |
 | `turned` | The facing changed in another way: a spinner. |
 
 `moved` comes before `turned` when both happen. An `act` response has `stopped` only after a displacement. An `act_many` batch stops after the step (see [Batches](#batches)).
 
 ### Wait
 
-A `wait` turn checks the stop conditions after each tick and ends at once when one occurs. The conditions are the same as for a batch: `damage`, `creature`, `message`, and `game_over` (see [Batches](#batches)). The response has `stopped`: `done` when all `ticks` ran, else the news. `ticks` gives the ticks that ran. This also works while the party sleeps: damage wakes the party.
+A `wait` turn checks the stop conditions after each tick and ends at once when one occurs. The conditions are the same as for a batch: `damage`, `creature`, `message`, and `game_over` (see [Batches](#batches)). The response has `stopped`: `done` when all `ticks` ran, otherwise the stop condition. `ticks` gives the ticks that ran. This also works while the party sleeps: damage wakes the party.
 
 Example: rest until something happens, at most 5000 ticks.
 
@@ -296,7 +296,7 @@ The champion `position` uses `front_left`, `front_right`, `back_right`, `back_le
 - `champions[]`: `index`, `name`, `title`, `alive`, `health`, `stamina`, `mana` (each `[current, maximum]`), `food`, `water`, `load_kg` (`[current, maximum]` in kg, one decimal), `position`, `poisoned`, `action_disabled`, `statistics`, `skills` (`{level, rank}` for fighter, ninja, priest, wizard), `wounds`, `slots[]` (`slot`, `where`, `object`), `actions` (action menu of the action hand), `runes` (chosen runes).
 - The values use the units of the game screen. The game stores stamina in tenths of the value that the inventory shows, so `stamina` is the stored value divided by 10. The game stores the load in tenths of a kilogram and shows it as `nn.n/ mm KG`, so `load_kg` is in kilograms. Health, mana, and statistics are not scaled. `food` and `water` are the stored values (the game shows them only as bars). The maximum is 2048; below 0 the champion starves or dies of thirst.
 - `rank` is the rank name that the eye panel shows for the level (from the string table of the game, for example `APPRENTICE`). It is `null` for level 1, because the game shows no rank then.
-- `action_menu`: `{champion, actions}` while a menu is open, else `null`.
+- `action_menu`: `{champion, actions}` while a menu is open, otherwise `null`.
 - `spell`: `{caster, chosen, available[{symbol, name, mana}]}`, or `null`.
 - `inventory`: `{champion, panel, chest?}`, or `null`.
 - `messages`: the rows of the message area that hold text.
@@ -329,7 +329,7 @@ The view shows what a player sees. Creature health is not in the view, because t
  2 ####D#####
 ```
 
-The map shows the same as the automap of the game: the squares that the party saw, with walls, floors, doors and their state, stairs, open pits, open teleporters, and pressure pads. It shows no wall features: a wall is `#`. What is on a wall (switches, locks, alcoves, fountains, texts) is in the view, with its side; keep it in your own map. The map shows the squares as they are now, also when they changed after you saw them.
+The map shows the same as the automap of the game: the squares that the party saw, with walls, floors, doors and their state, stairs, open pits, open teleporters, and pressure pads. It shows no wall features: a wall is `#`. What is on a wall (switches, locks, alcoves, fountains, texts) is in the view, with its side; keep it in your own map. The map shows the squares as they are now, even when they changed after you saw them.
 
 A floor square with a pressure pad (`pressure_pad`, `round_pressure_pad`, `tiny_pressure_pad`) is `_`.
 

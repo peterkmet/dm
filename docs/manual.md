@@ -44,7 +44,7 @@ Usage: dm [options]
 
 - `--adventure dm|csb` selects the adventure: Dungeon Master (data in `game/`) or Chaos Strikes Back (data in `game-csb/`). With `--adventure csb`, the program stops with exit code 1 when the CSB files are missing.
 - `--mode vanilla|advanced|turnbased` selects the game mode.
-- `--data DIR` selects the data folder (disk A) of the selected adventure. The CSB file check uses `DIR` only with `--adventure csb`. Else it uses `game-csb/`.
+- `--data DIR` selects the data folder (disk A) of the selected adventure. The CSB file check uses `DIR` only with `--adventure csb`. Otherwise it uses `game-csb/`.
 - `--saves DIR` selects the folder of the save files (`DMGAME.DAT`, `CSBGAME.DAT`, their `.BAK` files, `QUICK.DAT`, and `SETTINGS.TXT`). The default is the data folder. The folder must exist.
 - `--control PATH` selects the socket of the `turnbased` mode. The default is `~/.dm/control.sock`.
 - `--filter none|scale2x|scale3x` selects the pixel-art upscale filter. The default is `none`; the `advanced` mode takes the filter of the options menu. The filter makes the image 2 or 3 times larger before the window scaling; it smooths the mouse pointer together with the picture. It gives the sharpest image when the window scale is a multiple of the filter factor. Example: `build/dm --filter scale2x`.
@@ -86,12 +86,12 @@ The entrance of Dungeon Master: click ENTER or press Return to start a new game.
 2. Recruit one to four champions at the 24 mirrors.
 3. Save the game. In the prison, the save makes the new adventure: the save merges the party with `disk-b/MINI.DAT`, writes `CSBGAME.DAT`, loads it, and continues in the CSB dungeon. The original needs a restart with the utility disk for this step.
 
-The new adventure starts on LEVEL 5 (the number that the slot list shows) at (22, 18), facing south. Each champion has full health, stamina, and mana, no objects, and food and water of 1500 to 1755. The save needs at least one champion, and each champion needs a unique first name. Else a dialog gives the reason and the game stays in the prison.
+The new adventure starts on LEVEL 5 (the number that the slot list shows) at (22, 18), facing south. Each champion has full health, stamina, and mana, no objects, and food and water of 1500 to 1755. The save needs at least one champion, and each champion needs a unique first name. Otherwise a dialog gives the reason, and the game stays in the prison.
 
 In the advanced mode, the stairs down of the prison also start the new adventure: the party steps onto the stairs, and the game continues in the CSB dungeon at once. The stairs merge the party as the save does, but write no file and do not change the current save slot; save when you want. The automap of the new adventure is empty, the running cheats stay as they are (only loading a file sets the cheats from the file), and THE END offers RESTART THIS GAME only after the first save. When the party cannot make the adventure (no champion, first names not unique, `MINI.DAT` cannot be read), a dialog gives the reason, and the stairs lead to the lower level of the prison as in the original. The prison has 4 stairs down; two of them can be reached from the start: east through the hidden passage at (15, 6) (it looks like a wall) and the door with a button at (18, 6) to the stairs at (19, 7), and south through the hidden passage at (8, 14) and the door with a button at (7, 15) to the stairs at (6, 15). The other two stairs, (19, 3) and (1, 15), are walled off. The automap shows the stairs down in orange and the hidden passages checkered. The advanced mode does not show the prison text that tells you to save and restart with the utility disk. Vanilla and the turn-based mode keep the stairs of the original.
 
 - RESUME loads `CSBGAME.DAT`, or `CSBGAME.BAK` when `CSBGAME.DAT` is missing. When the file is missing or damaged, the dialogs are the same as in Dungeon Master, and the game shows the CSB screen again. In the advanced mode, RESUME opens the load list (see Saved games); CANCEL shows the CSB screen again.
-- The save dialog shows CANCEL, SAVE AND PLAY, and SAVE AND QUIT. SAVE AND PLAY saves and continues the game. SAVE AND QUIT saves, shows the credits, and then shows the CSB screen. In the prison, SAVE AND QUIT makes the new adventure and then quits: RESUME starts it. The dialog closes after a save. CSB has no quit without a save, as in the original. The advanced mode has its own save dialog (see Save slots).
+- The save dialog shows CANCEL, SAVE AND PLAY, and SAVE AND QUIT. SAVE AND PLAY saves and continues the game. SAVE AND QUIT saves, shows the credits, and then shows the CSB screen. In the prison, SAVE AND QUIT makes the new adventure and then quits: RESUME starts it. The dialog closes after a save. CSB has no quit without a save, as in the original.
 - After the credits (SAVE AND QUIT, the end of the game), the game shows the CSB screen. In turn-based mode, the game shows the entrance picture, and `load` or `new_game` over the socket starts the next game. QUIT on the CSB screen goes back to the first start screen, as QUIT on the DM entrance. Ctrl+Q or closing the window ends the program.
 - The end of the game: when the party dies, THE END shows with RESTART THIS GAME only (no QUIT), then the credits. When the party wins, the game plays the ending animation `ENDA.DAT`. After the last frame, a key or a click shows the CSB screen (the original stays on the last frame).
 - Quick save (F5) and quick load (F9) use `QUICK.DAT` in the CSB folder. A quick save in the prison is a plain save: it does not make the new adventure. DM and CSB use the same name `QUICK.DAT`; when `--saves` gives one folder to both, the load list of one adventure shows the quick save of the other as DAMAGED.
@@ -161,9 +161,9 @@ The controls are the controls of the original Amiga game.
 
 The Windows build has no control socket, so the LLM mode cannot start there: the mode screen offers VANILLA and ADVANCED only, and `--mode turnbased` stops with an error.
 
-The advanced features are not in the original game:
+The advanced features are not in the original game. The options menu and the cheat screen exist only in the `advanced` mode.
 
-- Automap: a top-down map of the seen squares in place of the dungeon view. The game time stops while the map is open. A white frame shows the end of the map. The top line shows the level and the party position, for example `LEVEL 7 (30,27)`: the level number is the one of the saved games list. Corridors are light gray, walls are dark gray. A wall that the party can walk through (an imaginary wall) is checkered light and dark gray; an open fake wall is a corridor. Drag the map with the left mouse button to see the whole level; a click without a move does not scroll. The map opens centered on the party.
+- Automap: a top-down map of the seen squares in place of the dungeon view. The game time stops while the map is open. A white frame shows the end of the map. The top line shows the level and the party position, for example `LEVEL 7 (30,27)`: the level number is the number of the saved games list. Corridors are light gray, walls are dark gray. A wall that the party can walk through (an imaginary wall) is checkered light and dark gray; an open fake wall is a corridor. Drag the map with the left mouse button to see the whole level; a click without a move does not scroll. The map opens centered on the party.
 - Up to 8 sounds play at once, not 2 as in the original.
 - Quick save and quick load: one save slot in `QUICK.DAT` in the data folder. `DMGAME.DAT` does not change. The message area shows GAME SAVED, GAME LOADED, NO QUICK SAVE, or QUICK SAVE DAMAGED.
 - W, A, S, D, Q, and E move and turn the party. The cursor keys and the keypad also work.
@@ -171,7 +171,7 @@ The advanced features are not in the original game:
 - Action icons in their own colors.
 - Stat meters in the object description (hold the eye with an object in the hand): attack for a weapon, defense for armour, and weight.
 - A click on a fountain with an empty hand lets every living champion drink, not only the leader.
-- Options menu: Escape in the dungeon view opens it in place of the dungeon view. The game time stops while the menu is open; the music and the sounds go on. Only in the `advanced` mode. The rows:
+- Options menu: Escape in the dungeon view opens it in place of the dungeon view. The game time stops while the menu is open; the music and the sounds go on. The rows:
   - SOUND: the sound volume, 0 (off) to 7 (full).
   - MUSIC VOLUME: the music volume, 0 (off) to 7 (full).
   - MUSIC: ORIGINAL (no music, the default), SUPER NES, or FM-TOWNS. The new music starts at once.
@@ -179,7 +179,7 @@ The advanced features are not in the original game:
   - CONTINUE: closes the menu.
 
   Mouse: click `-` or `+` to change a volume, click the MUSIC or FILTER row for the next value, click CONTINUE to close. Keys: Up and Down (also W and S) select a row; Left and Right (also A and D) change its value; Return on CONTINUE closes; Escape closes from every row.
-- Cheat screen: C in the dungeon view opens it in place of the dungeon view. The game time stops while the screen is open. Only in the `advanced` mode. The rows of the cheat page:
+- Cheat screen: C in the dungeon view opens it in place of the dungeon view. The game time stops while the screen is open. The rows of the cheat page:
   - FULL LIGHT: the view is always bright; the creature rules keep the real light.
   - IMMORTAL: the health of a champion stops at 1; damage, wounds, poison, hunger, and thirst stay.
   - FOOD AND WATER: food and water do not go down; eating and drinking still raise them.

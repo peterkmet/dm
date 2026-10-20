@@ -41,7 +41,7 @@ The possessions stay in the wall square list until the player accepts the candid
 |---|---|
 | `PANEL_CANCEL` | Removes the candidate. When it was the only champion, the party has no leader and no caster. |
 | `PANEL_RESURRECT` | Unlinks the possessions from the wall square. Disables the mirror sensor (`rec_sensor_set_type` to `SENSOR_DISABLED`). Prints "<name> RESURRECTED." |
-| `PANEL_REINCARNATE` | As resurrect, then the name entry (below). After OK, clears all experience and adds 1 to the current and maximum value of a random statistic 12 times. Prints "<name> REINCARNATED." The `turnbased` mode skips the name entry and keeps the old name. |
+| `PANEL_REINCARNATE` | As resurrect, then the name entry (below). After OK, the game clears all experience. It adds 1 to the current and maximum value of a random statistic 12 times. Prints "<name> REINCARNATED." The `turnbased` mode skips the name entry and keeps the old name. |
 
 With the first champion, the time of the last party move becomes the game time.
 
@@ -85,7 +85,7 @@ The name entry (`champion_start_rename` … `champion_rename_ok`) clears the nam
 | Function | Rule |
 |---|---|
 | `champion_get_maximum_load` | `stamina_adjusted(strength × 8 + 100)`. A wound removes 1/8 (1/4 with a leg wound). Elven Boots on the feet add 1/16. The result rounds up to a multiple of 10 (tenths of a kilogram). |
-| `champion_get_movement_ticks` | Below the maximum load: 2, or 3 when the load is above 5/8 of the maximum. Else `(load − max) × 4 / max + 4`. A feet wound adds 1 (2 when overloaded). Boots of Speed subtract 1. |
+| `champion_get_movement_ticks` | Below the maximum load: 2, or 3 when the load is above 5/8 of the maximum. Otherwise `(load − max) × 4 / max + 4`. A feet wound adds 1 (2 when overloaded). Boots of Speed subtract 1. |
 | `champion_get_dexterity` | Dexterity + `random16() & 7`, minus `load × (dexterity / 2) / max_load`, at least 2, halved while sleeping, then `bounded(1 + (r & 7), value / 2, 100 − (r & 7))`. |
 | `champion_get_strength(index, hand)` | Strength + `random16() & 15`, adjusted by the weight of the hand object. A weapon adds its strength and 2 × the levels of swing (swing classes), throw (classes 1–15), and shoot (classes 16–111). Then stamina adjustment, halved by a wound of the hand, and `bounded(0, value / 2, 100)`. |
 
@@ -134,7 +134,7 @@ Sleep keeps the selected runes of the magic caster, in the original (command 145
 2. All objects drop on the party square in the champion cell, in the order of `g_slot_drop_order` (`move_get_move_result`).
 3. A junk record (no reserve) becomes the bones (junk type 5, important, champion index in the charges) and drops in the same cell.
 4. The spell symbols clear. Poison ends.
-5. When no champion lives, `g_session.party_dead` becomes 1. Else the first living champion becomes leader or caster when the dead champion had that role.
+5. When no champion lives, `g_session.party_dead` becomes 1. Otherwise the first living champion becomes leader or caster when the dead champion had that role.
 
 ## Inventory
 
@@ -219,7 +219,7 @@ The code is in `src/engine/action.c`. The rules follow `action_is_action_perform
 | Melee actions (the above without a door, Punch, Stab, Thrust, Jab, Parry, Disrupt, Melee, Slash, Cleave, Stun) | `is_melee_performed`. A miss (no group, no creature in reach) halves the experience and the disabled ticks. |
 | War Cry, Blow Horn, Calm, Brandish, Confuse | `is_group_frightened`. Confuse uses a charge. War Cry plays sound 17, Blow Horn sound 18. |
 | Flip | Prints heads or tails (text 0x45 or 0x46) by a random bit. |
-| Climb Down | With the rope, the party goes into the pit in front (no group there) without fall damage. Else no disabled ticks. |
+| Climb Down | With the rope, the party goes into the pit in front (no group there) without fall damage. Without the rope, the action adds no disabled ticks. |
 | Freeze Life | A blue magical box adds 30 freeze ticks, a green box 125; the box is used up. Other objects add 70 and use a charge. The maximum is 200. |
 | Fireball (150), Dispell (harm non-material, 150), Lightning (180), Spit (fireball, 250), Invoke | Shoots the explosion with the attack as kinetic energy. Invoke: attack `100 + random(128)`, spell by `random % 6`: 0 poison bolt, 1 poison cloud, 2 harm non-material, otherwise fireball. With less mana than the cost, attack becomes `max(2, mana × attack / cost)` and all mana is used. A failed cast halves the experience. Each uses a charge. |
 | Shoot | The bow (class 16–31) or sling (class 32–47) in the action hand shoots the arrow (class 10) or stone (class 11) of the ready hand. Kinetic energy is the sum of both weapons. Attack is `(shoot level + launcher attributes low byte) × 2`. Step energy is the launcher class minus 16 or 32. Without ammunition: `g_session.action_damage = −2`, no experience. |
@@ -239,7 +239,7 @@ Block, Hit, and the other actions only add the action defense, the disabled tick
 
 ### Fear
 
-The influence roll is `random16() % (influence level + bonus)`. The bonus and the experience are: Confuse 12 and 45, War Cry 3 and 12, Blow Horn 6 and 20, Brandish 6 and 30, Calm 7 and 35. When the roll is below the fear resistance, or the creature is fearless (15), the group stays and the experience is halved. Else an attacking group stops its attack, the group flees, and the flee delay is `(16 − fear) × 4 / movement ticks`.
+The influence roll is `random16() % (influence level + bonus)`. The bonus and the experience are: Confuse 12 and 45, War Cry 3 and 12, Blow Horn 6 and 20, Brandish 6 and 30, Calm 7 and 35. When the roll is below the fear resistance, or the creature is fearless (15), the group stays and the experience is halved. Otherwise an attacking group stops its attack, the group flees, and the flee delay is `(16 − fear) × 4 / movement ticks`.
 
 ### Throwing
 

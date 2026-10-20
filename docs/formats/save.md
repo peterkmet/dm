@@ -135,7 +135,7 @@ Four champion portrait bitmaps, not encrypted. Each bitmap has `((32 + 15) & ~15
 
 ### Dungeon
 
-The dungeon in `Dungeon.DAT` format without compression: header (44 bytes), maps, column first-thing indices, square first things, text data, 16 thing arrays, and raw map data. Then one word: the 16-bit sum of all bytes of the dungeon parts. `dungeon_load` accepts the dungeon when the word is missing or equal to the sum. The dungeon header gives the part sizes. See [dungeon-format.md](dungeon.md).
+The dungeon in `Dungeon.DAT` format without compression: header (44 bytes), maps, column first-thing indices, square first things, text data, 16 thing arrays, and raw map data. Then one word: the 16-bit sum of all bytes of the dungeon parts. `dungeon_load` accepts the dungeon when the word is missing or equal to the sum. The dungeon header gives the part sizes. See [dungeon.md](dungeon.md).
 
 ## C API
 
@@ -192,7 +192,7 @@ Frees the decoded copy and clears `s`.
 
 ### CSB header
 
-With `g_adventure == ADVENTURE_CSB`, all functions use the CSB header: the payload key is at `0x3a` (word 29), and the fields from `0x12a` on are 2 bytes later. The extra bytes start at `0x17c`. `savefile_decode` also checks the block 2 checksum. See [csb-data.md](../csb/data.md) "Save file".
+With `g_adventure == ADVENTURE_CSB`, all functions use the CSB header: the payload key is at `0x3a` (word 29), and the fields from `0x12a` on are 2 bytes later. The extra bytes start at `0x17c`. `savefile_decode` also checks the block 2 checksum. See [data.md](../csb/data.md) "Save file".
 
 ## Game state (`savegame.c`)
 
@@ -229,7 +229,7 @@ When a file is damaged, the dungeon does not load and some globals can change. T
 
 - Block 0: the globals of the table above. The unused bytes are 0.
 - Block 1: `ActiveGroup` in its original 16-byte order. `group_index` is a big-endian word.
-- Block 2: `champion_pack` for the 4 champions, then the party record (`docs/rules/game-state.md`). The bytes from `0x58` to `0x7f` of the party part are not traced. The port writes 0 and ignores them on load.
+- Block 2: `champion_pack` for the 4 champions, then the party record ([game-state.md](../rules/game-state.md)). The bytes from `0x58` to `0x7f` of the party part are not traced. The port writes 0 and ignores them on load.
 - Block 3: 10 bytes per event: `map_time` (long), `type`, `priority`, `b`, `c`. A free slot has the next free index in the high word, as `timeline_reset` writes it.
 - Block 4: the heap of slot indices.
 

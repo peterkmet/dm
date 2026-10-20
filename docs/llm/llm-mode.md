@@ -56,7 +56,7 @@ The game selects NEW ADVENTURE at the start. `new_game` starts it again. `state.
 2. Send `save`. In the prison, the save makes the adventure: the save merges the party with `disk-b/MINI.DAT`, writes `CSBGAME.DAT`, and continues at the start of the CSB dungeon (map 4).
 3. The response of `save` is `{"ok":true}` only. Send `get_state` to see the new position.
 
-After that, `save` writes `CSBGAME.DAT` (the old file becomes `CSBGAME.BAK`), and `load` loads it. The save directory is the folder of `--saves`, else the CSB data folder.
+After that, `save` writes `CSBGAME.DAT` (the old file becomes `CSBGAME.BAK`), and `load` loads it. The save directory is the folder of `--saves`, otherwise the CSB data folder.
 
 ## MCP tools
 
@@ -94,7 +94,7 @@ The server accepts one client at a time. While a turn runs, the server does not 
 | `wait` | `ticks` (1-5000) | After the turn: `ticks` (the ticks that ran), `stopped`, `game_over`, `health_lost`, `seen`, `state`, `view`. See [Wait](llm-playbook.md#wait). |
 | `screenshot` | `path` | `path`. The game writes a PNG file to `path`. |
 | `save` | none | Nothing. The game writes `DMGAME.DAT` (CSB: `CSBGAME.DAT`) in the save directory. The old file becomes `DMGAME.BAK` (CSB: `CSBGAME.BAK`). |
-| `load` | none | `state`. The game loads `DMGAME.DAT` (else `DMGAME.BAK`; CSB: `CSBGAME.DAT`, else `CSBGAME.BAK`) from the save directory. |
+| `load` | none | `state`. The game loads `DMGAME.DAT` (or `DMGAME.BAK` when it is missing; CSB: `CSBGAME.DAT` or `CSBGAME.BAK`) from the save directory. |
 | `new_game` | none | `state`. The game loads `Dungeon.DAT` from the data directory and starts on the start square (CSB: in the prison). |
 
 Example: move one square forward.
@@ -119,7 +119,7 @@ During a turn, each frame is a tick: the game does not wait 12 frames for input.
 
 ### Save and load
 
-There is one save slot. The save directory is the folder of `--saves`, else the data directory (`game/`), the same as for the SAVE button of the game. A run uses `--saves playthroughs/current/game`. `save` and `load` use the same functions as the SAVE dialog and the RESUME button (`savegame_save`, `savegame_load`, `gameloop_start_loaded_game`).
+There is one save slot. The save directory is the folder of `--saves`, otherwise the data directory (`game/`), the same as for the SAVE button of the game. A run uses `--saves playthroughs/current/game`. `save` and `load` use the same functions as the SAVE dialog and the RESUME button (`savegame_save`, `savegame_load`, `gameloop_start_loaded_game`).
 
 - `load` without a save file returns `{"ok": false, "error": "no saved game (use save first)"}`. Nothing changes.
 - `load` of a damaged file returns an error. After that, only `load` and `new_game` work, because the game state can be incomplete.

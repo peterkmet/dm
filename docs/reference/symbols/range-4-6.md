@@ -473,7 +473,7 @@ Region header (`HeapRegion`, `0x1c` bytes, before the region memory):
 
 | Mode | Source | Release |
 |---|---|---|
-| 1 (permanent) | Best-fit unclaimed region (`heap_find_best_fit`, smallest sufficient free space). Else the fast arena when `(flags & 0x700) == flags`. Else the top of the main arena. | Never. |
+| 1 (permanent) | Best-fit unclaimed region (`heap_find_best_fit`, smallest sufficient free space). Otherwise the fast arena when `(flags & 0x700) == flags`. Otherwise the top of the main arena. | Never. |
 | 0 (stack) | Top of the main arena (`g_main_arena_top` moves down). | `mem_free_top(size)`, last in first out. |
 | 2 (temporary) | Bottom of the free space of the main arena (`g_main_arena_top − g_main_arena_free`). | `mem_free_temp(size)`. |
 

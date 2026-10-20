@@ -198,7 +198,7 @@ Explosion things are `0xff80 + type`: 0 fireball, 1 slime, 2 lightning bolt, 3 h
 ReDMCSB `GROUP.C` tail and `MOVESENS.C` head.
 
 - `group_is_fluxcage_on_square(x, y)`: true when an explosion of type 50 is on the square.
-- `group_get_lord_chaos_on_square(x, y)`: the group thing when creature type 23 (Lord Chaos) is there, else 0.
+- `group_get_lord_chaos_on_square(x, y)`: the group thing when creature type 23 (Lord Chaos) is there, otherwise 0.
 - `group_fluxcage_action(x, y)`: creates a fluxcage (type 50) and event 24 after 100 ticks, which removes it. When Lord Chaos is on an adjacent square and 3 fluxcages surround him, it sends event −3 to his group.
 - `group_fuse_action(x, y)` (`0x11cda2`): creates a harm non-material explosion. When Lord Chaos is on the square and 4 fluxcages surround him, it starts the fuse endgame sequence (`0x125132`). Otherwise Lord Chaos moves to a random free adjacent square.
 - `get_square_distance`: Manhattan distance.
@@ -406,7 +406,7 @@ Other types below 80 do nothing. The jump table is at `0x120a5e` (80 word offset
 
 Square event effects: 0 = set (open, activate), 1 = clear (close, deactivate), 2 = toggle. A handler resolves toggle against the current state.
 
-- Door animation (1): the door state moves one step per event: effect 0 decreases (opens), effect 1 increases (closes). Each step plays sound 2 and re-adds the event at time + 1, until state 0 or 4. When the door closes on the party, the party takes `champion_damage_all(5, 4, 2)` and the door goes back one step. A closing door hits a group that is not non-material when the creature height is at least the door state (a vertical door uses creature attributes bits 7–8, else height 1): 5 damage, `group_process_events_29_to_41(x, y, -3, 0)`, sound 4.
+- Door animation (1): the door state moves one step per event: effect 0 decreases (opens), effect 1 increases (closes). Each step plays sound 2 and re-adds the event at time + 1, until state 0 or 4. When the door closes on the party, the party takes `champion_damage_all(5, 4, 2)` and the door goes back one step. A closing door hits a group that is not non-material when the creature height is at least the door state (a vertical door uses creature attributes bits 7–8, otherwise height 1): 5 damage, `group_process_events_29_to_41(x, y, -3, 0)`, sound 4.
 - Fake wall (7): effect 0 sets bit 2. Effect 1 clears it. Closing waits (re-adds at time + 1) while the party or a material group is on the square.
 - Teleporter (8), pit (9): effect 0 sets bit 3 and calls `timeline_move_teleporter_or_pit_square_things`. Effect 1 clears bit 3. The two handlers have identical code.
 - `timeline_move_teleporter_or_pit_square_things(x, y)` re-runs `move_get_move_result(thing, x, y, x, y)` for the party, the group, and each object. Projectiles and explosions get their event data updated from the `g_move_result_*` globals (in the port: from the `MoveDestination`).
@@ -544,11 +544,11 @@ Symbols are characters `0x60 + step × 6 + n`. Champion record +0x21 holds the s
 1. Find the spell (`menus_get_spell_from_symbols`). No match: message "meaningless spell".
 2. Power = first symbol − 0x5f (1–6). Required level = power + base level. Experience = `(random & 7) + 16 × level + 8 × (power − 1) × base + D3²`. The intended last term is `level²` (ReDMCSB). The compiled code squares register D3 before it stores the level in D3, so it uses a stale value from the caller. A port should use `level²`.
 3. When the skill level is too low, each missing level gives a failure chance against the current wisdom (champion offset `0x50`, `min(wisdom + 15, 115)`). A failure adds reduced experience and prints "needs more practice".
-4. Potion: needs an empty flask (icon 0xc3) in a hand, else message "need flask" and return 3. The flask becomes potion `type` with power `power × 40 + random(16)`.
+4. Potion: needs an empty flask (icon 0xc3) in a hand, otherwise message "need flask" and return 3. The flask becomes potion `type` with power `power × 40 + random(16)`.
 5. Projectile: turn the champion to the party direction and shoot explosion `type − 128` with kinetic energy `bounded(21, (power + 2) × (4 + 2 × skill), 255)`. Type 4 doubles the skill.
 6. Other: 0 light, 1 darkness, 2 thieves eye (event 73), 3 invisibility (event 71), 4 party shield (event 74), 5 magic torch, 6 footprints (event 79), 7 zokathra (creates junk 10), 8 fire shield.
 
-`menus_print_spell_failure_message`: type 0 = more practice (strings 0x33/0x34 for skill 3, else 0x35/0x36), type 1 = meaningless (0x37/0x38), type 10 = need flask (0x39/0x3a).
+`menus_print_spell_failure_message`: type 0 = more practice (strings 0x33/0x34 for skill 3, otherwise 0x35/0x36), type 1 = meaningless (0x37/0x38), type 10 = need flask (0x39/0x3a).
 
 ### Uncertain items
 
@@ -656,7 +656,7 @@ The dialog system shows a message box with one to four choices. ReDMCSB calls it
 2. Count the choices: 1 to 4 non-null choice pointers, in order.
 3. Patch the box. 1 choice: layout `-0x36`, graphic zone `0x1c3`. 2 choices: layout `-0x37`, zone `0x1c4`. 4 choices: layout `-0x38`, zone `0x1c5`. 3 choices: no patch. The patch uses a temporary bitmap (a derived-cache slot when the memory option at `0x10253a` is set).
 4. Print the choice texts in color 9 on background 5. Zones: 1 choice `0x1ce`; 2 choices `0x1cf`, `0x1ce`; 3 choices `0x1cf`, `0x1d2`, `0x1d3`; 4 choices `0x1d0`–`0x1d3`.
-5. Print the two messages centered in the message zone (`0x1d5` for 1 choice, else `0x1d7`). A message that is wider than 7/8 of the zone width is split into two lines with `text_get_next_word_line`. The block of lines is centered vertically.
+5. Print the two messages centered in the message zone (`0x1d5` for 1 choice, otherwise `0x1d7`). A message that is wider than 7/8 of the zone width is split into two lines with `text_get_next_word_line`. The block of lines is centered vertically.
 6. Show the result with `dialog_draw_viewport`. In full-screen mode fade in to the palette at `0x100170`.
 
 #### `dialog_get_choice(choice_count, disk_change_drive, disk_change_choice)`
@@ -665,7 +665,7 @@ The dialog system shows a message box with one to four choices. ReDMCSB calls it
 2. Show the mouse pointer (undo all hide requests). Set `g_dialog_choice` to 99.
 3. Loop: `command_process_queue`, `wait_vertical_blank`. With one choice, the Return key (`0x4400`) selects choice 1. When `has_disk_changed(disk_change_drive)` is true, the choice is `disk_change_choice`.
 4. Hide the pointer again (restore the hide count).
-5. Animate the pressed button: draw a frame around the button box in colors 5, 0, 13, wait 5 frames, draw the pressed frame in colors 5, 12, 1. A mouse input entry is 12 bytes: command word, then `x1, x2, y1, y2`, then a button mask. When `x1` is negative, `x2` holds a zone index and the box comes from `get_zone_box`.
+5. Animate the pressed button: draw a frame around the button box in colors 5, 0, 13, wait 5 frames, draw the pressed frame in colors 5, 12, 1. When `x1` of the entry is negative, the box comes from `get_zone_box` (see Mouse and keyboard input tables).
 6. Restore the input tables. Return the choice number (1-based).
 
 ### Start and end
@@ -828,7 +828,7 @@ The checksum is the same for the plain and the encrypted data, because it adds b
 #### `save_game`
 
 1. `game_freeze`, `timeline_reset`. Allocate a 512-byte header.
-2. Show "PUT THE GAME SAVE DISK IN ~". Choices: when `g_save_dialog_format_choice` (`0x104060`, value 1) is set: SAVE, QUIT, FORMAT FLOPPY, CANCEL. Else: CANCEL, SAVE, QUIT.
+2. Show "PUT THE GAME SAVE DISK IN ~". Choices: when `g_save_dialog_format_choice` (`0x104060`, value 1) is set: SAVE, QUIT, FORMAT FLOPPY, CANCEL. Otherwise: CANCEL, SAVE, QUIT.
 3. QUIT: when the last save and the last load (`g_last_save_game_time`, `g_last_load_game_time`) are both more than 100 ticks old, ask "THE GAME IS NOT SAVED, IS IT OK TO QUIT?". Then clear `g_saved_game_exists` and call `endgame(0)`.
 4. FORMAT FLOPPY: `format_save_disk_dialog`.
 5. SAVE: check the disk with `is_save_disk_inserted(0)` and show the error ("CAN'T MODIFY DUNGEON MASTER DISK!", "THAT DISK IS UNREADABLE", "THAT DISK IS WRITE-PROTECTED!", "THERE IS NO DISK IN ~!"). Show "SAVING GAME . . .". Delete `DMGAME~.BAK`, rename `DMGAME~.DAT` to `.BAK`, write a new `DMGAME~.DAT`. On error show "UNABLE TO SAVE GAME!". On success set `g_saved_game_exists` and `g_last_save_game_time`, and show the dialog again.
@@ -840,12 +840,12 @@ Returns 1 on success, −1 on cancel (restart path).
 
 1. Set defaults: platform 5, byte `0x12a` = 1, format 3, dungeon ID 10. Allocate 4 portrait bitmaps (or reuse them on restart).
 2. Loaded game: show "PUT THE GAME SAVE DISK IN ~" with LOAD SAVED GAME and CANCEL, unless the save disk is already in the drive. Open `DMGAME~.DAT`, then `DMGAME~.BAK`, then `Dungeon~.FTL` (new game). Show "CAN'T FIND SAVED GAME!" when none opens. Read and check the header. Read the five blocks in order. Raise the max active group count to at least 110. Read the portraits. Then `load_dungeon`. When the backup was used, rename it back to `DMGAME~.DAT`. Show "LOADING GAME . . .".
-3. New game: `ensure_master_disk(0)`. Open `DungeonB~.dat` when `g_use_dungeon_b`, else `Dungeon~.dat`. When this fails: `fatal_error(0x32)`, wait 180 frames, `quit_game`. Clear the champion count and the hand object. Set `g_game_id` from two random words. Then `load_dungeon`.
+3. New game: `ensure_master_disk(0)`. Open `DungeonB~.dat` when `g_use_dungeon_b`, otherwise `Dungeon~.dat`. When this fails: `fatal_error(0x32)`, wait 180 frames, `quit_game`. Clear the champion count and the hand object. Set `g_game_id` from two random words. Then `load_dungeon`.
 4. On error show "THE GAME IS DAMAGED!" and quit (or return −1 on restart).
 
 #### `load_dungeon` and decompression
 
-1. New game only: read 8 bytes. When the first word is `0x8104`, the file is compressed. Offset 2 is the long decompressed size. Offset 6 is the dungeon ID. Read the rest of the file and call `decompress_dungeon(data, buffer, size)`. Set `g_load_from_memory`. Else seek back to 0.
+1. New game only: read 8 bytes. When the first word is `0x8104`, the file is compressed. Offset 2 is the long decompressed size. Offset 6 is the dungeon ID. Read the rest of the file and call `decompress_dungeon(data, buffer, size)`. Set `g_load_from_memory`. Otherwise seek back to 0.
 2. Read the parts with `save_read_summed_block`. Allocate them only when no restart is in progress (`g_restart_requested` = 0). The parts, the new-game extras (300 free square-first-thing entries, extra thing records per type from the table at `0x101058`, capped at 1024, 768 for type 15), and the event max count (100 + counts of type 4 and types 14–15) are as in the module map.
 3. Read the checksum word. Accept the dungeon when the word is missing or equal to the byte sum.
 4. Build the column pointer table `g_dungeon_map_data`: one pointer per map, then one pointer per column. Column `c` of map `m` starts at `raw + map.offset + c × height`.
@@ -861,7 +861,7 @@ Stop after `size` output bytes. `decompress_get_bits` is the internal bit reader
 
 #### Disk helpers
 
-- `build_save_prompt(dest, text, kind)` replaces `~` in the text with a drive name. It uses the name at `0x100106` when the flag at `0x100104` is set or `kind` is 1, else the name at `0x10010a`.
+- `build_save_prompt(dest, text, kind)` replaces `~` in the text with a drive name. It uses the name at `0x100106` when the flag at `0x100104` is set or `kind` is 1, otherwise the name at `0x10010a`.
 - `ensure_master_disk(force)` returns 1 at once when the master disk is present and `force` is not 2. Otherwise it freezes the game and shows "PUT THE DUNGEON MASTER DISK IN ~" with OK until the disk is present (next prompts add "THAT'S NOT THE MASTER DISK!"). It returns 0 when it showed a prompt.
 - `format_save_disk_dialog`: "PUT A BLANK DISK IN ~" with FORMAT FLOPPY and CANCEL. A save disk asks "FORMAT DISK ANYWAY?". Shows "FORMATTING DISK . . ." and calls `format_save_disk`. On error "UNABLE TO FORMAT DISK!".
 

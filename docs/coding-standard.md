@@ -34,8 +34,8 @@ this document names.
    The entry point `platform/main.c` is the one exception: it has no header. [module]
 8. Each header states its prefixes in one comment line, `/* Prefixes: rec_ */`. A prefix belongs to one
    module; no prefix starts with the prefix of another module. [prefix]
-9. `src/third_party/` is vendored code, the one folder of `src/` outside the layers: outside every check and outside
-   the format check, by folder. [layer]
+9. `src/third_party/` is vendored code, the one folder of `src/` outside the layers. The folder is outside every check,
+   also the format check. [layer]
 
 ## 2. Headers and includes
 
@@ -196,8 +196,8 @@ this document names.
 2. The public functions are in the order of the header. The header lists them by topic: setup and reset
    first, then queries, then commands; a one-line section comment names each topic in the header and in the
    `.c` file. [order]
-3. A static helper stands directly above the first function that calls it; a helper that several sections
-   share stands at the top of the functions. A forward declaration of a static function is allowed only for
+3. A static helper is directly above the first function that calls it; a helper that several sections
+   share is at the top of the functions. A forward declaration of a static function is allowed only for
    mutual recursion, with a comment that names the pair. [order]
 
    ```c

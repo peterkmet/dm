@@ -4,7 +4,7 @@
 /* Prefixes: turn_ */
 
 /* The turns of the program player: an action or a wait runs game ticks until the party can move again, a batch
-   runs its actions as turns until news, and the reply tells what the party saw. No socket, no input. */
+   runs its actions as turns until a stop condition, and the reply tells what the party saw. No socket, no input. */
 
 #include "panel.h"
 #include "json.h"

@@ -134,7 +134,7 @@ paragraph. A module with several `.c` files has one `<module>_internal.h` for it
 | `control/png.h` | `png_` | The screenshot of the program player: the game screen as an RGB PNG with stored deflate blocks. |
 | `control/request.h` | `request_` | The reader of one request line. |
 | `control/state_json.h` | `state_` | The game as JSON for the program player: the party, the champions, what the party sees, and the explored map. |
-| `control/turn.h` | `turn_` | The turns of the program player: an action or a wait runs game ticks until the party can move again, a batch runs its actions as turns until news, and the reply tells what the party saw. |
+| `control/turn.h` | `turn_` | The turns of the program player: an action or a wait runs game ticks until the party can move again, a batch runs its actions as turns until a stop condition, and the reply tells what the party saw. |
 
 ### platform/
 
