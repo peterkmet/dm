@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- The project name is DMMac: the window title, the release zips `DMMac-macos-arm64.zip` and `DMMac-windows-x64.zip`, and the repository `peterkmet/dmmac`.
+- The sound output passes a low-pass filter like the Amiga 500 output (the fixed RC filter and the LED filter).
+- The save dialog shows GAME SAVED in every mode, not only in the advanced mode.
+- Windows: no console window. The messages go to `dm.log` in the game folder, and a problem at the start shows a message box.
+
+### Fixed
+
+- Spell area: a cast left cyan blocks in the rune row, and a clicked rune box showed the next rune inverted. The click highlight now ends before the redraw, and the clicked box flashes as in the original.
+
 ## 1.0.0 - 2026-10-17
 
 ### Added
