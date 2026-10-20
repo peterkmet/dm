@@ -15,9 +15,9 @@ not supported. Disks are identified by content rather than filename.
 ## Features
 
 - **Full campaigns:** Both Dungeon Master and Chaos Strikes Back are playable in full (Dungeon Master verified
-  by a full playthrough to the defeat of Lord Chaos).
+  by a complete playthrough to the defeat of Lord Chaos).
 - **Vanilla mode:** Faithful original rules, timing, and interface.
-- **Advanced mode:** Automap, in-game options menu (volume, music, scaling), 8 save slots, quick save/load,
+- **Advanced mode:** Automap, in-game options menu (volume, music, upscale filter), 8 save slots, quick save/load,
   cheat screen, WASD movement, 8 simultaneous sounds, FM-Towns and Super NES soundtracks, and direct entry to
   Chaos Strikes Back from the prison stairs.
 - **LLM mode (macOS):** Turn-by-turn programmatic control over a Unix domain socket for scripts and language
@@ -69,9 +69,8 @@ make windows    # Cross-compile build/dm.exe with MinGW-w64
 ```
 
 Run `build/dm` from the directory containing your `.adf` images. See [Development](docs/development.md) for
-build and release workflows, [Architecture](docs/architecture.md) and the
-[coding standard](docs/coding-standard.md) for codebase structure, and the [changelog](CHANGELOG.md) for release
-history.
+build and release workflows, [Architecture](docs/architecture.md) and [Coding Standard](docs/coding-standard.md)
+for codebase structure, and [CHANGELOG.md](CHANGELOG.md) for release history.
 
 ## Engineering
 
@@ -111,5 +110,5 @@ Additional technical documentation covers [FTL file formats](docs/formats/ftl.md
 
 ## License
 
-GPL-3.0-or-later ([LICENSE](LICENSE)). Dungeon Master and Chaos Strikes Back are properties of FTL Games, with
-whom this project is not affiliated. Original game data is not included and is not covered by this license.
+GPL-3.0-or-later ([LICENSE](LICENSE)). Dungeon Master and Chaos Strikes Back are properties of FTL Games. This
+project is not affiliated with or endorsed by FTL Games. Original game data is not included and is not covered by this license.
