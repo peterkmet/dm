@@ -207,8 +207,8 @@ Text that differs:
 - The save dialog has "SAVE AND PLAY" (C`0x104f88`) and "SAVE AND QUIT" (C`0x104f96`), not SAVE and QUIT. Text 93 (quit without save) does not exist.
 - Texts 99, 100 ("A:", "B:") and 135–139 (memory errors) do not exist.
 - Creature names (pointer table C`0x102164`[27], DM texts 108–134): 12 names differ, for example 109 SLIME DEVIL (DM SWAMP SLIME), 111 GAZER (WIZARD EYE), 127 ZYTAZ (MATERIALIZER).
-- Correction: " NEEDS A MAGIC MAP IN ACTION HAND FOR THIS SPELL." (C`0x104bea`) and "NO CREATURE" (C`0x102654`) are not new. DM item 700 has them as texts 60 and 107, and the creature names as texts 108–134. The port uses these texts (`TEXT_NO_CREATURE` in `panel.c`, `SPELL_FAILURE_NEEDS_MAGIC_MAP` in `magic.c`).
-- Correction: the CSB direction table C`0x102578` is in direction order (NORTH, EAST, SOUTH, WEST). DM texts 22–25 are NORTH, SOUTH, EAST, WEST.
+- " NEEDS A MAGIC MAP IN ACTION HAND FOR THIS SPELL." (C`0x104bea`) and "NO CREATURE" (C`0x102654`) are not new. DM item 700 has them as texts 60 and 107, and the creature names as texts 108–134. The port uses these texts (`TEXT_NO_CREATURE` in `panel.c`, `SPELL_FAILURE_NEEDS_MAGIC_MAP` in `magic.c`).
+- the CSB direction table C`0x102578` is in direction order (NORTH, EAST, SOUTH, WEST). DM texts 22–25 are NORTH, SOUTH, EAST, WEST.
 
 Code references (each address verified: a `pea` or `lea` with A5 = C`0x10511e` in the function, found in the APPB code bytes):
 
@@ -319,7 +319,7 @@ The footprints bit (`set_square_aspect` C`0x10d630`–`0x10d654`): for a corrido
 
 Redraw: in `game_loop` (C`0x10809c`), with the inventory open and the drawn panel content 9 or 10, CSB sets the panel attribute of the inventory champion and calls `draw_champion_state` each tick. `draw_champion_state` (C`0x115a04`) draws `draw_panel_object(leader hand object, 1)` while the eye is pressed and the drawn panel content is 9 or 10. Thus the map and the creature name follow the game.
 
-Correction: `draw_panel_scroll` writes the drawn panel content `g_panel_content_drawn` (C`0x1024cc`: 5, 9, or 10), not `g_panel_content` (C`0x1024ca`).
+`draw_panel_scroll` writes the drawn panel content `g_panel_content_drawn` (C`0x1024cc`: 5, 9, or 10), not `g_panel_content` (C`0x1024ca`).
 
 Port changes: `src/engine/magic.c` (spell kind 4, failure message 11), `src/data/spells.c` (29 spells), `src/engine/event.c` (events 80–83), `src/engine/include/game.h` `Champion` (bytes `0x118`–`0x11d`, also in the save block), `src/ui/panel.c` (scroll panel, CREANAME, MAGICMAP), `src/ui/view.c` (square aspect for the map).
 
