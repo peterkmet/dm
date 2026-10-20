@@ -14,7 +14,6 @@ from dmtest.lib import load_lib
 from dmtest.markers import GAME, needs_dm
 
 DIRECTIONS = ["north", "east", "south", "west"]
-RUNE_CELL_PIXELS = 4 * 5 * 6  # the four rune cells of the cast box, 5 x 6 pixels each
 
 pytestmark = [needs_dm]
 
@@ -179,8 +178,8 @@ def test_a_rune_without_enough_mana_fails(game):
         client.sock.close()
 
 
-def test_a_cast_leaves_the_cleared_runes_inverted_as_with_the_mouse(game):
-    """The cast clears the runes inside the highlighted cast box; the tick inverts the box back over them."""
+def test_a_cast_leaves_the_cleared_runes_black_as_with_the_mouse(game):
+    """The cast ends the click highlight before it clears the runes: the cast box stays black."""
     lib = game.lib
     client = Client(game)
     champion = game.champions[0]
@@ -194,7 +193,7 @@ def test_a_cast_leaves_the_cleared_runes_inverted_as_with_the_mouse(game):
         box = Box()
         assert lib.ui_zone_box(C.ZONE_SPELL_CAST_BOX, ctypes.byref(box))
         cast_box = [fb[(box.y + y) * 320 + box.x + x] for y in range(box.h) for x in range(box.w)]
-        assert cast_box.count(C.COLOR_CYAN) == RUNE_CELL_PIXELS
+        assert cast_box.count(C.COLOR_CYAN) == 0
     finally:
         champion.current_mana = mana
         client.sock.close()
