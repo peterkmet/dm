@@ -10,7 +10,7 @@ Unpack a release (see the [README](../README.md)) or build the game (see [develo
 build/dm
 ```
 
-On startup, the game extracts each disk image once: the Dungeon Master v3.60 disk to `game/`, CSB disk A to `game-csb/`, CSB disk B to `game-csb/disk-b/`. The game checks the files against the Amiga disks; a wrong file stops the game with a message in the log.
+On startup, the game extracts each disk image once: the Dungeon Master v3.60 disk to `game/`, Chaos Strikes Back (CSB) disk A to `game-csb/`, CSB disk B to `game-csb/disk-b/`. The game checks the files against the Amiga disks; a wrong file stops the game with a message in the log.
 
 ### Extract the disks by hand
 
@@ -70,7 +70,7 @@ Click ENTER or press Return to start a new game. Click RESUME to continue the sa
 In the advanced mode, the stairs down of the prison also start the new adventure, without a save. The automap shows the stairs down in orange and the hidden passages to them checkered. In vanilla, the stairs lead to the lower level of the prison, as in the original.
 
 - RESUME continues the saved adventure.
-- The save dialog shows CANCEL, SAVE AND PLAY, and SAVE AND QUIT. CSB has no quit without a save, as in the original. SAVE AND QUIT shows the credits and the CSB screen.
+- In vanilla, the save dialog shows CANCEL, SAVE AND PLAY, and SAVE AND QUIT. CSB has no quit without a save, as in the original. SAVE AND QUIT shows the credits and the CSB screen.
 - When the party dies, THE END shows with RESTART THIS GAME. When the party wins, the game plays the ending animation; a key or a click then shows the CSB screen.
 
 ## Saved games
@@ -131,7 +131,7 @@ The game rules are the same in all modes.
 |---|---|
 | `vanilla` | Default. The original game. The advanced keys do nothing. |
 | `advanced` | The original game with the advanced features below. |
-| `turnbased` | The advanced features, and a program plays through a Unix socket. See [llm-mode.md](llm/llm-mode.md). Not on Windows. |
+| `turnbased` | The advanced rules without the keys (8 sounds, colored icons, stat meters), and a program plays through a Unix socket. See [llm-mode.md](llm/llm-mode.md). Not on Windows. |
 
 ### Advanced features
 
@@ -152,7 +152,7 @@ The game rules are the same in all modes.
 - Action icons in their own colors.
 - Stat meters in the object description (hold the eye with an object in the hand): attack, defense, and weight.
 - A click on a fountain with an empty hand lets every living champion drink.
-- The damage that a champion deals stays in the action area for two ticks. A click in the second tick acts at once.
+- The damage that a champion deals stays in the action area for two ticks. A click during the second tick starts the next action without a wait.
 - Smooth projectile flight between two game ticks.
 - The save file keeps the explored squares of the automap and the cheats that are on. Vanilla loads the file and ignores them.
 
@@ -165,7 +165,7 @@ The game writes the values to `SETTINGS.TXT` in the saves folder and reads them 
 Music (ORIGINAL plays no music):
 
 - FM-Towns Dungeon Master: each level has a track. FM-Towns Chaos Strikes Back: each zone has a track. Super NES (Dungeon Master only): 22 trigger squares start a track. A track plays once and does not loop, as in those versions.
-- The MP3 files go into `music/` of the game folder: `game/music/` gets `music/Game_Dungeon_Master_JP/*.mp3` and `music/Game_Dungeon_Master_US/Super_NES,*.mp3`; `game-csb/music/` gets `music/Game_Chaos_Strikes_Back_JP/*.mp3`. A missing file gives silence.
+- The MP3 files go into `music/` of the game folder (`game/music/`, `game-csb/music/`), named `FM-Towns,Track_01,Music.mp3` or `Super_NES,Track_01,Music.mp3` with the track number. A missing file gives silence.
 
 ### Cheat screen
 

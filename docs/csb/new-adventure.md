@@ -13,7 +13,7 @@ The sources are the decompiled modules in `reference/decomp/csb-a/` (disk A) and
 5. CEDT copies the champions of the saved game into the `MINI.DAT` state, resets them, and writes `CSBGAME.DAT` to the save disk.
 6. The player starts disk A again and resumes. The engine loads `CSBGame.dat` and plays the CSB dungeon.
 
-The dungeon text in the prison says the same: "FIRST CHOOSE YOUR CHAMPIONS...THEN SAVE THE GAME...THEN RESTART WITH THE UTILITY DISK." (text strings 24 and 25 of disk A `Dungeon.DAT`, read with `dmcsb`).
+The dungeon text in the prison says the same: "FIRST CHOOSE YOUR CHAMPIONS...THEN SAVE THE GAME...THEN RESTART WITH THE UTILITY DISK." (text strings 24 and 25 of disk A `Dungeon.DAT`, read with `dmcsb`, the Dungeon Master tools by Cycl0ne).
 
 `MINI.DAT` uses the cipher of the DM save file ([save.md](../formats/save.md)), not a special one, with a header that is moved by 2 bytes. It is not compressed. CEDT does not change or randomize the dungeon.
 

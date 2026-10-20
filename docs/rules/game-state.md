@@ -97,7 +97,7 @@ The portrait pointer (`0x114`) is not in the struct. The port keeps the portrait
 | `g_projectile_disabled_movement_ticks` | `0x1001f4` | `int16_t` |
 | `g_last_projectile_disabled_movement_direction` | `0x1001f6` | `int16_t` |
 
-These globals are the values that the save file header stores.
+These globals are the values that block 0 of the save file stores ([save.md](../formats/save.md#block-0-globals)).
 
 ## Session
 
@@ -110,7 +110,7 @@ field keeps its value until one of the listed functions changes it.
 | `party_sleeping` | `0x1001de` | `bool` | Cleared by `game_start_new`, `game_reset_session`, and the load (`restore_game`). |
 | `party_dead` | `0x1001e4` | `bool` | Cleared by `game_start_new` and the load; a failed load keeps it (`restore_snapshot`). |
 | `won` | `0x1001e2` | `bool` | Cleared by `game_reset_session`. |
-| `cheat_light`, `cheat_immortal`, `cheat_food` | — | `bool` | Cleared by `game_reset_session`. |
+| `cheat_light`, `cheat_immortal`, `cheat_food`, `cheat_kill`, `cheat_walls`, `cheat_map` | — | `bool` | The six cheats of the advanced mode. Cleared by `game_reset_session`. |
 | `saved_game_exists` | `0x10415a` | `bool` | Set by a save and a load, cleared by `savegame_forget` (new game); a quick save, a quick load and a failed load keep it. |
 | `last_save_time` | `0x104062` | `uint32_t` | The game time of a save; a quick save keeps it; a quick load sets 0. |
 | `last_load_time` | `0x100200` | `uint32_t` | The game time of a load; a failed load keeps it; a quick load sets 0. |

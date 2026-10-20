@@ -37,7 +37,7 @@ These steps made the mapping:
 | CSB-only | No DM partner | 49 |
 | DM-only | No CSB partner | 45 |
 
-DM has 752 functions, CSB has 756. The classes are a heuristic:
+The mapping has 752 DM functions and 756 CSB functions (the module map counts 749 in its nine ranges; the rest are outside the ranges). The classes are a heuristic:
 
 - A spot check of "identical" pairs (for example `visible_party_distance`, K`0x10ceee`, C`0x10ed9a`) found the same logic.
 - Most "constants" pairs differ only in code generation: bit-field masks (DM `lsr #6; and #31`, CSB `and #$7c0; lsr #6`), sign extension (`-1` against `0xffff`), and two word pushes that DM merges into one long push.
@@ -61,7 +61,7 @@ The DM-only functions are the language support (`set_language_file_names`, `load
 
 ## Data tables
 
-The port reads 140 table addresses from the KAOS image (`src/*/*.c`, `#define ... 0x10xxxx`). For CSB, `g_csb_copies` (`src/data/csb_image.c`) maps each address to its APPB address. The CSB addresses come from a content search with the exact table size and from the code references of the paired functions.
+The port reads the table addresses (`KAOS_*` in `src/data/include/kaos_addresses.h`) from the KAOS image. For CSB, `g_csb_copies` (`src/data/csb_image.c`) maps each address to its APPB address. The CSB addresses come from a content search with the exact table size and from the code references of the paired functions.
 
 ### Equal tables at new addresses
 
@@ -179,7 +179,7 @@ Not in the CSB image:
 
 ### Text
 
-DM 3.60 takes all text from `Graphics.DAT` item 700 (`get_string`), action names from item 699, and object names from item 694. CSB has inline English text in the APPB data section. The final texts are the same, except the items in the list below.
+DM 3.60 takes all text from `Graphics.DAT` item 700 (`get_string`), action names from item 699, and object names from item 694. CSB has inline English text in the APPB data section. The texts are the same except those under "Text that differs".
 
 | DM string (port id) | CSB source |
 |---|---|

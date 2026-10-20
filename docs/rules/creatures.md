@@ -84,7 +84,7 @@ An attacking creature (events 38–41) turns to the party, moves to the front ce
 
 `is_creature_attacking` makes one attack:
 
-- Attack range 1, or a party next to the group (half of the time): a melee hit on the champion in the cells that the creature reaches first. A creature with "attack any champion" picks a random living champion.
+- Attack range 1, or (half of the time) a party next to the group: a melee hit on the champion in the cells that the creature reaches first. A creature with "attack any champion" picks a random living champion.
 - A Giggler steals objects from random slots of the champion while the champion fails a dexterity and luck check. Then the Giggler often flees.
 - Longer range: the creature shoots a spell projectile with step energy 8. The creature type selects the spell: slime for a Swamp Slime, lightning or open door for a Wizard Eye, a random spell for a Vexirk or Lord Chaos, poison cloud or fireball for a Materializer, otherwise a fireball.
 

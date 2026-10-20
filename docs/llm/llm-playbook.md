@@ -187,7 +187,7 @@ When a move action (`move_forward`, `move_back`, `move_left`, `move_right`) does
 
 ### Displacement
 
-The game informs; it does not play. After each `act` turn and each `act_many` step, the game compares the party facing, square, and map with what the action does:
+The game reports a displacement; it does not react to it. After each `act` turn and each `act_many` step, the game compares the party facing, square, and map with what the action does:
 
 - A move action changes the square by one step in its direction, or nothing (a bump).
 - `turn_left` and `turn_right` change the facing by 90 degrees.
@@ -293,7 +293,7 @@ The champion `position` uses `front_left`, `front_right`, `back_right`, `back_le
 - `leader` (index, or `null`), `leader_hand` (object or `null`).
 - `candidate`: the champion that a mirror shows, with the fields of a champion, or `null`. The candidate is not in the party: it is not in `champions[]` and is never the `leader`. Answer with `act recruit`.
 - `champions[]`: `index`, `name`, `title`, `alive`, `health`, `stamina`, `mana` (each `[current, maximum]`), `food`, `water`, `load_kg` (`[current, maximum]` in kg, one decimal), `position`, `poisoned`, `action_disabled`, `statistics`, `skills` (`{level, rank}` for fighter, ninja, priest, wizard), `wounds`, `slots[]` (`slot`, `where`, `object`), `actions` (action menu of the action hand), `runes` (chosen runes).
-- The values use the units of the game screen. The game stores stamina in tenths of the value that the inventory shows, so `stamina` is the stored value divided by 10. The game stores the load in tenths of a kilogram and shows it as `nn.n/ mm KG`, so `load_kg` is in kilograms. Health, mana, and statistics are not scaled. `food` and `water` are the stored values (the game shows them only as bars). The maximum is 2048; below 0 the champion starves or dies of thirst.
+- The values use the units of the game screen. The game stores stamina as ten times the shown value; `stamina` is the shown value. The game stores the load in tenths of a kilogram and shows it as `nn.n/ mm KG`, so `load_kg` is in kilograms. Health, mana, and statistics are not scaled. `food` and `water` are the stored values (the game shows them only as bars). The maximum is 2048; below 0 the champion starves or dies of thirst.
 - `rank` is the rank name that the eye panel shows for the level (from the string table of the game, for example `APPRENTICE`). It is `null` for level 1, because the game shows no rank then.
 - `action_menu`: `{champion, actions}` while a menu is open, otherwise `null`.
 - `spell`: `{caster, chosen, available[{symbol, name, mana}]}`, or `null`.

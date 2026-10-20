@@ -7,7 +7,7 @@ The C code has two layers:
 - `src/engine/savefile.c` handles the container: the header, the cipher, and the checksums.
 - `src/engine/savegame.c` copies the game state into the blocks and back. `src/engine/dungeon.c` writes and reads the dungeon part.
 
-The English version removes `~` from the file name. The port writes `DMGAME.DAT` and `DMGAME.BAK`. The save slots of the advanced mode use the same format: slot 1 is `DMGAME.DAT`, slots 2 to 8 are `DMGAME2.DAT` to `DMGAME8.DAT` with the backups `DMGAME2.BAK` to `DMGAME8.BAK` (CSB: `CSBGAME`).
+The English version removes `~` from the file name. The port writes `DMGAME.DAT` and `DMGAME.BAK`. The save slots of the advanced mode use the same format: slot 1 is `DMGAME.DAT`, slots 2 to 8 are `DMGAME2.DAT` to `DMGAME8.DAT` with the backups `DMGAME2.BAK` to `DMGAME8.BAK` (Chaos Strikes Back, CSB: `CSBGAME`).
 
 ## Byte order
 
@@ -104,7 +104,7 @@ The checksum is weak. A change that sets a bit in the plain word and clears the 
 | 26 | 2 | `g_timeline.first_unused` |
 | 28 | 2 | `g_timeline.capacity` |
 | 30 | 2 | `g_active_group_count` |
-| 32 | 4 | `g_last_creature_attack_time` (`0x10314e`) |
+| 32 | 4 | `0x10314e`, the last creature attack time (suggested name, not in the symbol table) |
 | 36 | 4 | `g_last_party_movement_time` |
 | 40 | 2 | `g_disabled_movement_ticks` |
 | 42 | 2 | `g_projectile_disabled_movement_ticks` |
@@ -198,7 +198,7 @@ With `g_adventure == ADVENTURE_CSB`, all functions use the CSB header: the paylo
 
 ### Files
 
-The save directory is the game data directory (`--data`, default `game/`). `startend_set_save_dir` changes it.
+The save directory is the data directory (`--data`, default `game/`) or the folder of `--saves`. `startend_set_save_dir` sets it.
 
 `bool savegame_save(const char *dir)`:
 
@@ -293,6 +293,6 @@ The port keeps the portrait pixels of each champion in `ChampionRuntime.portrait
 - A restart does not check that the saved game has the same game ID ("THAT'S NOT THE SAME GAME").
 - The header byte at `0x12a` (`SAVE_HEADER_HEADER_BYTE`) is always written as 1 (`HEADER_BYTE_DEFAULT`). The original writes back the value of the last load.
 - `savefile_decode` does not check the dungeon part. A file that is cut inside the dungeon part decodes. The dungeon loader must check the part sizes and the byte sum.
-- The meaning of the header byte at `0x12a`, of `g_save_header_extra`, and of the long at block 0 offset 32 is not traced.
+- The meaning of the header byte at `0x12a` and of `g_save_header_extra` is not traced.
 - Free active group entries are saved with 0 bytes after a new game or a load; the original saves whatever its memory holds. An entry that a group leaves keeps its bytes, as in the original.
 - A cells byte beyond the active group table reads a free entry (`group_get_active`).

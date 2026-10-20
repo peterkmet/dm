@@ -16,7 +16,7 @@ All addresses in this page are image addresses after `dm-ftl` with base `0x10000
 |---|---|---|
 | `Graphics.DAT` | 728 items, not 749. Same container format. Text items 699 and 700 are empty. Item 694 uses a different string encoding. | `gfx_open` and `gfx_expand` read and decode all items. `csb_text.c` builds the text items from `APPB.FTL`. |
 | `Dungeon.DAT` | A 2-level start dungeon with 24 champion mirrors, dungeon ID 12. Same format. | `dungeon_load` loads it. |
-| Save file | `CSBGame.dat`. Header fields move 2 bytes up. The payload key is at a different offset. Blocks, cipher, and dungeon part are the same. | `savefile.c` reads and writes the CSB header when `g_adventure` is `ADVENTURE_CSB`. |
+| Save file | `CSBGame.dat`. Header fields are 2 bytes later. The payload key is at a different offset. Blocks, cipher, and dungeon part are the same. | `savefile.c` reads and writes the CSB header when `g_adventure` is `ADVENTURE_CSB`. |
 | Endgame | `ENDA.DAT`, an animation file that `ANIM.FTL` plays. No credits screen. | `anim.c` plays `ENDA.DAT`. |
 | Sounds | Same 35 sounds, same graphic items, same sound table. | `sound.c` works with the CSB items. |
 | Engine tables | No `KAOS.FTL`. `APPB.FTL` holds the tables at different addresses. | `csb_image.c` builds a KAOS-layout image from the `APPB.FTL` tables. |
@@ -32,7 +32,7 @@ Both files use format 1 (`0x8001`), the header of [kaos-map.md](../reference/kao
 | DM `game/Graphics.DAT` | 749 | 458108 | `0x04598281` |
 | CSB `game-csb/Graphics.DAT` | 728 | 402254 | `0x3bc83984` |
 
-`dmcsb` calls the DM file `amiga_csb_ml` ("CSB Amiga Multilanguage"). The CRC32 of that variant is the CRC32 of the DM v3.60 file. `dmcsb` does not know the CSB file (no CRC32 match, no structural match for 728 items).
+`dmcsb` (the Dungeon Master tools by Cycl0ne, see the README) calls the DM file `amiga_csb_ml` ("CSB Amiga Multilanguage"). The CRC32 of that variant is the CRC32 of the DM v3.60 file. `dmcsb` does not know the CSB file (no CRC32 match, no structural match for 728 items).
 
 ### Item comparison
 
@@ -205,7 +205,7 @@ The chunk dispatcher of `ANIM.FTL` is `0x100d1a`: a switch table at `0x100d30` (
 | `EN` | `0x100812` | Full frame: the `Graphics.DAT` packed graphic format (width, height, commands), decoded by the GRF1 function behind slot `0xea` into the back buffer. The parameter is the time in vertical blanks (50 Hz) that the frame stays. | Yes |
 | `DL` | `0x100846` | Delta frame: the blitter first copies the shown screen into the back buffer (`0x1017bc`), then the same decoder draws the frame. Skip commands keep the old pixels. Pad word `0xff81` before the size. Parameter as `EN`. | Yes |
 | `SD` | `0x10087a` | Sample: adds the payload to the sample table (max. 32). Payload: length word, then the 8-bit sample data. | Yes |
-| `SO` | `0x1008f2` | Plays sample number parameter (1-based) at Paula period 650 (`0x101406`). The two bytes after the chunk header give the volumes: (byte + 1) >> 2. In `ENDA.DAT` the `SO` chunks have no payload, so these are the bytes `DL` of the next tag (volumes 17 and 19). | Done. UNVERIFIED: which volume is the left channel. |
+| `SO` | `0x1008f2` | Plays sample number parameter (1-based) at Paula period 650 (`0x101406`). The two bytes after the chunk header give the volumes: (byte + 1) >> 2. `SO` has no payload in `ENDA.DAT`, so the two volume bytes are the first two bytes of the next tag, `DL` (volumes 17 and 19). | Done. UNVERIFIED: which volume is the left channel. |
 | `FO` | `0x100b64` | Loop start: pushes the loop (count parameter − 1, start = the second chunk after `FO`) onto a stack of 16 loops. The chunk after `FO` runs once. | Yes |
 | `NE` | `0x100be2` | End of a pass: decrements the count. When the count was 0, it pops the loop and skips the two chunks after `NE`. | Yes |
 | `BN` | `0x100c7e` | Goes back to the loop start. | Yes |
@@ -309,7 +309,7 @@ The port reads all rule and view tables from the `KAOS.FTL` image. CSB has no `K
 | `src/data/graphics.c` | `load_strings` | Ends each CSB object name at a byte with bit 7 set. | CSB object names end with bit 7, not NUL. |
 | `src/data/csb_text.c` | `csb_text_build`, `csb_text_get_item` | Builds the text items from `APPB.FTL`, with a map to the DM text indices. | Items 699 and 700 are empty in CSB. |
 | `src/ui/startend.c` | `csb_draw_restart_button` | Draws RESTART THIS GAME in the two boxes of APPB `0x100dcc` (image address `0x104248`) and keeps the click box of the CSB endgame mouse table. | The CSB layout has no zones 437 and 438. |
-| `src/engine/savefile.c` | `savefile_decode`, `savefile_encode`, `savefile_init_header`, header accessors | Reads and writes the CSB header: key at `0x3a`, fields 2 bytes up, 132 extra bytes. | A CSB save fails the DM header check. |
+| `src/engine/savefile.c` | `savefile_decode`, `savefile_encode`, `savefile_init_header`, header accessors | Reads and writes the CSB header: key at `0x3a`, fields 2 bytes later, 132 extra bytes. | A CSB save fails the DM header check. |
 | `src/engine/savegame.c` | `savegame_save`, `savegame_load`, portrait functions | Uses `CSBGAME.DAT` and `CSBGAME.BAK`. Keeps the saved portrait bitmaps. | CSB parties come from DM saves or the champion editor. Their portraits are not in graphic 26. |
 | `src/data/kaos.c`, `src/data/csb_image.c` | `kaos_load`, `csb_image_build` | Loads `APPB.FTL` and builds a KAOS-layout image: each table is at its DM address. | CSB has no `KAOS.FTL`. Most tables are identical at different addresses. |
 | `src/ui/anim.c` | Animation player | Plays the chunks of `ENDA.DAT`. | The CSB endgame plays `ENDA.DAT`. |

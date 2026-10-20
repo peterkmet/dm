@@ -9,7 +9,7 @@ All addresses are for the image that `uv run dm-ftl game/KAOS.FTL <out.bin>` cre
 - The compiler uses 16-bit `int`. Word parameters are pushed as 2 bytes. The port uses `int16_t` and `uint16_t` for them.
 - Most functions use `LINK A6` and caller cleanup. The runtime helpers `rt_lmul`, `rt_uldiv`, `rt_ulmod`, `rt_ldiv`, and `rt_lmod` remove their own 8 bytes of arguments and keep `D1`.
 - Booleans are words with the value 0 or 1. Some functions extend the result to a long (`ext.l`), for example `file_read`.
-- The error alert text says "Chaos Strikes Back". KAOS shares its code base with CSB.
+- The error alert text says "Chaos Strikes Back". KAOS shares its code base with Chaos Strikes Back (CSB).
 
 ## Runtime library (`0x104e6c`–`0x105090`)
 

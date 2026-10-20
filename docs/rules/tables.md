@@ -9,7 +9,7 @@ All addresses are original KAOS addresses (see [KAOS module map](../reference/ka
 1. Call `tables_load(path)`. It loads the image (`kaos_load`) and decodes the tables. It returns false when `kaos_load` fails.
 2. Call an accessor, for example `tables_get_creature_info(type)`.
 
-Each accessor of the table list returns a pointer to a constant record. It returns `NULL` for an index out of range. To change between DM and CSB, call `tables_load` again with the other module.
+Each accessor of the table list returns a pointer to a constant record. It returns `NULL` for an index out of range. To change between Dungeon Master (DM) and Chaos Strikes Back (CSB), call `tables_load` again with the other module.
 
 The image accessors read the loaded image at call time. They need `tables_load`. They do not check the index. All addresses are in `src/data/include/kaos_addresses.h`.
 
@@ -102,8 +102,8 @@ Each table ends where the next named table starts. The tests check this.
 | Offset | Field | Meaning |
 |---|---|---|
 | 0 | `aspect_index` | Index for `tables_get_creature_aspect`. |
-| 1 | `attack_sound_byte` | 0 = no sound. Otherwise index + 1 into the creature sound table, as stored; the reader uses the index, −1 for none. |
-| 2 | `attributes` | Bits 0–1 size, bit 2 side attack, bit 3 prefer back row, bit 4 attack any champion, bits 7–8 height, bit 9 drops fixed possessions, bit 11 sees invisible, bit 12 night vision, bit 13 archenemy. |
+| 1 | `attack_sound_byte` | 0 = no sound; otherwise the creature sound index + 1. The accessor returns the index, −1 for none. |
+| 2 | `attributes` | Bits 0–1 size, bit 2 side attack, bit 3 prefer back row, bit 4 attack any champion, bit 5 levitates, bit 6 non-material, bits 7–8 height, bit 9 drops fixed possessions, bit 11 sees invisible, bit 12 night vision, bit 13 archenemy. |
 | 4 | `graphic_info` | Bit 2 flip when not attacking, bit 9 flip when attacking, bit 10 flip during attack, bits 12–13 horizontal offset range, bits 14–15 vertical offset range. |
 | 6 | `movement_ticks` | Ticks between moves. |
 | 7 | `attack_ticks` | Ticks between attacks. |

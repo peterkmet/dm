@@ -22,7 +22,7 @@
 - Before an adventure loads, the game checks the CRC32 of its required files against the Amiga disks and names the first wrong file.
 - Windows build: `make windows` (MinGW-w64) and `tools/dist/make-dist-win.sh` for a Windows zip. No LLM mode on Windows.
 - REINCARNATE asks for a new name and title, as in the original (DM and CSB). The turn-based mode keeps the old name.
-- The entrance shows the credits; the entrance and the credits fade the palette as in the original.
+- The entrance shows the credits; the entrance and its credits fade the palette as in the original.
 - The view draws the Thieves Eye holes: the wall ahead, the door ahead, and the door frame of the party square.
 - A thing on a far square disappears when the records of its type run out, as in the original.
 - Advanced mode: the damage of a hit stays in the action area for two ticks; the action icons keep their colors in every light.

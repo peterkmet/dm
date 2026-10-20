@@ -189,7 +189,7 @@ Explosion things are `0xff80 + type`: 0 fireball, 1 slime, 2 lightning bolt, 3 h
 - `has_impact_occurred(impact_type, x, y, cell, thing)`: impact type −2 = party, −1 = creature, ≥ 0 = wall or door. A flask projectile (potion 0x13 or 0x03) becomes a fireball or poison cloud explosion.
 - `projectile_get_impact_attack` returns the attack value. It sets `g_projectile_attack_type` (1 fire, 3 sharp, 5 magic, 7 lightning) and `g_projectile_poison_attack`.
 - `projectile_get_impact_count` deletes all projectiles in a cell that hit, and returns the count.
-- `explosion_process_event_25` applies the explosion effect, then removes it. Poison cloud and smoke repeat with less attack (−3 or −40) until they fade. Rebirth step 1 becomes step 2. Harm non-material damages non-material creatures. Lord Chaos (type 19) gets damage per creature. A fireball destroys a door with `group_is_door_destroyed_by_attack`.
+- `explosion_process_event_25` applies the explosion effect, then removes it. Poison cloud and smoke repeat with less attack (−3 or −40) until they fade. Rebirth step 1 becomes step 2. Harm non-material damages non-material creatures. Lord Chaos (type 23) gets damage per creature. A fireball destroys a door with `group_is_door_destroyed_by_attack`.
 
 ### Group helpers and teleporter rotation
 
@@ -264,7 +264,7 @@ Bits 5–7 hold the square type (0 wall, 1 corridor, 2 pit, 3 stairs, 4 door, 5 
 
 ### Movement (`move_*`)
 
-`move_get_move_result(thing, src_x, src_y, dst_x, dst_y)` moves a thing between squares. It is the central movement function. `thing = 0xffff` moves the party. `src_x < 0` means "add only". `dst_x < 0` means "remove only". The function returns 1 when the moved group died or left the map. For groups it can also return an active group code (see below).
+`move_get_move_result(thing, src_x, src_y, dst_x, dst_y)` moves a thing between squares. It is the central movement function. `thing = 0xffff` moves the party. `src_x < 0` means "add only". `dst_x < 0` means "remove only". The function returns 1 when the moved group died or left the map. For groups it can also return an active group code.
 
 Algorithm:
 
@@ -357,10 +357,9 @@ Heap order (`is_before`): earlier time (bits 0–23) first. On equal time, the l
 1. Type 0: return -1.
 2. A full timeline calls `fatal_error(0x2d)`.
 3. `find_mergeable` can merge the event:
-   - Square events 5–10: an event with the same time, map, and X/Y (and the same cell for type 6) gets the new effect byte. Return its index.
+   - Square events 5–10: an event with the same time, map, and X/Y (and the same cell for type 6) gets the new effect byte. Return its index. An existing type 1 event (door animation) at the same time and place is deleted; a toggle effect in the new event becomes `1 − old effect`.
    - New type 1 (door animation): an existing type 10 event at the same time and place with toggle effect gets effect `1 − new`. An existing type 1 event gets the new effect.
    - New type 2 (door destruction): delete all type 1 and type 10 events of that square and map.
-   - Any other new type: an existing type 1 event with the same time and place is deleted. A toggle effect in the new event becomes `1 − old effect`.
 4. Take a slot from the free list, copy 10 bytes, append the slot to the heap, and sift up.
 
 `timeline_extract_first_event` copies the heap root and deletes it. `timeline_is_first_event_expired` compares the root time with `g_game_time`.
@@ -402,7 +401,7 @@ Other types below 80 do nothing. The jump table is at `0x120a5e` (80 word offset
 
 Square event effects: 0 = set (open, activate), 1 = clear (close, deactivate), 2 = toggle. A handler resolves toggle against the current state.
 
-- Door animation (1): the door state moves one step per event: effect 0 decreases (opens), effect 1 increases (closes). Each step plays sound 2 and re-adds the event at time + 1, until state 0 or 4. When the door closes on the party, the party takes `champion_damage_all(5, 4, 2)` and the door goes back one step. A closing door hits a group that is not non-material when the creature height is at least the door state (a vertical door uses creature attributes bits 7–8, otherwise height 1): 5 damage, `group_process_events_29_to_41(x, y, -3, 0)`, sound 4.
+- Door animation (1): the door state moves one step per event: effect 0 decreases (opens), effect 1 increases (closes). Each step plays sound 2 and re-adds the event at time + 1, until state 0 or 4. When the door closes on the party, the party takes `champion_damage_all(5, 4, 2)` and the door goes back one step. A closing door hits a group that is not non-material when the creature height is at most the door state (a vertical door uses creature attributes bits 7–8, otherwise height 1): 5 damage, `group_process_events_29_to_41(x, y, -3, 0)`, sound 4.
 - Fake wall (7): effect 0 sets bit 2. Effect 1 clears it. Closing waits (re-adds at time + 1) while the party or a material group is on the square.
 - Teleporter (8), pit (9): effect 0 sets bit 3 and calls `timeline_move_teleporter_or_pit_square_things`. Effect 1 clears bit 3. The two handlers have identical code.
 - `timeline_move_teleporter_or_pit_square_things(x, y)` re-runs `move_get_move_result(thing, x, y, x, y)` for the party, the group, and each object. Projectiles and explosions get their event data updated from the `g_move_result_*` globals (in the port: from the `MoveDestination`).
@@ -473,7 +472,7 @@ Button codes from `input_event_handler`: 2 left press, 4 left release, 1 right p
 
 #### Party movement
 
-`command_move_party(command)` charges every living champion `load × 3 / max_load + 1` stamina. It highlights the arrow zone `command + 0x43`. It computes the target square with `g_movement_arrow_to_step_forward_count` and `g_movement_arrow_to_step_right_count`. Stairs lead to `command_take_stairs`. Walls, closed doors (state not 0, 1, or 5), and solid fake walls block the move. A blocked move hurts the two front champions (24 damage, wound mask 2) and plays sound 15. A group on the target square blocks the move and gets event −1 (`group_process_events_29_to_41`). A successful move sets `g_disabled_movement_ticks` to the maximum movement ticks of the living champions.
+`command_move_party(command)` charges every living champion `load × 3 / max_load + 1` stamina. It highlights the arrow zone `command + 0x43`. It computes the target square with `g_movement_arrow_to_step_forward_count` and `g_movement_arrow_to_step_right_count`. Stairs lead to `command_take_stairs`. Walls, closed doors (state not 0, 1, or 5), and solid fake walls block the move. A blocked move hurts the two champions on the side of the bump (1 damage, wounds `0x18`: torso and legs) and plays sound 15. A group on the target square blocks the move and gets event −1 (`group_process_events_29_to_41`). A successful move sets `g_disabled_movement_ticks` to the maximum movement ticks of the living champions.
 
 `command_turn_party` turns the party. On stairs it takes the stairs. It removes the party from the square sensors before the turn and adds it after the turn.
 
@@ -514,7 +513,7 @@ Per-action tables (44 bytes each, indexed by action):
 | `0x103f88` | `g_action_skill_index` | Skill that the action trains. |
 | `0x103fb4` | `g_action_experience_gain` | Experience gain. |
 
-`menus_is_action_performed(champion, action)` runs the action against the square in the champion direction. Action indices: 2 CHOP, 4 BLOW HORN, 5 FLIP, 6 PUNCH, 7 KICK, 8 WAR CRY, 9 STAB, 10 CLIMB DOWN, 11 FREEZE LIFE, 13 SWING, 14 STAB, 15 THRUST, 16 JAB, 17 PARRY, 18 HACK, 19 BERZERK, 20 FIREBALL, 21 DISPELL, 22 CONFUSE, 23 LIGHTNING, 24 DISRUPT, 25 MELEE, 27 INVOKE, 28 SLASH, 29 CLEAVE, 30 BASH, 31 STUN, 32 SHOOT, 33 SPELLSHIELD, 34 FIRESHIELD, 35 FLUXCAGE, 36 HEAL, 37 CALM, 38 LIGHT, 39 WINDOW, 40 SPIT, 41 BRANDISH, 42 THROW, 43 FUSE. Melee actions on a closed door bash the door (`group_is_door_destroyed_by_attack` (`0x11d5e0`)). Other melee actions call `menus_is_melee_action_performed`. The result goes into `g_action_damage`: −1 "can't reach", −2 "need ammo", otherwise damage. `menus_refresh_action_area` draws it with `menus_draw_action_damage`. After the action the function disables the champion action, decrements stamina, and adds experience.
+`menus_is_action_performed(champion, action)` runs the action against the square in the champion direction. Action indices: 2 CHOP, 4 BLOW HORN, 5 FLIP, 6 PUNCH, 7 KICK, 8 WAR CRY, 9 STAB (dagger), 10 CLIMB DOWN, 11 FREEZE LIFE, 13 SWING, 14 STAB (skill 5), 15 THRUST, 16 JAB, 17 PARRY, 18 HACK, 19 BERZERK, 20 FIREBALL, 21 DISPELL, 22 CONFUSE, 23 LIGHTNING, 24 DISRUPT, 25 MELEE, 27 INVOKE, 28 SLASH, 29 CLEAVE, 30 BASH, 31 STUN, 32 SHOOT, 33 SPELLSHIELD, 34 FIRESHIELD, 35 FLUXCAGE, 36 HEAL, 37 CALM, 38 LIGHT, 39 WINDOW, 40 SPIT, 41 BRANDISH, 42 THROW, 43 FUSE. Melee actions on a closed door bash the door (`group_is_door_destroyed_by_attack` (`0x11d5e0`)). Other melee actions call `menus_is_melee_action_performed`. The result goes into `g_action_damage`: −1 "can't reach", −2 "need ammo", otherwise damage. `menus_refresh_action_area` draws it with `menus_draw_action_damage`. After the action the function disables the champion action, decrements stamina, and adds experience.
 
 `menus_is_group_frightened_by_action` (WAR CRY, BLOW HORN, CONFUSE, CALM, BRANDISH) compares `random16() % (skill + bonus)` with the creature fear resistance. A frightened group flees for `(16 − fear) × 4 / movement_ticks`.
 

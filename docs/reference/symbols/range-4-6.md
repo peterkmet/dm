@@ -69,7 +69,7 @@ Record fields that the code in these ranges uses (word at offset 2 unless stated
 |---|---|
 | 5–7 | Square type: 0 wall, 1 corridor, 2 pit, 3 stairs, 4 door, 5 teleporter, 6 fake wall. |
 | 4 | The square has a thing list. |
-| 0–3 | Type-specific flags. Wall: random ornament allowed for each side. Pit: bit 3 open, bit 0 invisible. Stairs: bit 3 orientation, bit 2 up. Door: bits 0–2 state (0 open … 4 closed, 5 destroyed), bit 3 orientation. Teleporter: bit 3 open, bit 2 visible. Fake wall: bit 2 open, bit 0 imaginary, bit 3 random ornament allowed. |
+| 0–3 | Type-specific flags. Wall: random ornament allowed for each side. Pit: bit 3 open, bit 0 imaginary, bit 2 invisible. Stairs: bit 3 orientation, bit 2 up. Door: bits 0–2 state (0 open … 4 closed, 5 destroyed), bit 3 orientation. Teleporter: bit 3 open, bit 2 visible. Fake wall: bit 2 open, bit 0 imaginary, bit 3 random ornament allowed. |
 
 `get_square(x, y)` returns the byte for a square on the map. For a square outside the map, it returns a wall byte. The wall gets an "ornament allowed" bit when the adjacent square on the map is a corridor or a pit: `2` above row 0, `8` below the last row, `4` left of column 0, `1` right of the last column.
 

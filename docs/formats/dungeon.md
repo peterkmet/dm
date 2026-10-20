@@ -165,7 +165,7 @@ The function reads all three tables from the KAOS image. The single characters f
 
 ## Differences from dmcsb
 
-`dmcsb` 0.2.1 agrees on the map count, map sizes and offsets, all square bytes, thing counts, and thing lists. It differs on escape code 30: it maps the single-glyph entries to display characters (`?`, `'`) or to an empty string. The original code emits the glyph codes from the KAOS table. `tests/differential/test_dungeon.py` compares `dungeon_decode_text` with the original function in `dmtools.emu` for every text and every mode.
+`dmcsb` (the Dungeon Master tools by Cycl0ne, see the README) 0.2.1 agrees on the map count, map sizes and offsets, all square bytes, thing counts, and thing lists. It differs on escape code 30: it maps the single-glyph entries to display characters (`?`, `'`) or to an empty string. The original code emits the glyph codes from the KAOS table. `tests/differential/test_dungeon.py` compares `dungeon_decode_text` with the original function in `dmtools.emu` for every text and every mode.
 
 ## Tests
 
@@ -178,7 +178,9 @@ The function reads all three tables from the KAOS image. The single characters f
 - An uncompressed copy of `Dungeon.DAT` loads, and a wrong checksum fails.
 - Truncated files, a thing count above the limit, a bad map offset, a bad raw map data size, and a map count of 0 fail. A bad text offset and a small output buffer make `dungeon_decode_text` return 0.
 
-## Deviations
+## Deviations of the port from the original
+
+This list covers every module of the port (coding standard, rule 10.5).
 
 - A creature type beyond the creature table has no attributes (`map_get_creature_attributes`).
 - A new game and a game load start the search for a thing to discard on map 0 for each thing type (`discard_reset`); the original keeps `g_last_discarded_thing_map_index` for the whole run.
@@ -190,7 +192,7 @@ The function reads all three tables from the KAOS image. The single characters f
 - The party on a wall square runs no wall sensor of that square on a move or a turn (`sensor_process_thing_change`); only the walk through walls cheat of the advanced mode puts the party there, the original never does.
 - With the walk through walls cheat of the advanced mode on, a door that closes on the party goes back open as in the original, but the party takes no door damage (`process_door_animation`).
 - The spell experience squares the required level of the spell (`magic.c`); the original squares an undefined register.
-- The endgame screens show the credits without the palette fade; the original fades the palette.
+- The endgame screens (THE END and the credits after it) do not fade the palette; the original fades it.
 
 ## Structure differences from the original
 

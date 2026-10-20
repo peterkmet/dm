@@ -88,11 +88,11 @@ git config blame.ignoreRevsFile .git-blame-ignore-revs
 6. Commit `CHANGELOG.md`, `pyproject.toml`, and `uv.lock` with the message `docs: version X.Y.Z`.
 7. `git tag vX.Y.Z`.
 8. Push the branch and the tag.
-9. Write the notes file: the `CHANGELOG.md` section of the version.
+9. Copy the `CHANGELOG.md` section of the version into `build/notes.md`.
 10. Create the release:
 
     ```sh
-    gh release create vX.Y.Z build/DMMac-macos-arm64.zip build/DMMac-windows-x64.zip --notes-file <notes>
+    gh release create vX.Y.Z build/DMMac-macos-arm64.zip build/DMMac-windows-x64.zip --notes-file build/notes.md
     ```
 
 ### Replace the zips of a release
@@ -107,5 +107,5 @@ A change that keeps the version number replaces the zips of its release:
    ```sh
    git tag -f vX.Y.Z && git push -f origin vX.Y.Z
    gh release upload vX.Y.Z build/DMMac-macos-arm64.zip build/DMMac-windows-x64.zip --clobber
-   gh release edit vX.Y.Z --notes-file <notes>
+   gh release edit vX.Y.Z --notes-file build/notes.md
    ```

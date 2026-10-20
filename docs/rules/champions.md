@@ -22,7 +22,7 @@ The port reads all game tables from the KAOS image at run time ([tables.md](tabl
 
 1. The new champion record is cleared. Action is `ACTION_NONE`. The two event indices are −1. Direction is the party direction.
 2. The cell is the first free cell, starting at the party direction and going clockwise.
-3. Food and water are `1500 + random16() & 255` each (two draws).
+3. Food and water are `1500 + (random16() & 255)` each (two draws).
 4. All slots are empty.
 5. The text on the party square gives the name, title, sex, health, stamina, mana, statistics, and experience (`recruit_parse`, [recruit.h](../../src/engine/include/recruit.h)).
 6. The champion becomes the candidate (`g_session.candidate_champion_index`: index, −1 for none). The first champion becomes leader and magic caster.

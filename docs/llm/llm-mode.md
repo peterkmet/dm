@@ -18,7 +18,7 @@ In turn-based mode, a program or an LLM plays the game through a Unix socket. Th
    make
    ```
 
-2. Start the game in turn-based mode. Replace `<socket>` with the socket path. Use `~/.dm/control.sock` to match the default of the MCP server.
+2. Start the game in turn-based mode with the default socket `~/.dm/control.sock`.
 
    ```sh
    build/dm --mode turnbased --control ~/.dm/control.sock
@@ -44,7 +44,7 @@ In turn-based mode, a program or an LLM plays the game through a Unix socket. Th
 
 ## Play Chaos Strikes Back
 
-The CSB files must be in `game-csb/` (see the [manual](../manual.md)). Start the game with `--adventure csb`:
+The Chaos Strikes Back (CSB) files must be in `game-csb/` (see the [manual](../manual.md)). Start the game with `--adventure csb`:
 
 ```sh
 build/dm --adventure csb --mode turnbased --control ~/.dm/control.sock
@@ -113,7 +113,7 @@ An `act` turn does these steps:
 2. It runs the game one tick per frame.
 3. It ends when at least 2 ticks are done and the party can move again (`g_disabled_movement_ticks` is 0). It also ends after 64 ticks, and at once when the game is over.
 
-A `wait` turn runs `ticks` ticks. A game that does not tick ends a turn after 16 frames for each tick of the limit.
+A `wait` turn runs `ticks` ticks. When the game cannot tick (for example a dialog is open), the turn ends after 16 frames per requested tick.
 
 During a turn, each frame is a tick: the game does not wait 12 frames for input. The game rules do not change.
 

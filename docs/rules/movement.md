@@ -163,7 +163,7 @@ The trigger rule: XOR the value with the revert bit (byte 5 bit 5). Effect 3 (ho
 
 ### Wall click
 
-`sensor_is_wall_triggered(x, y, cell)` handles a click on the front wall cell with the leader hand. The command step calls it. It returns 1 when a sensor triggered. Only sensors in the clicked cell count. Without a leader, only type 127 counts. `g_leader_empty_handed` tells if the leader hand is empty.
+`sensor_is_wall_triggered(x, y, cell)` handles a click on the front wall cell with the leader hand. The command step calls it. It returns 1 when a sensor triggered. Only sensors in the clicked cell count. Without a leader, only type 127 counts. `g_leader_empty_handed` is true when the leader hand is empty.
 
 | Type | Rule |
 |---|---|
