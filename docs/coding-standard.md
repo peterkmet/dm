@@ -23,7 +23,7 @@ this document names.
 3. Only `platform/` includes SDL and operating system headers (`_WIN32`, POSIX, `<sys/...>`, `<unistd.h>`,
    `<dirent.h>`). The other layers reach the operating system through the hooks of `data/os.h`, which
    `platform/` and the tests set. [platform]
-4. Game rules in `engine/` do not call the user interface: they set redraw flags (`g_redraw`,
+4. Game rules in `engine/` do not call the user interface. They set redraw flags (`g_redraw`,
    `CHAMPION_ATTR_*`), and they call a hook that `ui/` sets for an event that must run the user interface
    inside the rule (`g_endgame_sensor_hook`, `g_sound_play_hook`). A NULL hook skips the call. [layer]
 5. `ui/` changes game state only through engine functions. Exceptions: redraw flags and hooks. [engine-write]
@@ -31,7 +31,7 @@ this document names.
    [platform]
 7. A module is one `.c` file with one public header. A module with several `.c` files has one public header
    and one `<module>_internal.h` for the shared private declarations; both carry the prefix of the module.
-   The entry point `platform/main.c` is the one exception: it has no header. [module]
+   The entry point `platform/main.c` is the one exception. It has no header. [module]
 8. Each header states its prefixes in one comment line, `/* Prefixes: rec_ */`. A prefix belongs to one
    module; no prefix starts with the prefix of another module. [prefix]
 9. `src/third_party/` is vendored code, the one folder of `src/` outside the layers. The folder is outside every check,
@@ -107,7 +107,7 @@ this document names.
    shift by a `*_SHIFT` constant of another module. [packed]
 10. The byte order helpers `be16`, `wr16`, `be32`, `wr32` are `static inline` functions in `data/bytes.h`
     only. [byteorder]
-11. The record layout belongs to `engine/record.h` and `engine/record.c`: no other file indexes a record
+11. The record layout belongs to `engine/record.h` and `engine/record.c`. No other file indexes a record
     (`REC(`) or `g_dungeon_map_data[`. [record]
 12. Read game data at run time; do not copy a game table into the source. Four tables stay in the source: the soundtrack tables of the other versions (not in the game files),
     the APPB address tables of the CSB image build (`data/csb_image.c`, `data/csb_text.c`), the CRC-32 table of a
@@ -151,7 +151,7 @@ this document names.
 
 2. Every truth value is `bool`: predicates, locals, parameters, return values. A flag in a game record or a
    save file keeps its stored type. [bool]
-3. No `long`: it has 32 bits on Windows and 64 bits on macOS. A value wider than `int` uses a fixed-width
+3. No `long`, because it has 32 bits on Windows and 64 bits on macOS. A value wider than `int` uses a fixed-width
    type with the `<inttypes.h>` formats. [review only]
 4. A cast is allowed only where it changes the result (16-bit wrap, sign, truncation), with a short comment
    when the reason is not obvious. No cast that only repeats the 68000 operand size, no double integer cast.
@@ -226,7 +226,7 @@ this document names.
 1. Each non-trivial function has a one-line comment that tells what it does in game terms: a public function
    in the header above its prototype, a static function above its definition, never both. A one-line record
    accessor needs none. [comment]
-2. A comment does not repeat the code, and does not name an original symbol, address or event number: it
+2. A comment does not repeat the code, and does not name an original symbol, address or event number. It
    names the constant (`EVENT_ENABLE_CHAMPION_ACTION`). The original name belongs in
    `docs/reference/kaos-symbols.csv`. [event-comment; the rest review only]
 3. A kept quirk of the original and a fixed bug of the original get a short comment at the place, and an
@@ -240,7 +240,7 @@ this document names.
 1. `data/` and `engine/` never write to stderr and never exit. They log through `g_os_log_hook` and fail
    through `g_os_fatal_hook` of `data/os.h`; `data/os.c` holds the default (stderr and `exit`), `platform/`
    and the tests replace it; `os_fatal` never returns. [platform]
-2. A loader returns `false` on a bad file. An image address outside the image is a port bug: `os_fatal`.
+2. A loader returns `false` on a bad file. An image address outside the image is a port bug and calls `os_fatal`.
    [review only]
 3. An allocation failure aborts. [review only]
 4. A struct field that points to owned memory says so in its comment; a module that opens or allocates has a

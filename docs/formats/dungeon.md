@@ -13,7 +13,7 @@ if (!dungeon_load("game/Dungeon.DAT"))
     return 1;
 ```
 
-`dungeon_load` loads the dungeon for a new game. It returns false on error. Call `tables_load("game/KAOS.FTL")` (`tables.h`) first: the loader and `dungeon_decode_text` read the new-game extras table (`0x101058`) and the escape tables (`0x1016ea`, `0x1017ea`, `0x10182a`) from the KAOS image. Without KAOS, `dungeon_load` returns false. A new call frees the previous dungeon.
+`dungeon_load` loads the dungeon for a new game. It returns false on error. Call `tables_load("game/KAOS.FTL")` (`tables.h`) first, because the loader and `dungeon_decode_text` read the new-game extras table (`0x101058`) and the escape tables (`0x1016ea`, `0x1017ea`, `0x10182a`) from the KAOS image. Without KAOS, `dungeon_load` returns false. A new call frees the previous dungeon.
 
 ## Compressed file
 
@@ -187,7 +187,7 @@ This list covers every module of the port (coding standard, rule 10.5).
 - An icon below the first icon sheet draws empty (`ui_extract_icon`); the original reads the sheet table before its first entry.
 - The entrance doors open over the view of the start square; the original draws a made-up corridor (`entrance_open_doors`).
 - The panel with the eye pressed keeps the leader hand object name; the original clears it until the eye is released (`panel_draw_eye`).
-- In the turn-based mode, REINCARNATE keeps the old name: the protocol has no name entry (`champion_click_rebirth_panel`).
+- In the turn-based mode, REINCARNATE keeps the old name, because the protocol has no name entry (`champion_click_rebirth_panel`).
 - After a refused duplicate name, the name entry puts the input at the end of the name and clears the title (`champion_rename_ok`); the original points the input at the name but keeps the title state.
 - The party on a wall square runs no wall sensor of that square on a move or a turn (`sensor_process_thing_change`); only the walk through walls cheat of the advanced mode puts the party there, the original never does.
 - With the walk through walls cheat of the advanced mode on, a door that closes on the party goes back open as in the original, but the party takes no door damage (`process_door_animation`).

@@ -54,7 +54,7 @@ Both handlers run as interrupt servers. `A1` points to `g_interrupt_data`, which
 
 `vblank_interrupt_handler` (`INTB_VERTB`):
 
-1. Increments `g_vblank_counter`. When it exceeds `g_wait_for_input_max_vblank_count`, it sets `g_stop_waiting_for_input`. This sets the game speed: one game tick takes at least 12 frames when no input arrives (about 4 ticks per second on PAL).
+1. Increments `g_vblank_counter`. When it exceeds `g_wait_for_input_max_vblank_count`, it sets `g_stop_waiting_for_input`. This sets the game speed. One game tick takes at least 12 frames when no input arrives (about 4 ticks per second on PAL).
 2. When `g_display_active` is set:
    - `g_sprite_palette_pending`: writes 16 words from `g_sprite_palette` to `COLOR16`–`COLOR31`.
    - `g_top_palette_pending`: writes 16 colors from `g_top_palette` into the first copper list (the value word of each `MOVE`, offsets 2, 6, ..., `0x3e`) and copies them to `g_current_palette[0..15]`.

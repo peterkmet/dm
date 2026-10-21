@@ -23,7 +23,7 @@ This page names a header with its layer: `engine/game.h` is `src/engine/include/
 
 - `data/` owns the file formats, the engine image and its tables, and the run configuration. It reaches the
   operating system only through the hooks of `data/os.h`.
-- `engine/` owns the game rules and the game state. It does not call the user interface: it sets redraw flags
+- `engine/` owns the game rules and the game state. It does not call the user interface. It sets redraw flags
   and calls a hook.
 - `ui/` owns the screens, the dungeon view, the input mapping and the audio output. It changes game state only
   through engine functions, except the redraw flags and the hooks.
@@ -147,7 +147,7 @@ The modules `advanced`, `automap`, `cheats`, `music`, `optmenu`, `rows`, and `sl
 | `platform/scale.h` | `scale2x` `scale3x` `output_` | The pixel-art upscale filters and the placement of the game screen in the window. |
 | `platform/transport.h` | `transport_` | The control socket: a Unix domain socket with one request line in and one reply line out (POSIX). |
 
-`platform/main.c` has no header: it is the entry point. `platform/transport_none.c` is the build of
+`platform/main.c` has no header, because it is the entry point. `platform/transport_none.c` is the build of
 `transport.h` without a socket (Windows).
 
 ## The frame loop
@@ -205,7 +205,7 @@ In turn-based mode a program player plays the game over a Unix domain socket. Th
 3. `control_handle_line` (`control/control.c`) answers the request immediately, or it starts a turn.
 4. While `control_is_turn_pending()` is true, the frame loop runs game frames and ticks.
 
-Between two turns the game time stands still: `app_run_frame` does not call `gameloop_run_frame`. The turn
+Between two turns the game time stands still, because `app_run_frame` does not call `gameloop_run_frame`. The turn
 rules (when a turn ends, what the reply tells) are in `control/turn.c`. The game as JSON is in
 `control/state_json.c`.
 
@@ -246,7 +246,7 @@ A hook is a function pointer that a higher layer sets, so that a lower layer can
 - `state_get_string` (`control/state_json.h`) gives the state, the view or the map as JSON.
 - The tests set `g_frame_hook` to run the frames of a sequence, for example in
   `tests/differential/test_csb_ending.py`.
-- The tests set the os hooks: `dmtest.lib.set_folder_hooks` sets the folder hooks.
+- The tests set the os hooks. `dmtest.lib.set_folder_hooks` sets the folder hooks.
 - The golden snapshots in `tests/golden/` hash the save file, the view, the rules, the screens and the
   protocol replies.
 - The differential tests in `tests/differential/` run the same input through the port and the original in the

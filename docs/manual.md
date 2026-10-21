@@ -1,6 +1,6 @@
 # Player manual
 
-How to run DMMac and how to play it. The repository has no game files: you supply your own disk images.
+How to run DMMac and how to play it. The repository has no game files. You supply your own disk images.
 
 ## Run the game
 
@@ -22,7 +22,7 @@ uv run dm-extract "<disk A>.adf" game-csb
 uv run dm-extract "<disk B>.adf" game-csb/disk-b
 ```
 
-The two Chaos Strikes Back (CSB) disks are optional. Each disk needs its own folder: the disks have files with the same names.
+The two Chaos Strikes Back (CSB) disks are optional. Each disk needs its own folder, because the disks have files with the same names.
 
 ## Options
 
@@ -87,7 +87,7 @@ The game saves to `DMGAME.DAT` in `game/`; Chaos Strikes Back saves to `CSBGAME.
 The advanced mode has 8 save slots. Slot 1 is the file of the other modes (`DMGAME.DAT`); slots 2 to 8 are `DMGAME2.DAT` to `DMGAME8.DAT`, each with its own backup. CSB uses `CSBGAME*.DAT` in the same way.
 
 - The save dialog (the save icon, Ctrl+S) shows LOAD, SAVE, CONTINUE, and QUIT. LOAD and SAVE open the slot list: one row per slot with the level and the date of the file, `EMPTY`, or `DAMAGED`. Click a row to load or save; CANCEL or Escape goes back.
-- A save over a used slot asks nothing: the backup of the slot keeps the previous game.
+- A save over a used slot asks nothing. The backup of the slot keeps the previous game.
 - RESUME at the entrance opens the slot list; the last row is QUICK, the quick save.
 - RESTART THIS GAME loads the slot of the last save or load.
 

@@ -104,7 +104,7 @@ An `act` turn does these steps:
 
 A `wait` turn runs `ticks` ticks. When the game cannot tick (for example a dialog is open), the turn ends after 16 frames per requested tick.
 
-During a turn, each frame is a tick: the game does not wait 12 frames for input. The game rules do not change.
+During a turn, each frame is a tick. The game does not wait 12 frames for input. The game rules do not change.
 
 ### Save and load
 
@@ -450,4 +450,4 @@ The commands `save`, `load`, and `new_game` use `startend_save_dir()` and `gamel
 
 - In the turn-based mode the automap and the quick save keys do not work, because the keyboard does not control the game. `get_map` gives the automap.
 - Throwing objects has no action.
-- `recruit` with `reincarnate` keeps the old name and title: the turn-based mode has no name entry.
+- `recruit` with `reincarnate` keeps the old name and title, because the turn-based mode has no name entry.

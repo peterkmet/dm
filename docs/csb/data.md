@@ -224,7 +224,7 @@ The port plays `ANIM.DAT` after NEW ADVENTURE (`play_csb_intro` in `src/platform
 
 `ANIM.DAT` has 851 frames, 10808 vertical blanks (216 s). After the last frame or a stop (`BR` 1), the cleanup fades the music: volume 29 down to 1, one step every 3 ticks (`0x102e4c`), then the music stops.
 
-A stop is not immediate in the original: the shown frame stays for the rest of its time, one more frame shows for its full time, and then the music fades for 87 ticks (1.7 s). Frames of the title pictures last up to 536 ticks (10.7 s). The port in vanilla keeps only the shown frame for the rest of its time, then fades the music; in the advanced mode it stops immediately (`anim_set_stop_at_once`), then fades the music.
+A stop is not immediate in the original. The shown frame stays for the rest of its time, one more frame shows for its full time, and then the music fades for 87 ticks (1.7 s). Frames of the title pictures last up to 536 ticks (10.7 s). The port in vanilla keeps only the shown frame for the rest of its time, then fades the music; in the advanced mode it stops immediately (`anim_set_stop_at_once`), then fades the music.
 
 `NAKED.AMG` is not a tracker or MIDI file. All words are big-endian:
 

@@ -269,7 +269,7 @@ Recorded in [dungeon.md](../formats/dungeon.md#deviations-from-the-original).
 - `map_get_square`, `map_is_square_open`, `map_get_square_first_thing`, `map_get_stairs_exit_direction`, and `map_get_level_change_location` give the same results as the original functions in `dmtools.emu` on maps 0–2, including the squares around the map.
 - Start position from the dungeon header. A move into a wall does not move the party. A corridor move follows the step tables of KAOS. Turns change the direction and the champion cells. A turn on stairs takes the stairs.
 - Stairs on map 0 at (3, 15) lead to map 1 at (3, 1), direction 0.
-- The floor sensor at map 0 (6, 9) opens the door at (5, 9): the door state is 4, 3, 2, 1, 0 on the ticks after the move.
+- The floor sensor at map 0 (6, 9) opens the door at (5, 9). The door state is 4, 3, 2, 1, 0 on the ticks after the move.
 - A door event (type 10, toggle) opens and closes a door.
 - The teleporter at map 1 (30, 3) moves the party to (30, 1) with direction 0.
 - The pit at map 1 (7, 8) drops the party to map 2 and adds pending damage to the champion.
