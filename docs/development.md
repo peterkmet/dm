@@ -57,6 +57,20 @@ Some tests need files that the repository does not have. Pytest skips them with 
 
 Each test module owns its state, so the tests run in any order and in parallel.
 
+### Test seams
+
+- `build/libdm.dylib` holds every layer except the SDL files: `platform/main.c`, `platform/app.c`,
+  `platform/platform.c` and `platform/debug_view.c` (`SDL_SOURCES` in the `Makefile`). Each test module loads
+  its own copy with `dmtest.lib.load_lib()` (`tests/dmtest/lib.py`) and calls the C functions with ctypes.
+- `state_get_string` (`control/state_json.h`) gives the state, the view or the map as JSON.
+- The tests set `g_frame_hook` to run the frames of a sequence, for example in
+  `tests/differential/test_csb_ending.py`.
+- The tests set the os hooks. `dmtest.lib.set_folder_hooks` sets the folder hooks.
+- The golden snapshots in `tests/golden/` hash the save file, the view, the rules, the screens and the
+  protocol replies.
+- The differential tests in `tests/differential/` run the same input through the port and the original in the
+  emulator and compare the state.
+
 To hide the format commit in `git blame`:
 
 ```sh
@@ -77,6 +91,16 @@ git config blame.ignoreRevsFile .git-blame-ignore-revs
 
 - `make format` formats the C files. Run it before a commit.
 - `make check` runs `ruff`, `tests/standard` (with the format check), and the full suite.
+
+## Add a game rule
+
+1. Find the original function in [the KAOS symbol table](reference/kaos-symbols.csv).
+2. Write the rule in the engine module that owns the data.
+3. Name every value (rule 3.1 of [the coding standard](coding-standard.md)).
+4. Change the user interface only through the redraw flags or a hook.
+5. Write a differential test against the emulator. When the emulator cannot reach the case, write a golden
+   scenario.
+6. Run `make check`.
 
 ## Release
 

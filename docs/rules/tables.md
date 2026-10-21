@@ -220,11 +220,3 @@ The action names come from graphic 699, not from KAOS.
 ## Fixed possessions
 
 40 words at `0x101c10`. The block holds several lists, each ended by a 0 word. Each word is an object info index. Bit 15 marks a possession that the creature drops at random. The creature drop code selects the list start for each creature type.
-
-## Not in this module
-
-These tables are in the data region, but other modules own them:
-
-- Graphics and view tables: object, projectile, and creature aspects, ornament coordinate sets, palette changes.
-- Input tables: mouse and keyboard input, movement arrows.
-- Dungeon format tables: thing data byte counts, new-game extra thing counts, direction steps.

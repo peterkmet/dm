@@ -30,13 +30,9 @@ Usage: dm [options]
   --help             print this help
 ```
 
-- `--adventure` and `--mode` skip the start screens.
-- `--data DIR` selects the data folder of the selected adventure instead of `game/` or `game-csb/`.
-- `--saves DIR` puts the save files, the quick save, and `SETTINGS.TXT` in `DIR` instead of the data folder. The folder must exist.
-- `--control PATH` selects the socket of the turn-based mode. The default is `~/.dm/control.sock`.
-- `--filter` selects the pixel-art upscale filter. The advanced mode takes the filter of the options menu. The image is sharpest when the window scale is a multiple of the filter factor.
-- `--frames N` quits after N frames (50 frames per second).
-- `--view` shows the dungeon view with free movement through walls; `--show N` shows one graphic. Both are developer tools.
+- `--saves DIR` also holds the quick save and `SETTINGS.TXT`. The folder must exist.
+- `--control` defaults to `~/.dm/control.sock`.
+- The advanced mode takes the filter of the options menu, not `--filter`. The image is sharpest when the window scale is a multiple of the filter factor.
 - The environment variable `DM_AUTO_ENTER=1` skips the start screens and the entrance. The tests use it.
 
 ## Start screens

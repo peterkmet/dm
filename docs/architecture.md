@@ -209,6 +209,30 @@ Between two turns the game time stands still, because `app_run_frame` does not c
 rules (when a turn ends, what the reply tells) are in `control/turn.c`. The game as JSON is in
 `control/state_json.c`.
 
+### The C API of the control layer
+
+`control/control.h` (no socket, no SDL, in `libdm`):
+
+| Function | Purpose |
+|---|---|
+| `bool control_handle_line(const char *line, Json *reply)` | Answers one request line. Returns true when `reply` holds the answer, false when a turn started. |
+| `bool control_end_turn(Json *reply)` | Advances the pending turn by one frame. Returns true when the request ended and `reply` holds the answer. |
+| `bool control_is_turn_pending(void)` | True while a turn runs. |
+| `void control_drop_client(void)` | The client is gone: a pending turn ends without a reply. |
+
+`platform/transport.h` (plain POSIX; `transport_none.c` replaces it on Windows):
+
+| Function | Purpose |
+|---|---|
+| `bool transport_is_available(void)` | True where the control socket exists (macOS). |
+| `bool transport_open(const char *path)` | Listens on the socket. Replaces an old socket file. Returns false on an error. |
+| `void transport_poll(void)` | Call once per frame. Advances a pending turn, accepts a client, answers requests. |
+| `void transport_close(void)` | Closes the sockets and removes the socket file. |
+
+The commands `save`, `load`, and `new_game` use `startend_save_dir()` and `gameloop_get_data_dir()`. `gameloop_load_data` sets both directories.
+
+`control/state_json.h` (in `libdm`, no SDL): `state_write_state`, `state_write_view`, `state_write_map` append one JSON object to a `Json` buffer. `state_get_string(part)` returns a new string. Release it with `free`.
+
 ## Global state
 
 The globals of the game:
@@ -237,27 +261,3 @@ A hook is a function pointer that a higher layer sets, so that a lower layer can
 | `g_os_make_folder_hook` | `data/os.h` | `platform/app.c`, the tests | `os_make_folder` (`data/os.c`) | the folder is not made; the call returns false |
 | `g_os_list_folder_hook` | `data/os.h` | `platform/app.c`, the tests | `os_list_folder` (`data/os.c`) | no file is listed |
 | `g_os_file_time_hook` | `data/os.h` | `platform/app.c` | `os_get_file_time` (`data/os.c`) | the slot list shows no file time |
-
-## Test seams
-
-- `build/libdm.dylib` holds every layer except the SDL files: `platform/main.c`, `platform/app.c`,
-  `platform/platform.c` and `platform/debug_view.c` (`SDL_SOURCES` in the `Makefile`). Each test module loads
-  its own copy with `dmtest.lib.load_lib()` (`tests/dmtest/lib.py`) and calls the C functions with ctypes.
-- `state_get_string` (`control/state_json.h`) gives the state, the view or the map as JSON.
-- The tests set `g_frame_hook` to run the frames of a sequence, for example in
-  `tests/differential/test_csb_ending.py`.
-- The tests set the os hooks. `dmtest.lib.set_folder_hooks` sets the folder hooks.
-- The golden snapshots in `tests/golden/` hash the save file, the view, the rules, the screens and the
-  protocol replies.
-- The differential tests in `tests/differential/` run the same input through the port and the original in the
-  emulator and compare the state.
-
-## How to add a game rule
-
-1. Find the original function in [the KAOS symbol table](reference/kaos-symbols.csv).
-2. Write the rule in the engine module that owns the data.
-3. Name every value (rule 3.1 of [the coding standard](coding-standard.md)).
-4. Change the user interface only through the redraw flags or a hook.
-5. Write a differential test against the emulator. When the emulator cannot reach the case, write a golden
-   scenario.
-6. Run `make check`.
