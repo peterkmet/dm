@@ -54,4 +54,4 @@ The two roles are agent definitions in the repository:
 
 - The main session starts `dm-coordinator` with the first session number of the batch. When the batch ends, it starts the next `dm-coordinator`.
 - The coordinator starts one `dm-player` per session with the session number, the goal, and the call limit.
-- When the coordinator cannot start a subagent, it returns at once with the task message of the next player. The main session then starts the player, and gives the report to the next coordinator.
+- When the coordinator cannot start a subagent, it returns immediately with the task message of the next player. The main session then starts the player, and gives the report to the next coordinator.

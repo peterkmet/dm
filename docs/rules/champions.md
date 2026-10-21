@@ -20,7 +20,7 @@ The port reads all game tables from the KAOS image at run time ([tables.md](tabl
 
 `champion_add_candidate_to_party(portrait)` runs when the party clicks a mirror (sensor type 127). It does nothing when the leader holds an object or the party has 4 champions.
 
-1. The new champion record is cleared. Action is `ACTION_NONE`. The two event indices are -1. Direction is the party direction.
+1. The function clears the new champion record. Action is `ACTION_NONE`. The two event indices are -1. Direction is the party direction.
 2. The cell is the first free cell, starting at the party direction and going clockwise.
 3. Food and water are `1500 + (random16() & 255)` each (two draws).
 4. All slots are empty.

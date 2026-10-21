@@ -105,7 +105,7 @@ One square chain (`follow_square_chain`) serves every mover kind (`MOVER_PARTY`,
 | Teleporter | projectile | Any scope except 1 (creatures only). The projectile rotates its flight direction and its cell. |
 | Teleporter | all | A closed teleporter, another scope, or a teleporter that points to its own square ends the loop. |
 | Pit | all | An open pit takes a thing that does not levitate one level down (`map_get_level_change_location(place, 1)`). |
-| Pit | party | `champion_fall_damage(uses_rope)`: `champion_damage_all(20, 0x30, 2)` and sound 7, or with the rope a stamina loss of `load * 25 / maximum_load + 1` for each living champion. Only the first pit of the chain uses the rope. |
+| Pit | party | `champion_fall_damage(uses_rope)` ([champions.md](champions.md#damage)). Only the first pit of the chain uses the rope. |
 | Pit | group | `group_is_killed_by_fall`: each creature takes `FALL_DAMAGE` (20) on the source map. Creatures that died drop their fixed possessions on the destination. When all creatures die, the loop ends. |
 | Stairs | object, group | Down stairs (bit 2 clear) go one level down; up stairs do not change the level. The thing steps out in the exit direction and takes the cell on the side it came from, next to the stairs. |
 | Stairs | party, projectile | The loop ends. |
@@ -115,7 +115,7 @@ After the loop:
 
 - The `MoveDestination` (when the caller gives one) holds the map, the square, the cell, and the projectile direction (the original `g_move_result_*` globals).
 - A party move to a new square adds a scent. The scent list keeps 24 entries. `party_add_scent_strength` updates the strengths. The original compares scent `i` with strength `count - 1 - i`. The port keeps this.
-- A group that died in a fall, or that reached a map that does not allow its creature type, drops its possessions and is deleted (`group_remove_after_move`).
+- A group that died in a fall, or that reached a map that does not allow its creature type, drops its possessions, and `group_remove_after_move` deletes it.
 - A move to the same square does nothing when the party direction or the cell of an object or a group did not change.
 - The thing leaves the source square with `sensor_process_thing_change(..., 0)`. A levitating object (projectile, explosion) only unlinks.
 - The party on a new map sets `g_session.new_party_map`. The party on the same map enters the floor sensors. An object enters the square with its sensors. A projectile only links.
@@ -191,7 +191,7 @@ The door state is bits 0–2 of the door square: 0 open, 1–3 partly closed, 4 
 - A closing door on the party square (state not 0) opens fully when the party has champions, damages the party (`champion_damage_all(5, 4, 2)`, sound 15), and tries again at time + 2.
 - A closing door with a group that is not non-material (creature attribute bit 6) goes back one step when the creature height is at most the state, plays sound 4, and tries again at time + 2. The height is 1, or creature attribute bits 7–8 for a door with bit 5 of byte 3.
 - Event 2 (door destruction): the state becomes 5.
-- `event_is_door_destroyed(at, attack, magic, ticks)` (`0x11d5e0`): force (`magic` false) needs door word bit 8. Magic needs door word bit 7. The attack must reach the door defense (low byte of `g_current_map_door_info[door type]`). The door must be closed (state 4). `ticks` 0 destroys the door at once. Otherwise event 2 destroys it after `ticks`. Returns true when the door breaks.
+- `event_is_door_destroyed(at, attack, magic, ticks)` (`0x11d5e0`): force (`magic` false) needs door word bit 8. Magic needs door word bit 7. The attack must reach the door defense (low byte of `g_current_map_door_info[door type]`). The door must be closed (state 4). `ticks` 0 destroys the door immediately. Otherwise event 2 destroys it after `ticks`. Returns true when the door breaks.
 
 ## Pits, teleporters, and fake walls
 
@@ -260,9 +260,7 @@ Movement rules that the event table does not cover:
 
 ## Deviations from the original
 
-- Event 65 stops at the end of the thing list. The original stops only at `0xffff`.
-- `sensor_process_rotation_effect` stops when the cell has no sensor. The original reads past the list.
-- Wall sensor type 16 does not exchange when the square has no object. The original puts `0xfffe` into the leader hand.
+Recorded in [dungeon.md](../formats/dungeon.md#deviations-from-the-original).
 
 ## Tests
 

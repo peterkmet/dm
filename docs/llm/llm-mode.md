@@ -100,7 +100,7 @@ An `act` turn does these steps:
 
 1. It gives the input as mouse clicks and keys to the command queue (`command.h`). This is the same path as the input of a player.
 2. It runs the game one tick per frame.
-3. It ends when at least 2 ticks are done and the party can move again (`g_disabled_movement_ticks` is 0). It also ends after 64 ticks, and at once when the game is over.
+3. It ends when at least 2 ticks are done and the party can move again (`g_disabled_movement_ticks` is 0). It also ends after 64 ticks, and immediately when the game is over.
 
 A `wait` turn runs `ticks` ticks. When the game cannot tick (for example a dialog is open), the turn ends after 16 frames per requested tick.
 

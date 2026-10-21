@@ -64,18 +64,7 @@ All other items in 0–726 are byte-identical.
 
 ### Port decoding test
 
-A check loads `build/libdm.dylib` with `ctypes`, calls `gfx_open`, and calls `gfx_load_bitmap` for every item. Output:
-
-```text
-DM gfx_open -> 749
- decoded 731 failed 18 [697, 698, 713, ..., 727, 748]
-CSB gfx_open -> 728
- decoded 709 failed 19 [697, 698, 699, 700, 713, ..., 727]
-```
-
-The failed items have fewer than 4 bytes (empty or 2-byte items). They are not bitmaps. In both files, the decoded width and height equal the header dimensions of each item.
-
-A check compares the port pixels with `dmcsb.graphics.decode_img1` for the 673 CSB image items (0–670, 676, 686). All 673 are equal.
+A check decodes every item of both files with `gfx_load_bitmap`: the decoded width and height equal the header dimensions, and the 673 CSB image items (0–670, 676, 686) equal the `dmcsb` pixels. The items with fewer than 4 bytes are not bitmaps.
 
 Result: `gfx_expand` decodes the CSB items without a CSB branch.
 
@@ -229,7 +218,7 @@ The port plays `ANIM.DAT` after NEW ADVENTURE (`play_csb_intro` in `src/platform
 |---|---|---|
 | `SF` | `0x100920` | Payload: a file name (`SOUND/TELE2.amg`). The file is a sample: length word, signed 8-bit data. It goes into the `SD` sample table; a file that cannot be read keeps its number. AmigaDOS ignores the case of the name; the files on disk are `Sound/tele2.amg`. |
 | `MF` | `0x100a1a` | Payload: a music file name (`MIDI/NAKED.amg`), into the music table. `MD` (`0x100866`) puts its payload into the same table. |
-| `MI` | `0x1008f6` | Plays music number parameter (1-based) at once (`0x101424`). |
+| `MI` | `0x1008f6` | Plays music number parameter (1-based) immediately (`0x101424`). |
 | `SO` | `0x1008a2` | As on disk A (period 650, volumes `(byte + 1) >> 2`). The word after the two volume bytes (`0x1388`) is not read. While the music plays, a sample goes to pair A (channels 3 and 2), and a new sample stops the previous sample. |
 | `DO` | `0x100c4c` | Ends the samples after their cycle. It does not stop the music. |
 
@@ -241,8 +230,7 @@ and sets the counter to its time. After a stop the loop waits for the counter ag
 music. So a click keeps the shown frame for the rest of its time, shows one more frame for its full time, and then
 fades the music for 87 ticks (1.7 s). `ANIM.DAT` has frames of up to 536 ticks (10.7 s; the title pictures of the
 first minute). The port stops after the rest of the shown frame and does not show the next frame; then it fades
-the music as in the original. Measured in the port: a click 8.6 s before the end of a long frame starts
-the prison 10.3 s later; a click in a short frame, 1.9 s later. Loading the prison takes 30 ms. In the advanced mode the port stops at once (`anim_set_stop_at_once`), then fades the music.
+the music as in the original. In the advanced mode the port stops immediately (`anim_set_stop_at_once`), then fades the music.
 
 `NAKED.AMG` is not a tracker or MIDI file. All words are big-endian:
 

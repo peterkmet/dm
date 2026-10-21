@@ -232,7 +232,7 @@ When the cursor is on row 3 and a new row is necessary:
 3. Each vblank scrolls the area one pixel line up (`copy_bytes` per plane) and copies one more line of the row bitmap to the bottom. A full row takes 7 frames.
 4. When text arrives after the scroll, `g_message_area_copy_pending` tells the vblank handler to copy the whole row bitmap.
 
-Functions that draw into the area busy-wait until the scroll ends. The port keeps the rows as text and scrolls one row at once, without a wait (`start_new_row`, `src/engine/message.c`).
+Functions that draw into the area busy-wait until the scroll ends. The port keeps the rows as text and scrolls one row immediately, without a wait (`start_new_row`, `src/engine/message.c`).
 
 ## Trackdisk and save disk format (`0x109bb2`–`0x10a3a6`)
 

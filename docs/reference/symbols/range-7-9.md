@@ -184,7 +184,7 @@ Explosion record (thing type 15, 4 bytes): `+0` next thing, `+2` attack (byte), 
 Explosion things are `0xff80 + type`: 0 fireball, 1 slime, 2 lightning bolt, 3 harm non-material, 4 open door, 6 poison bolt, 7 poison cloud, 40 smoke, 50 fluxcage, 100 rebirth step 1, 101 rebirth step 2.
 
 - `projectile_create(thing, x, y, cell, direction, kinetic_energy, attack, step_energy)` gets a free type-14 thing, links it to the square, and adds an event at `game_time + 1`. The event type is 49 when `g_create_launcher_projectile` is set, otherwise 48 (ignore impacts on the first step). Event word at +8: bits 11–15 x, 6–10 y, 4–5 direction, 0–3 step energy. Event word at +6: the projectile thing. When no thing is free, the object drops to the square.
-- `explosion_create(thing, attack, x_combo, y_combo, cell)`: a combo value ≥ 0x100 holds `(x + 1) << 8 | target`. It adds event 25 after 1 tick (5 for rebirth step 1). Fireball and lightning damage the party or the creatures on the square at once: `damage = random((attack >> 1) + 1) + (attack >> 1) + 2`, halved for lightning.
+- `explosion_create(thing, attack, x_combo, y_combo, cell)`: a combo value ≥ 0x100 holds `(x + 1) << 8 | target`. It adds event 25 after 1 tick (5 for rebirth step 1). Fireball and lightning damage the party or the creatures on the square immediately: `damage = random((attack >> 1) + 1) + (attack >> 1) + 2`, halved for lightning.
 - `projectile_process_events_48_to_49` moves a projectile one square per event. Each step subtracts the step energy from kinetic energy and attack. Zero kinetic energy drops the object.
 - `has_impact_occurred(impact_type, x, y, cell, thing)`: impact type -2 = party, -1 = creature, ≥ 0 = wall or door. A flask projectile (potion 0x13 or 0x03) becomes a fireball or poison cloud explosion.
 - `projectile_get_impact_attack` returns the attack value. It sets `g_projectile_attack_type` (1 fire, 3 sharp, 5 magic, 7 lightning) and `g_projectile_poison_attack`.
@@ -205,7 +205,7 @@ ReDMCSB `GROUP.C` tail and `MOVESENS.C` head.
 - `order_attack_cells` copies 4 cells from `g_ordered_cells_to_attack[direction * 2 + side]`.
 - `group_get_champion_damage(group, champion)`: creature attack on a champion. It uses dexterity, luck, the map difficulty (`map[0x0c] >> 4`), invisibility, and the creature wound probabilities. It adds poison.
 - `group_get_melee_action_damage(...)`: champion melee attack on a creature.
-- `group_is_door_destroyed_by_attack(x, y, attack, magic, ticks)`: compares the attack with the door defense (`door_info[type].defense`). It sets the square door state to 5 (destroyed) at once, or adds event 2 (door destruction) after `ticks`.
+- `group_is_door_destroyed_by_attack(x, y, attack, magic, ticks)`: compares the attack with the door defense (`door_info[type].defense`). It sets the square door state to 5 (destroyed) immediately, or adds event 2 (door destruction) after `ticks`.
 - `move_get_teleporter_rotated_group_result` and `rotate_projectile` rotate a group or projectile by the teleporter rotation (teleporter `+2` bits 2–3 rotation, bit 4 absolute). The projectile direction goes to `g_move_result_direction` (`0x10316a`) (range 8, move result direction).
 
 ### Notes on globals of other ranges
@@ -701,7 +701,7 @@ Returns 1 on success, -1 on cancel (restart path).
 #### Disk helpers
 
 - `build_save_prompt(dest, text, kind)` replaces `~` in the text with a drive name. It uses the name at `g_game_drive_name` (`0x100106`) when the flag at `g_single_floppy_drive` (`0x100104`) is set or `kind` is 1, otherwise the name at `g_save_drive_name` (`0x10010a`).
-- `ensure_master_disk(force)` returns 1 at once when the master disk is present and `force` is not 2. Otherwise it freezes the game and shows "PUT THE DUNGEON MASTER DISK IN ~" with OK until the disk is present (next prompts add "THAT'S NOT THE MASTER DISK!"). It returns 0 when it showed a prompt.
+- `ensure_master_disk(force)` returns 1 immediately when the master disk is present and `force` is not 2. Otherwise it freezes the game and shows "PUT THE DUNGEON MASTER DISK IN ~" with OK until the disk is present (next prompts add "THAT'S NOT THE MASTER DISK!"). It returns 0 when it showed a prompt.
 - `format_save_disk_dialog`: "PUT A BLANK DISK IN ~" with FORMAT FLOPPY and CANCEL. A save disk asks "FORMAT DISK ANYWAY?". Shows "FORMATTING DISK . . ." and calls `format_save_disk`. On error "UNABLE TO FORMAT DISK!".
 
 #### Other globals

@@ -56,7 +56,7 @@ paragraph. A module with several `.c` files has one `<module>_internal.h` for it
 | `data/kaos.h` | `kaos_` | The loaded engine image (KAOS.FTL, or the KAOS-layout image of the CSB APPB.FTL) and its readers at the addresses of the original. |
 | `data/kaos_addresses.h` | `KAOS_` | Addresses of the KAOS.FTL image (and of the KAOS-layout CSB image). |
 | `data/os.h` | `os_` | The operating system services that data/ and engine/ need: folders, file times, the log, and fatal errors. |
-| `data/settings.h` | `settings_` | The settings file of the advanced mode (not in the original game): SETTINGS.TXT in the saves folder with the sound volume, the music volume, the music choice and the upscale filter. |
+| `data/settings.h` | `settings_` | The settings file of the advanced mode: SETTINGS.TXT in the saves folder with the sound volume, the music volume, the music choice and the upscale filter. |
 | `data/spells.h` | `spell_` | The spell rules of the spell table: the symbol strings, the mana cost and the skill draws. |
 | `data/swsh.h` | `swsh_` | The FTL logo module SWSH.FTL: a palette script, the logo graphic, and its sound. |
 | `data/tables.h` | `tables_` | Static rule tables of KAOS.FTL, decoded once from the loaded image. |
@@ -72,7 +72,7 @@ paragraph. A module with several `.c` files has one `<module>_internal.h` for it
 | `engine/discard.h` | `discard_` | The record of a new thing: a free record, or the record of a thing that disappears from a far square when no record of its type is free. |
 | `engine/dungeon.h` | `dungeon_` | The loaded dungeon: header, maps, squares and thing records, in the big-endian byte layout of the original memory. |
 | `engine/event.h` | `event_` | Timeline event types and the handlers of the square events. |
-| `engine/explored.h` | `explored_` | Explored squares (not in the original game): the squares the party has seen, for the automap. |
+| `engine/explored.h` | `explored_` | Explored squares: the squares the party has seen, for the automap. |
 | `engine/game.h` | `game_` | The game session: the clock, the run flags, the modes and cheats, and the redraw flags that the rules raise. |
 | `engine/group.h` | `group_` `creature_` | Creature groups (KAOS range 4, GROUP.C, and the group helpers of range 7). |
 | `engine/inventory.h` | `inventory_` `object_` | Objects, slots, and the leader hand. |
@@ -93,13 +93,15 @@ paragraph. A module with several `.c` files has one `<module>_internal.h` for it
 
 ### ui/
 
+The modules `advanced`, `automap`, `cheats`, `optmenu`, `rows`, and `slotlist` are the advanced features; they are not in the original game.
+
 | Header | Prefixes | Purpose |
 |---|---|---|
-| `ui/advanced.h` | `advanced_` | Game modes and the advanced features (not in the original game): the viewport screen state (`g_advanced_screen`: automap, options menu, cheat screen; at most one open, the game time stops), automap, quick save and quick load, WASD/QE keys, rune symbols on scrolls, colored action icons, item stat meters. |
+| `ui/advanced.h` | `advanced_` | Game modes and the advanced features: the viewport screen state (`g_advanced_screen`: automap, options menu, cheat screen; at most one open, the game time stops), automap, quick save and quick load, WASD/QE keys, rune symbols on scrolls, colored action icons, item stat meters. |
 | `ui/anim.h` | `anim_` | The animation player of ANIM.FTL for the chunk files (CSB ENDA.DAT). |
 | `ui/audio.h` | `audio_` | The audio output: eight stereo pairs of voices (the Amiga has two), the CSB intro music, and the mixer that platform/ calls on the game thread; it scales the mix by the sound volume and passes it through a low-pass filter like the Amiga 500 output (the fixed RC filter and the LED filter). |
-| `ui/automap.h` | `automap_` | Automap (not in the original game): draws the squares the party has seen (engine/explored owns them) as a top-down map. |
-| `ui/cheats.h` | `cheats_` | The cheat screen of the advanced mode (not in the original game): it switches the cheats, offers quick save and quick load, and lists the spells of the loaded game with their runes; a spell line casts its spell. |
+| `ui/automap.h` | `automap_` | Automap: draws the squares the party has seen (engine/explored owns them) as a top-down map. |
+| `ui/cheats.h` | `cheats_` | The cheat screen of the advanced mode: it switches the cheats, offers quick save and quick load, and lists the spells of the loaded game with their runes; a spell line casts its spell. |
 | `ui/command.h` | `command_` | Player input as the command table of the original: clicks and keys become queued commands; command_process_queue runs them. |
 | `ui/dialog.h` | `dialog_` | The message box with one to four choices: it draws the dialog in the viewport and waits for a click on a choice. |
 | `ui/draw.h` | `draw_` | Pixel operations on bitmaps: blit, fill, flip, shrink, and the masked fill. |
@@ -110,12 +112,12 @@ paragraph. A module with several `.c` files has one `<module>_internal.h` for it
 | `ui/logo.h` | `logo_` | The FTL logo of SWSH.FTL (not KAOS): the original shows it before the DM title. |
 | `ui/menus.h` | `menus_` | The action area, the spell area and the movement arrows at the right of the screen. |
 | `ui/music.h` | `music_` | Music of the advanced mode (not in the original Amiga game): the soundtracks of the FM-Towns and Super NES versions from MP3 files, scaled by the music volume. |
-| `ui/optmenu.h` | `optmenu_` | The options menu of the advanced mode (not in the original game): sound volume, music volume, music choice and upscale filter in the viewport; platform/ sets the filter hook; it writes SETTINGS.TXT after a change. |
+| `ui/optmenu.h` | `optmenu_` | The options menu of the advanced mode: sound volume, music volume, music choice and upscale filter in the viewport; platform/ sets the filter hook; it writes SETTINGS.TXT after a change. |
 | `ui/palette.h` | `palette_` | The palette fade of the original: it changes both palette halves of g_screen step by step, one frame for each step through g_frame_hook. |
 | `ui/panel.h` | `panel_` | The inventory panel: slots, the eye and the mouth, food and water, skills and statistics, the object description, the scroll, the chest. |
-| `ui/rows.h` | `rows_` | The rows of text of the viewport screens (not in the original game): it draws a title and rows in the game font and maps a click to a row and a text column. |
+| `ui/rows.h` | `rows_` | The rows of text of the viewport screens: it draws a title and rows in the game font and maps a click to a row and a text column. |
 | `ui/select.h` | `select_` | The start screens in the DM font: adventure, mode, and the CSB entrance. |
-| `ui/slotlist.h` | `slotlist_` | The slot list of the advanced mode (not in the original game): the save slots, and in the load list also the quick save, as rows in the dialog graphic with CANCEL. It takes every click and key while it is open. |
+| `ui/slotlist.h` | `slotlist_` | The slot list of the advanced mode: the save slots, and in the load list also the quick save, as rows in the dialog graphic with CANCEL. It takes every click and key while it is open. |
 | `ui/startend.h` | `startend_` | Sequences outside the game loop: the save dialog, resuming a saved game, the endgame screens, and the fuse sequence with Lord Chaos. |
 | `ui/status.h` | `status_` | The champion status boxes at the top of the screen: name, bars, hands, shields, damage, the party icons. |
 | `ui/text.h` | `text_` | The DM font: it draws text and measures it. |
@@ -167,7 +169,7 @@ paragraph. A module with several `.c` files has one `<module>_internal.h` for it
 A dialog, the endgame and the fuse sequence wait for the player inside a rule. They run their own frames
 through the frame hook `g_frame_hook` (`ui/frame.h`). `platform/app.c` sets the hook; it shows one frame and
 reads the input into the command queue. The hook runs no game logic, so a wait inside a game tick is safe. In
-turn-based mode the hook is NULL: a wait ends at once.
+turn-based mode the hook is NULL: a wait ends immediately.
 
 ## The tick
 
@@ -200,7 +202,7 @@ In turn-based mode a program player plays the game over a Unix domain socket. Th
    pending. It advances the turn by one frame. When the turn ends, it returns true and the reply goes out on
    the socket.
 2. `transport_poll` then reads one request line from the socket.
-3. `control_handle_line` (`control/control.c`) answers the request at once, or it starts a turn.
+3. `control_handle_line` (`control/control.c`) answers the request immediately, or it starts a turn.
 4. While `control_is_turn_pending()` is true, the frame loop runs game frames and ticks.
 
 Between two turns the game time stands still: `app_run_frame` does not call `gameloop_run_frame`. The turn
@@ -229,7 +231,7 @@ A hook is a function pointer that a higher layer sets, so that a lower layer can
 |---|---|---|---|---|
 | `g_endgame_sensor_hook` | `engine/event.h` | `ui/gameloop.c` (`startend_run_endgame_sensor`) | `engine/event.c`, an endgame sensor | no endgame runs |
 | `g_sound_play_hook` | `engine/sound.h` | `ui/audio.c` (`audio_play_data`) | `engine/sound.c` | no sound plays |
-| `g_frame_hook` | `ui/frame.h` | `platform/app.c`, the tests | `frame_wait` (`ui/frame.c`) | a wait ends at once (tests, turn-based mode) |
+| `g_frame_hook` | `ui/frame.h` | `platform/app.c`, the tests | `frame_wait` (`ui/frame.c`) | a wait ends immediately (tests, turn-based mode) |
 | `g_os_log_hook` | `data/os.h` | `platform/app.c` | `os_log` (`data/os.c`) | the message goes to stderr |
 | `g_os_fatal_hook` | `data/os.h` | `platform/app.c` | `os_fatal` (`data/os.c`) | the message goes to stderr |
 | `g_os_make_folder_hook` | `data/os.h` | `platform/app.c`, the tests | `os_make_folder` (`data/os.c`) | the folder is not made; the call returns false |

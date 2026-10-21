@@ -204,7 +204,7 @@ When the dungeon changes the party in another way, the turn has a displacement:
 
 ### Wait
 
-A `wait` turn checks the stop conditions after each tick and ends at once when one occurs. The conditions are the same as for a batch: `damage`, `creature`, `message`, and `game_over` (see [Batches](#batches)). The response has `stopped`: `done` when all `ticks` ran, otherwise the stop condition. `ticks` gives the ticks that ran. This also works while the party sleeps: damage wakes the party.
+A `wait` turn checks the stop conditions after each tick and ends immediately when one occurs. The conditions are the same as for a batch: `damage`, `creature`, `message`, and `game_over` (see [Batches](#batches)). The response has `stopped`: `done` when all `ticks` ran, otherwise the stop condition. `ticks` gives the ticks that ran. This also works while the party sleeps: damage wakes the party.
 
 Example: rest until something happens, at most 5000 ticks.
 

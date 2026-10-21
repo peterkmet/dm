@@ -147,7 +147,7 @@ The game rules are the same in all modes.
 
 - Automap: a top-down map of the squares the party saw, in place of the dungeon view. The game time stops while the map is open. The top line shows the level and the party position. Corridors are light gray, walls dark gray, a wall that the party can walk through checkered. Drag the map with the mouse to see the whole level.
 - Quick save and quick load: one extra save in `QUICK.DAT`. The saved game does not change.
-- Up to 8 sounds play at once, not 2 as in the original.
+- Up to 8 sounds play at the same time, not 2 as in the original.
 - Rune symbols in red after each rune name on an open scroll.
 - Action icons in their own colors.
 - Stat meters in the object description (hold the eye with an object in the hand): attack, defense, and weight.

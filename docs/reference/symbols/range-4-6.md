@@ -17,15 +17,7 @@ Names follow the ReDMCSB function order where the code matches. All offsets are 
 
 ### Thing word
 
-A thing is a word:
-
-| Bits | Meaning |
-|---|---|
-| 0–9 | Index into the record array of the type. |
-| 10–13 | Thing type. |
-| 14–15 | Cell (0–3) on the square. |
-
-`0xfffe` ends a list. `0xffff` means "no thing". `get_thing_data(thing)` returns `g_thing_data[type] + g_thing_data_byte_count[type] * index`.
+The thing word (index, type, cell) is in [dungeon.md](../../formats/dungeon.md#thing-lists). `0xfffe` ends a list. `0xffff` means "no thing". `get_thing_data(thing)` returns `g_thing_data[type] + g_thing_data_byte_count[type] * index`.
 
 The thing types and record sizes are in [dungeon.md](../../formats/dungeon.md#thing-lists).
 

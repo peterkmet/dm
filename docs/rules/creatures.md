@@ -74,9 +74,9 @@ Smell uses the smell range of the creature. A creature smells the party directly
 - The creature moves when half its movement ticks have passed since the last move. Otherwise the group waits.
 - `group_get_directions_to` returns a `DirectionPair`: a primary direction and a second direction. Random numbers select between equal choices.
 - `test_movement` blocks walls, stairs, open pits (except for levitating creatures), closed fake walls, the party square, other groups, and closed doors that are too low for the creature. A wary creature avoids a teleporter to a map that does not allow its type. Lord Chaos does not enter a fluxcage.
-- A creature never turns around at once. It turns left or right first.
+- A creature never turns around immediately. It turns left or right first.
 - Lord Chaos sometimes jumps two squares over a free square.
-- `move_get_move_result` moves a group through the square chain of every mover (the rule table in [movement.md](movement.md)): teleporters with the creatures scope, pits (20 damage to each creature), and stairs. The group hooks are `group_turn_by_teleporter`, `group_is_killed_by_fall`, `group_remove_after_move`, and `group_enter_square`. A group that reaches a map that does not allow its creature type dies and drops its possessions. When the destination is occupied, the group waits with event 60 or 61 and tries again every 5 ticks.
+- `move_get_move_result` moves a group through the square chain of every mover (the rule table in [movement.md](movement.md)): teleporters with the creatures scope, pits, and stairs. The group hooks are `group_turn_by_teleporter`, `group_is_killed_by_fall`, `group_remove_after_move`, and `group_enter_square`. A group that reaches a map that does not allow its creature type dies and drops its possessions. When the destination is occupied, the group waits with event 60 or 61 and tries again every 5 ticks.
 
 ### Attack
 
@@ -138,7 +138,7 @@ Event 65 enables a generator again after its delay (see [movement.md](movement.m
 Event 48 or 49 (`projectile_process_move_event`) moves a projectile one cell forward:
 
 1. Event 49 tests the party and the group on the square. A hit ends the projectile.
-2. The step energy is subtracted from the kinetic energy and from the attack. A projectile without kinetic energy drops to the square.
+2. Subtract the step energy from the kinetic energy and from the attack. A projectile without kinetic energy drops to the square.
 3. A projectile in a front cell leaves the square. Stairs, a wall, or a closed fake wall in front stop it with an impact.
 4. In a door square, a closed door stops it with an impact.
 5. The next event comes after 1 tick on the party map, 3 ticks on other maps.
@@ -163,7 +163,7 @@ Event 6 (wall) on a launcher sensor (type 7–10, 14, or 15) in the event cell c
 
 ## Explosions
 
-`explosion_create(thing, attack, at, target, cell)` puts an explosion on the square `at` and adds event 25 after 1 tick (5 for the first rebirth step). A fireball or lightning bolt damages the party or the group on the target square at once: `random(attack / 2 + 1) + attack / 2 + 2`, half for lightning. Fire resistance reduces the damage to creatures.
+`explosion_create(thing, attack, at, target, cell)` puts an explosion on the square `at` and adds event 25 after 1 tick (5 for the first rebirth step). A fireball or lightning bolt damages the party or the group on the target square immediately: `random(attack / 2 + 1) + attack / 2 + 2`, half for lightning. Fire resistance reduces the damage to creatures.
 
 Event 25 (`explosion_process_step_event`):
 
@@ -204,15 +204,7 @@ Then the explosion disappears.
 
 ## Fixed original bugs
 
-Recorded in [dungeon.md](../formats/dungeon.md#deviations-from-the-original).
-
-Each fix has a short comment in the code.
-
-- `group_get_generated`: a group of several creatures starts its cell value from 0, not from a stale register.
-- `group_get_melee_action_damage`: a champion without strength uses base 0, not a stale register.
-- Group reaction events set byte 8 (ticks) to 0. The original leaves it uninitialized.
-- The square object search of a launcher stops at the end of the list.
-- The spell experience squares the required level, not a stale register.
+Recorded in [dungeon.md](../formats/dungeon.md#deviations-from-the-original). Each fix has a short comment in the code.
 
 ## Tests
 

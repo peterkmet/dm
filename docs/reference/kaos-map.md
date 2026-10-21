@@ -201,7 +201,7 @@ The formula is in [game-state.md](../rules/game-state.md#random-number-generator
 | `g_dungeon_header` | 44 bytes | See [Dungeon.DAT](#dungeondat). |
 | `g_dungeon_maps` | 16 bytes per map | Offset 0: raw data offset. Offset 8: width - 1 (bits 6–10), height - 1 (bits 11–15). Offsets 10–14: ornament, creature type, and door type counts, see [range-4-6.md](symbols/range-4-6.md#map-descriptor). |
 | `g_current_map_data` | pointer per column | Square bytes of the current map. Bits 5–7: square type (0 wall, 1 corridor, 2 pit, 3 stairs, 4 door, 5 teleporter, 6 fake wall). Bit 4: the square has things. |
-| `g_thing_data[16]` | pointers | Thing records per type. A thing is a word: bits 10–13 type, bits 0–9 index, bits 14–15 cell. `0xfffe` is the end of a list. |
+| `g_thing_data[16]` | pointers | Thing records per type ([dungeon.md](../formats/dungeon.md#thing-lists)). |
 | `g_active_groups` | 16 bytes per entry | Active creature groups. |
 | `g_timeline.events` | 10 bytes per event | Offset 0: map index (bits 24–31) and time (bits 0–23). Offset 4: event type. |
 | `g_creature_info` | `0x1a` bytes per creature type | Static creature attributes. |

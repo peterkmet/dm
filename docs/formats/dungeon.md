@@ -193,6 +193,14 @@ This list covers every module of the port (coding standard, rule 10.5).
 - With the walk through walls cheat of the advanced mode on, a door that closes on the party goes back open as in the original, but the party takes no door damage (`process_door_animation`).
 - The spell experience squares the required level of the spell (`magic.c`); the original squares an undefined register.
 - The endgame screens (THE END and the credits after it) do not fade the palette; the original fades it.
+- The original quits the program after the credits of the endgame and after "THE GAME IS DAMAGED!"; the port shows the entrance (`g_return_to_entrance`, `platform/app.c`).
+- Event 65 stops at the end of the thing list; the original stops only at `0xffff` (`event.c`).
+- `sensor_process_rotation_effect` stops when the cell has no sensor; the original reads past the list.
+- Wall sensor type 16 does not exchange when the square has no object; the original puts `0xfffe` into the leader hand.
+- `group_get_generated`: a group of several creatures starts its cell value from 0, not from a stale register.
+- `group_get_melee_action_damage`: a champion without strength uses base 0, not a stale register.
+- Group reaction events set byte 8 (ticks) to 0; the original leaves it uninitialized.
+- The square object search of a launcher stops at the end of the list.
 
 ## Structure differences from the original
 

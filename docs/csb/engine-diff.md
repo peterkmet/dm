@@ -230,7 +230,7 @@ Code references (each address verified: a `pea` or `lea` with A5 = C`0x10511e` i
 | `0x1048b4` | `menus_get_action_name` |
 | `0x104d08` + 4·n | Read with `move.l` (no `lea`), for example `reference/decomp/csb-a/APPB.c` line 38716 (entry 0) and line 37116 (save dialog: entries 24, 21, 22) |
 
-The pointer table C`0x104d08` has 26 entries. Entry n gives DM text: 78, 94, 79, 80, 81, 82, 95, 92, 84, 90, 85, 86, 97, 96, 98, 87, 88, 89, 83, 91, 101, 102 (SAVE AND PLAY), 103 (SAVE AND QUIT), 105, 106, 104.
+The pointer table C`0x104d08` has 26 entries; the DM text index of each entry is in `src/data/csb_text.c` (`CSB_APPB_DISK_MESSAGES`).
 
 Port:
 
