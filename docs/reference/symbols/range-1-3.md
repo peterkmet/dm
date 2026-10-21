@@ -111,7 +111,7 @@ The port maps these functions to `fopen`, `fseek`, `ftell`, `fread`, `fwrite`.
 
 ## Palette and display (`0x1065c6`–`0x106ff6`)
 
-- Colors are Amiga 12-bit RGB words `0x0RGB`.
+- Colors are Amiga 12-bit RGB words `0x0rgb`.
 - `palette_fade(target, start)` fades in 15 steps. `start` has 32 colors. `target` has 16 colors, used for both halves. Each step reads a delta table from the video driver (`*(g_video + 0x130)`, 15 × 16 bytes, indexed by step and component difference). It sets both palette-pending flags and busy-waits until the vblank handler clears them. The fade takes 15 frames. Work buffers are in the chip block: `0x1c8` (current) and `0x208` (copy of the start palette).
 - `palette_fade_to(target)` fades from `g_current_palette`.
 - `fade_display_out` fades to `g_dungeon_palettes[0]` (the normal palette), not to black.
@@ -137,7 +137,7 @@ Bitmap layout: 4 planes, not interleaved. Each plane is `((width + 15) & ~15) / 
 - `str_*` work like the C library. `str_find_char` returns null when the character is not found. `str_replace_char(src, insert, c, dst)` copies `src` to `dst` and replaces the first `c` with `insert`. It returns 1 when it found `c`. The language file names use it with `~`.
 - `bounded_value(min, value, max)` clamps `value`.
 - `scale_value(a, shift, b)` returns `(a * b) >> shift` with an unsigned 16×16 multiply. Callers use the low word.
-- Random: the formula is in [game-state.md](../../rules/game-state.md#random-number-generator). The port keeps the 32-bit wrap-around.
+- Random: the formula is in [game-state.md](../../rules/game-state.md#random-number-generator). The port keeps the 32-bit wraparound.
 
 Emulator checks (`dmtools.emu`): `bounded_value(0, 15, 10) = 10`, `scale_value(100, 3, 50) = 625`, `rt_ldiv(-7, 2) = -3`, `rt_lmod(-7, 2) = -1`.
 

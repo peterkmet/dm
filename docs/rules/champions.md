@@ -132,7 +132,7 @@ The name entry (`champion_start_rename` … `champion_rename_ok`) clears the nam
 2. All objects drop on the party square in the champion cell, in the order of `tables_get_slot_drop_order` (`move_get_move_result`).
 3. A junk record (no reserve) becomes the bones (junk type 5, important, champion index in the charges) and drops in the same cell.
 4. The spell symbols clear. Poison ends.
-5. When no champion lives, `g_session.party_dead` becomes 1. Otherwise the first living champion becomes leader or caster when the dead champion had that role.
+5. When no champion lives, `g_session.party_dead` becomes true. Otherwise the first living champion becomes leader or caster when the dead champion had that role.
 
 ## Inventory
 

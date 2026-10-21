@@ -88,7 +88,7 @@ this document names.
    #define WOUND_LEGS        0x10
    #define WOUND_FEET        0x20
 
-   /* Square types, bits 5-7 of the square byte. */
+   /* Square types, bits 5–7 of the square byte. */
    #define SQUARE_WALL     0
    #define SQUARE_CORRIDOR 1
    #define SQUARE_PIT      2
@@ -133,7 +133,7 @@ this document names.
    `group_process_reaction_event`, not `group_process_events_29_to_41`. [numbered]
 10. One term per concept: a `location` is a square of the current map (`x`, `y`); a `position` is a square
     with its map (`map`, `x`, `y`); a `square` is the square byte; a `cell` is one of the four cells of a
-    square; a `thing` is a record reference; a `champion_index` is 0-3, -1 for none. [review only]
+    square; a `thing` is a record reference; a `champion_index` is 0–3, -1 for none. [review only]
 
 ## 5. Types and values
 

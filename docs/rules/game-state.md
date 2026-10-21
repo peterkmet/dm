@@ -223,7 +223,7 @@ Projectiles (thing type 14) and explosions (thing type 15) are dungeon things. T
 
 `champion_is_lucky(champion_index, percentage)`:
 
-1. When `random_bit()` is 1 and `percentage < random16() % 100`, return 1. Luck does not change.
+1. When `random_bit()` is 1 and `percentage < random16() % 100`, return true. Luck does not change.
 2. Lucky is true when the current luck is above 0 and `percentage < random16() % (2 * luck)`.
 3. Add -2 (lucky) or +2 to the current luck, bounded by the minimum and maximum. Return lucky.
 

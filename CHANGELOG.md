@@ -28,13 +28,13 @@
 - Advanced mode: the damage of a hit stays in the action area for two ticks; the action icons keep their colors in every light.
 - The upscale filter smooths the mouse pointer with the picture.
 - Advanced mode: Escape opens an options menu with the sound volume, the music volume (0 to 7), and the music choice. `SETTINGS.TXT` in the saves folder keeps the values.
-- Advanced mode: the options menu has a FILTER row (NONE, SCALE2X, SCALE3X). The filter changes at once, and `SETTINGS.TXT` keeps it. `--filter` takes priority at a game start.
+- Advanced mode: the options menu has a FILTER row (NONE, SCALE2X, SCALE3X). The filter changes immediately, and `SETTINGS.TXT` keeps it. `--filter` takes priority at a game start.
 - Advanced mode: C opens a cheat screen with full light, immortality, food and water, and the new cheats one-hit kill, walk through walls, and reveal map; quick save and quick load; and a list of all spells with their runes. The save file keeps the cheats in a new extension block.
 - Advanced mode: 8 save slots (`DMGAME.DAT`, `DMGAME2.DAT` to `DMGAME8.DAT`; CSB `CSBGAME`). The save dialog shows LOAD, SAVE, CONTINUE, and QUIT in DM and CSB; SAVE opens a save list, LOAD and RESUME a load list with the level and the file time of each slot and the quick save; RESTART THIS GAME loads the slot of the last save or load.
-- Advanced mode, Chaos Strikes Back: the stairs down of the prison start the new adventure at once, without a save and without the utility disk. Two of the stairs are behind hidden passages, at (15, 6) and (8, 14) of the first level. The advanced prison does not show the text about the utility disk.
-- Advanced mode: a key or a click ends the CSB intro at once; vanilla waits for the shown picture, as in the original.
+- Advanced mode, Chaos Strikes Back: the stairs down of the prison start the new adventure immediately, without a save and without the utility disk. Two of the stairs are behind hidden passages, at (15, 6) and (8, 14) of the first level. The advanced prison does not show the text about the utility disk.
+- Advanced mode: a key or a click ends the CSB intro immediately; vanilla waits for the shown picture, as in the original.
 - Advanced mode: the automap draws a wall that the party walks through (an imaginary wall) checkered.
-- Advanced mode: up to 8 sounds play at once (vanilla keeps the 2 of the Amiga).
+- Advanced mode: up to 8 sounds play at the same time (vanilla keeps the 2 of the Amiga).
 
 ### Changed
 
@@ -252,7 +252,7 @@ Items of the todo list. The save format does not change: saves of 0.2.0 load, an
 ### Fixed
 
 - The automap marked side squares that the party cannot see.
-- Eating redraws the food and water bars at once, and the mouth blinks when the object is used up, as in the original.
+- Eating redraws the food and water bars immediately, and the mouth blinks when the object is used up, as in the original.
 - The name of the object in the leader hand follows a changed icon: a waterskin shows WATERSKIN after the last drink.
 
 ### Deviations from the original
@@ -285,7 +285,7 @@ Chaos Strikes Back (Amiga) support, and changes to the advanced mode.
 
 ### Deviations from the original
 
-- CSB: the save in the prison makes the new adventure at once; the original needs a restart with the utility disk. After the credits or the `ENDA.DAT` animation, the game shows the CSB screen; the original freezes or loops.
+- CSB: the save in the prison makes the new adventure immediately; the original needs a restart with the utility disk. After the credits or the `ENDA.DAT` animation, the game shows the CSB screen; the original freezes or loops.
 
 ## 0.1.0 - 2026-10-04
 

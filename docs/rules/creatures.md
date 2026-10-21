@@ -116,7 +116,6 @@ An attacking creature (events 38–41) turns to the party, moves to the front ce
 ### Other damage
 
 - A closing door hits the creatures on its square with 5 damage. The survivors react to danger.
-- A pit hits a group that falls with 20 damage.
 
 ## Group generators
 

@@ -29,7 +29,7 @@ Call `map_reset()` after `dungeon_load`. The current map pointers then point to 
 |---|---|---|
 | `map_get_square(x, y)` | `0x10a8ac` | Square byte. Outside the map: a wall byte. The wall gets bit 1, 3, 2, or 0 when the adjacent square above, below, left, or right is a corridor or a pit. |
 | `get_square_type(x, y)` | — | `map_get_square(x, y) >> 5`. |
-| `map_is_square_open(x, y)` | `0x10bce6` | 1 for a corridor, pit, door, or teleporter. |
+| `map_is_square_open(x, y)` | `0x10bce6` | True for a corridor, pit, door, or teleporter. |
 | `map_get_level_change_location(place, delta)` | `0x10aa0c` | Finds the map on level `level + delta` that covers the same dungeon position. Returns the `Position` on that map, or map -1 and the unchanged square when no map matches. |
 | `map_get_stairs_exit_direction(x, y)` | `0x10aad2` | Bit 3 of the stairs square selects the axis (set: north–south). The exit side is the side that is not a wall or stairs. |
 | `map_get_square_first_thing(x, y)` | `0x10ac4e` | First thing, or `0xfffe`. |

@@ -13,7 +13,7 @@ if (!dungeon_load("game/Dungeon.DAT"))
     return 1;
 ```
 
-`dungeon_load` loads the dungeon for a new game. It returns false on error. Call `tables_load("game/KAOS.FTL")` (`tables.h`) first: the loader and `dungeon_decode_text` read the new-game extras table (`0x101058`) and the escape tables (`0x1016ea`, `0x1017ea`, `0x10182a`) from the KAOS image. Without KAOS, `dungeon_load` returns 0. A new call frees the previous dungeon.
+`dungeon_load` loads the dungeon for a new game. It returns false on error. Call `tables_load("game/KAOS.FTL")` (`tables.h`) first: the loader and `dungeon_decode_text` read the new-game extras table (`0x101058`) and the escape tables (`0x1016ea`, `0x1017ea`, `0x10182a`) from the KAOS image. Without KAOS, `dungeon_load` returns false. A new call frees the previous dungeon.
 
 ## Compressed file
 
@@ -176,7 +176,7 @@ The function reads all three tables from the KAOS image. The single characters f
 - `dungeon_decode_text` against the original `0x10b312` in the emulator.
 - `dungeon_decompress` against the original `0x12712c` in the emulator, on all of `Dungeon.DAT`.
 - An uncompressed copy of `Dungeon.DAT` loads, and a wrong checksum fails.
-- Truncated files, a thing count above the limit, a bad map offset, a bad raw map data size, and a map count of 0 fail. A bad text offset and a small output buffer make `dungeon_decode_text` return 0.
+- Truncated files, a thing count above the limit, a bad map offset, a bad raw map data size, and a map count of 0 fail. A bad text offset and a small output buffer make `dungeon_decode_text` return false.
 
 ## Deviations from the original
 

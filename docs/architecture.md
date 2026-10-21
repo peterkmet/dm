@@ -93,7 +93,7 @@ paragraph. A module with several `.c` files has one `<module>_internal.h` for it
 
 ### ui/
 
-The modules `advanced`, `automap`, `cheats`, `optmenu`, `rows`, and `slotlist` are the advanced features; they are not in the original game.
+The modules `advanced`, `automap`, `cheats`, `music`, `optmenu`, `rows`, and `slotlist` are the advanced features; they are not in the original game.
 
 | Header | Prefixes | Purpose |
 |---|---|---|
@@ -111,7 +111,7 @@ The modules `advanced`, `automap`, `cheats`, `optmenu`, `rows`, and `slotlist` a
 | `ui/layout.h` | `layout_` | The screen layout from the layout graphic of Graphics.DAT: it finds the box of a zone on the screen. |
 | `ui/logo.h` | `logo_` | The FTL logo of SWSH.FTL (not KAOS): the original shows it before the DM title. |
 | `ui/menus.h` | `menus_` | The action area, the spell area and the movement arrows at the right of the screen. |
-| `ui/music.h` | `music_` | Music of the advanced mode (not in the original Amiga game): the soundtracks of the FM-Towns and Super NES versions from MP3 files, scaled by the music volume. |
+| `ui/music.h` | `music_` | Music of the advanced mode: the soundtracks of the FM-Towns and Super NES versions from MP3 files, scaled by the music volume. |
 | `ui/optmenu.h` | `optmenu_` | The options menu of the advanced mode: sound volume, music volume, music choice and upscale filter in the viewport; platform/ sets the filter hook; it writes SETTINGS.TXT after a change. |
 | `ui/palette.h` | `palette_` | The palette fade of the original: it changes both palette halves of g_screen step by step, one frame for each step through g_frame_hook. |
 | `ui/panel.h` | `panel_` | The inventory panel: slots, the eye and the mouth, food and water, skills and statistics, the object description, the scroll, the chest. |

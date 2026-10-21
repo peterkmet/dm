@@ -143,7 +143,7 @@ View square tables (24 bytes each, index = view square):
 
 | Table | Content |
 |---|---|
-| `g_view_square_lane` | -3…+3 (left/right offset). |
+| `g_view_square_lane` | -3 to +3 (left/right offset). |
 | `g_view_square_depth` | 0–4. |
 | `g_view_square_object_coord_index`, `g_view_square_alcove_object_coord_index` | Object coordinate set index, or -1. |
 | `g_view_square_creature_coord_index` | Creature coordinate set index, or -1. |
@@ -216,7 +216,7 @@ ReDMCSB `GROUP.C` tail and `MOVESENS.C` head.
 
 ## Range 8: movement, sensors, timeline, commands, menus
 
-Range 8 covers `0x11d842`–`0x123ae2` (101 functions). The order follows the ReDMCSB files MOVESENS.C, TIMELINE.C, COMMAND.C, and MENU.C. All word parameters are 16-bit. A thing is a 16-bit word: bits 14–15 cell, bits 10–13 type, bits 0–9 index. `0xfffe` ends a thing list. `0xffff` is "no thing" or "the party" (in move functions).
+Range 8 covers `0x11d842`–`0x123ae2` (101 functions). The order follows the ReDMCSB files MOVESENS.C, TIMELINE.C, COMMAND.C, and MENU.C. All word parameters are 16-bit. The thing word is in [dungeon.md](../../formats/dungeon.md#thing-lists); `0xffff` is "no thing" or "the party" (in move functions).
 
 ### Common structures
 
@@ -276,19 +276,7 @@ The timeline keeps future events in two arrays:
 - `g_first_unused_event_index` (`0x103182`) heads the free list (port: `g_timeline.first_unused`).
 - `g_event_high_water` (`0x103176`) holds the highest used slot + 1 (port: `g_timeline.high_water`). Linear scans use it as a bound. `timeline_reset` rebuilds it, the free list, and the heap size after a load. The save file stores the heap, the heap size, and the free list head.
 
-Heap order (`is_before`): earlier time (bits 0–23) first. On equal time, the larger word at offset 4 (type × 256 + priority) first. On a full tie, the lower slot address first. `timeline_fix_chronology(i)` sifts the entry at heap position `i` up, and down when it did not move up. `timeline_get_index` finds a slot in the heap with a linear search. It calls `fatal_error(0x46)` when the slot is missing.
-
-`timeline_add_event(event)`:
-
-1. Type 0: return -1.
-2. A full timeline calls `fatal_error(0x2d)`.
-3. `find_mergeable` can merge the event:
-   - Square events 5–10: an event with the same time, map, and X/Y (and the same cell for type 6) gets the new effect byte. Return its index. An existing type 1 event (door animation) at the same time and place is deleted; a toggle effect in the new event becomes `1 - old effect`.
-   - New type 1 (door animation): an existing type 10 event at the same time and place with toggle effect gets effect `1 - new`. An existing type 1 event gets the new effect.
-   - New type 2 (door destruction): delete all type 1 and type 10 events of that square and map.
-4. Take a slot from the free list, copy 10 bytes, append the slot to the heap, and sift up.
-
-`timeline_extract_first_event` copies the heap root and deletes it. `timeline_is_first_event_expired` compares the root time with `g_game_time`.
+The heap order, `timeline_add_event`, the merge rules, and `timeline_extract_first_event` are in [game-state.md](../../rules/game-state.md#timeline). `timeline_fix_chronology(i)` sifts the entry at heap position `i` up, and down when it did not move up. `timeline_get_index` finds a slot in the heap with a linear search; it calls `fatal_error(0x46)` when the slot is missing. A full timeline calls `fatal_error(0x2d)`.
 
 `timeline_process` runs every expired event. It sets the current map from the event, dispatches on the type, and restores the party map. Event types and handlers:
 
@@ -331,7 +319,7 @@ Square event effects: 0 = set (open, activate), 1 = clear (close, deactivate), 2
 
 #### Mouse and keyboard input tables
 
-A `MouseInput` entry has 6 words: command, x1, x2, y1, y2, button mask. A command of 0 ends the table. When x1 is negative, x2 holds a layout zone index: -1 screen coordinates, -2 relative to the viewport origin (`0x10293a`, `0x10293c`), -3 relative to the centered viewport. `command_init_mouse_input_table` converts zone entries to boxes at start-up. `command_get_command_from_mouse_input` resolves the remaining zone entries at click time.
+A `MouseInput` entry has 6 words: command, x1, x2, y1, y2, button mask. A command of 0 ends the table. When x1 is negative, x2 holds a layout zone index: -1 screen coordinates, -2 relative to the viewport origin (`0x10293a`, `0x10293c`), -3 relative to the centered viewport. `command_init_mouse_input_table` converts zone entries to boxes at startup. `command_get_command_from_mouse_input` resolves the remaining zone entries at click time.
 
 A `KeyboardInput` entry has 2 words: command, key code. A command of 0 ends the table.
 
@@ -569,7 +557,7 @@ Ghidra drops the pointer argument of `memory_select_feature_set`. The real argum
 
 `memory_select_feature_set` (range 6) tries option sets from `g_memory_feature_sets` (`0x104134`) until the game fits in memory. The list is bytes:
 
-- `0..5`: set flag `g_memory_options[n]` (`0x1001d4`) to 1.
+- 0–5: set flag `g_memory_options[n]` (`0x1001d4`) to 1.
 - `0xfd n`: reserve `n << 10` bytes.
 - `0xfe`: end of one set.
 - `0xff`: end of the list.
@@ -690,11 +678,7 @@ Returns 1 on success, -1 on cancel (restart path).
 
 #### `load_dungeon` and decompression
 
-1. New game only: read 8 bytes. When the first word is `0x8104`, the file is compressed. Offset 2 is the long decompressed size. Offset 6 is the dungeon ID. Read the rest of the file and call `decompress_dungeon(data, buffer, size)`. Set `g_load_from_memory`. Otherwise seek back to 0.
-2. Read the parts with `save_read_summed_block`. Allocate them only when no restart is in progress (`g_restart_requested` = 0). The parts, the new-game extras (300 free square-first-thing entries, extra thing records per type from the table at `0x101058`, capped at 1024, 768 for type 15), and the event max count (100 + counts of type 4 and types 14–15) are as in the module map.
-3. Read the checksum word. Accept the dungeon when the word is missing or equal to the byte sum.
-4. Build the column pointer table `g_dungeon_map_data`: one pointer per map, then one pointer per column. Column `c` of map `m` starts at `raw + map.offset + c × height`.
-5. New game: `timeline_init`, `group_init_active_groups`.
+`load_dungeon` reads the file as [dungeon.md](../../formats/dungeon.md) describes. Original specifics: it allocates the parts only when no restart is in progress (`g_restart_requested` = 0); it builds the column pointer table `g_dungeon_map_data` (one pointer per map, then one per column; column `c` of map `m` starts at `raw + map.offset + c × height`); for a new game it calls `timeline_init` and `group_init_active_groups`.
 
 `decompress_dungeon` decodes the compressed file; the format is in [dungeon.md](../../formats/dungeon.md#compressed-file). `decompress_get_bits` is the internal bit reader (register interface, not a C function).
 

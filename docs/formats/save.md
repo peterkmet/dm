@@ -281,7 +281,7 @@ The port keeps the portrait pixels of each champion in `ChampionRuntime.portrait
 ### Dungeon part (`dungeon.c`)
 
 - `uint8_t *dungeon_save(uint32_t *size)` writes the parts in the order of `save_game`: header, maps, column first-thing indices, square first things, text data, 16 thing arrays, raw map data. Then the 16-bit sum of all bytes. The header has the counts with the free records of the new game, so the load needs no extras.
-- `int16_t dungeon_load_saved(const uint8_t *data, uint32_t size)` reads these parts like `dungeon_load` for a saved game: no compression, no party start from the header, no free records, and no new `g_timeline.capacity`. It checks the byte sum when the word is there.
+- `bool dungeon_load_saved(const uint8_t *data, uint32_t size)` reads these parts like `dungeon_load` for a saved game: no compression, no party start from the header, no free records, and no new `g_timeline.capacity`. It checks the byte sum when the word is there.
 
 ## Tests
 

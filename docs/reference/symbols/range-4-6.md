@@ -120,19 +120,7 @@ ordinal = allowed && index < count ? index + 1 : 0;
 
 ### Active group
 
-`g_active_groups` has `g_max_active_group_count` entries of 16 bytes (110 for a new game):
-
-| Offset | Size | Meaning |
-|---|---|---|
-| 0 | word | Group record index, or `-1` for a free entry. |
-| 2 | byte | Directions (2 bits for each creature). |
-| 3 | byte | Saved cells of the group record. |
-| 4 | byte | Low byte of the game time at the last move. |
-| 5 | byte | Delay before the group stops fleeing. |
-| 6, 7 | bytes | Target X, Y (usually the last known party position). |
-| 8, 9 | bytes | Prior X, Y. |
-| 10, 11 | bytes | Home X, Y. |
-| 12 | 4 bytes | Aspect of each creature: bit 7 attacking, bit 6 flipped, bits 3–5 vertical offset, bits 0–2 horizontal offset. |
+`g_active_groups` has `g_max_active_group_count` entries of 16 bytes (110 for a new game). The layout is in [game-state.md](../../rules/game-state.md#active-creature-groups).
 
 ### Creature info
 
@@ -167,62 +155,11 @@ Several callees are in range 7 ([range-7-9.md](range-7-9.md)): `get_square_dista
 
 ### Champion record
 
-`g_champions` holds 4 records of `0x140` bytes:
-
-| Offset | Size | Meaning |
-|---|---|---|
-| `0x00` | 8 bytes | Name (NUL-terminated). |
-| `0x08` | 20 bytes | Title. |
-| `0x1c` | byte | Direction. |
-| `0x1d` | byte | Cell in the party. |
-| `0x20` | byte | Action index (255 is none). |
-| `0x21` | byte | Spell symbol step. |
-| `0x22` | 5 bytes | Spell symbols (string). |
-| `0x28` | byte | Direction of the maximum damage received. |
-| `0x29` | byte | Maximum damage received. |
-| `0x2a` | byte | Poison event count. |
-| `0x2c` | word | Timeline index of the enable-action event (event 11), or -1. |
-| `0x2e` | word | Timeline index of the hide-damage event (event 12), or -1. |
-| `0x30` | word | Attributes (redraw flags, see below). |
-| `0x32` | word | Wounds: bit 0 ready hand, 1 action hand, 2 head, 3 torso, 4 legs, 5 feet. |
-| `0x34` | word | Current health. |
-| `0x36` | word | Maximum health. |
-| `0x38` | word | Current stamina (shown divided by 10). |
-| `0x3a` | word | Maximum stamina. |
-| `0x3c` | word | Current mana. |
-| `0x3e` | word | Maximum mana. |
-| `0x40` | word | Action defense. |
-| `0x42` | word | Food (-1024 to 2048). |
-| `0x44` | word | Water (-1024 to 2048). |
-| `0x46` | 7 × 3 bytes | Statistics: luck, strength, dexterity, wisdom, vitality, anti-magic, anti-fire. Each has maximum, current, minimum. |
-| `0x5c` | 20 × 6 bytes | Skills: word temporary experience, long experience. 0–3 are the base skills (fighter, ninja, priest, wizard). 4–19 are the hidden skills. |
-| `0xd4` | 30 words | Slots (ReDMCSB order, consistent with `g_slot_masks`): 0 ready hand, 1 action hand, 2 head, 3 torso, 4 legs, 5 feet, 6 pouch 2, 7 quiver line 2, 8–9 quiver line 1, 10 neck, 11 pouch 1, 12 quiver line 1 slot 1, 13–29 backpack. |
-| `0x110` | word | Load (weight in 1/10 kg). |
-| `0x112` | word | Shield defense (from the potion). |
-| `0x114` | long | Pointer to the portrait bitmap (32 × 29). |
-| `0x1e`, `0x1f`, `0x23`–`0x27`, `0x118`–`0x13f` | — | No code reference found. |
-
-Attribute flags at `0x30`: `0x0008` disable action, `0x0010` male, `0x0080` name and title, `0x0100` statistics, `0x0200` load, `0x0400` icon, `0x0800` panel, `0x1000` status box, `0x2000` wounds, `0x4000` viewport, `0x8000` action hand. `champion_draw_state` draws the parts that have a flag and then keeps only bits 0–6.
+`g_champions` holds 4 records of `0x140` bytes. The fields are in [game-state.md](../../rules/game-state.md#champions). One field is not in the port struct: `0x114`, a long pointer to the portrait bitmap (32 × 29).
 
 ### Party record
 
-`g_party` (`0x101ed4`) is the ReDMCSB PARTY structure:
-
-| Offset | Size | Meaning |
-|---|---|---|
-| `0x00` | word | Magical light amount. |
-| `0x02` | byte | Thieves eye event count. |
-| `0x03` | byte | Footprints event count. |
-| `0x04` | word | Shield defense. |
-| `0x06` | word | Fire shield defense. |
-| `0x08` | word | Spell shield defense. |
-| `0x0a` | byte | Scent count. |
-| `0x0b` | byte | Freeze life ticks. |
-| `0x0c` | byte | First scent index (footprints). |
-| `0x0d` | byte | Last scent index. |
-| `0x0e` | 24 words | Scents: X bits 11–15, Y bits 6–10, map bits 0–5. |
-| `0x3e` | 24 bytes | Scent strengths. |
-| `0x56` | byte | Invisibility event count. |
+The fields of `g_party` are in [game-state.md](../../rules/game-state.md#party).
 
 ### Rules
 
