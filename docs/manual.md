@@ -12,18 +12,6 @@ build/dm
 
 On startup, the game extracts each disk image once: the Dungeon Master v3.60 disk to `game/`, Chaos Strikes Back (CSB) disk A to `game-csb/`, CSB disk B to `game-csb/disk-b/`. The game checks the files against the Amiga disks; a wrong file stops the game with a message in the log.
 
-### Extract the disks by hand
-
-Install the Python tools with `uv sync`, then extract each disk image:
-
-```sh
-uv run dm-extract <disk.adf> game
-uv run dm-extract "<disk A>.adf" game-csb
-uv run dm-extract "<disk B>.adf" game-csb/disk-b
-```
-
-The two Chaos Strikes Back (CSB) disks are optional. Each disk needs its own folder, because the disks have files with the same names.
-
 ## Options
 
 `build/dm --help` prints the options:
