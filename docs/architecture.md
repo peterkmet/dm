@@ -18,10 +18,8 @@ engine/     game rules: dungeon, party, champions, creatures, timeline, saves
 data/       file formats, the engine image (KAOS.FTL, APPB.FTL) and its tables, run configuration
 ```
 
-A file includes only headers of its own layer and of the layers below it in the diagram. The public headers of a
-layer are in `src/<layer>/include/`, and the include path of a layer holds only its own and the lower layers,
-so the compiler rejects an include of a higher layer. This page names a header with its layer: `engine/game.h`
-is `src/engine/include/game.h`. The rules are in [the coding standard](coding-standard.md), section 1.
+A file includes only headers of its own layer and of the layers below it in the diagram ([coding standard](coding-standard.md), section 1).
+This page names a header with its layer: `engine/game.h` is `src/engine/include/game.h`.
 
 - `data/` owns the file formats, the engine image and its tables, and the run configuration. It reaches the
   operating system only through the hooks of `data/os.h`.
@@ -211,7 +209,7 @@ rules (when a turn ends, what the reply tells) are in `control/turn.c`. The game
 
 ## Global state
 
-A global holds state that lives across calls. These are the globals of the game:
+The globals of the game:
 
 - The game state that the save file holds: `g_party` (`engine/party.h`), `g_champions`
   (`engine/champion.h`), the dungeon (`g_dungeon_*`, `g_thing_data`, `engine/dungeon.h`), the timeline
@@ -221,8 +219,7 @@ A global holds state that lives across calls. These are the globals of the game:
 - `g_screen` (`ui/video.h`): the frame buffer and the two palettes.
 - The redraw flags: `g_redraw` and the `CHAMPION_ATTR_*` bits of `Champion.attributes`.
 
-The state of one module is `static` in its `.c` file. A result does not pass through a global: it passes
-through the return value or a struct out-parameter ([the coding standard](coding-standard.md), rule 6.6).
+The state of one module is `static` in its `.c` file ([coding standard](coding-standard.md), rules 6.6 and 7.1).
 
 ## Hooks between layers
 

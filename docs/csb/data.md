@@ -121,7 +121,7 @@ Unchanged indices that the port uses: 0, 6, 7–9, 12–25, 27–41, 46, 48–32
 | Thing counts in the file | 4 doors, 26 texts, 30 sensors, 12 groups |
 | `g_timeline.capacity` after a new-game load | 297 |
 
-A check loads the file with `kaos_load("game/KAOS.FTL")` and `dungeon_load`. The call returns 1. The thing counts include the new-game extras (groups 87 = 12 + 75). The CSB engine uses the same thing record sizes (`0x10154a`) and the same new-game extra counts (`0x10155a`) as DM, so the DM KAOS tables give the correct result.
+A check loads the file with `kaos_load("game/KAOS.FTL")` and `dungeon_load`. The call returns 1. The thing counts include the new-game extras (groups 87 = 12 + 75).
 
 `dmcsb` identifies the file by CRC32 as `atarist_csb` (Atari ST CSB 2.x dungeon). The Amiga file is byte-identical to it.
 
@@ -158,18 +158,7 @@ The CSB `save_game` is at `0x128cc0` (jump table slot `0xb6a(A5)`). The CSB `loa
 
 ### Header differences
 
-| Field | DM offset | CSB offset | CSB value |
-|---|---|---|---|
-| Payload key | `0x014` (group 2, `w2`) | `0x03a` (group 7, `w1`) | Random |
-| Header byte (`SAVE_HEADER_HEADER_BYTE`) | `0x12a` | `0x12c` | Byte of the last load, default 1 |
-| Platform | `0x12b` | `0x12d` | 5. A load fails when the value is 1. |
-| Dialog choice | `0x130` | `0x132` | Not read by the load |
-| Game ID | `0x132` | `0x134` | `g_game_id` |
-| 16 keys | `0x136` | `0x138` | Keys 0–4 encrypt blocks 0–4 |
-| 5 checksums | `0x156` | `0x158` | |
-| Save format | `0x176` | `0x178` | 3. A load fails on other values. |
-| Dungeon ID | `0x178` | `0x17a` | From the dungeon header, default 10 |
-| Extra bytes | `0x17a`, 134 bytes | `0x17c`, 132 bytes | Copied unchanged |
+The offsets of the DM and CSB headers are in [save.md](../formats/save.md#csb-header).
 
 Evidence: the writer at `0x128cc0` and the reader at `0x129b3e` use the same offsets. The machine code at `0x12928c` is `moveq #5,d0; move.b d0,$12d(a3); move.b -$421(a5),$12c(a3)`.
 
@@ -223,12 +212,7 @@ The `SO` chunks play `SD` sample 2 (graphic item 683) three times.
 
 ### Engine use
 
-1. A wall sensor of type 18 (endgame, `0x123970`) sets the game-won flag (`-0x4f9c(A5)`) and calls `0x1285e8` through slot `0xb42(A5)`. There is no delay. DM waits the sensor delay, clears the saved-game flag, and calls `endgame(1)`.
-2. `0x1285e8` branches to `0x1285ee` (`quit_game_to_ending`). It waits until the pointer is hidden, closes `Graphics.DAT`, stops in an endless loop while the won flag is 0 (C`0x128600`), fills zones 401, 13, 11, and 9 with color 0, writes `'ENDA'` into the next-module field of the shared FTL block (`*(-4(A5)) + 4`, C`0x12863a`), and leaves `APPB` (`system_shutdown`, `rt_longjmp`).
-3. The launcher `APPA.FTL` (`APPA.c` line 355) reads the field. For `ANIM`, `TITL`, or `ENDA`, it starts `ANIM.FTL` with that tag.
-4. `ANIM.FTL` `0x100e96` builds the file name from the tag and `.DAT` (`0x2e444154`) and plays `ENDA.DAT`. After `ENDA`, it loops forever with a delay (`ANIM.c` line 579). The last frame stays on the screen. The player must reset the computer.
-
-The endgame `0x128374` (party dead) goes to `0x1285e8` when there is no saved game. The won flag is 0 then, so the engine stops at C`0x128600` on the credits screen.
+The engine path from the endgame sensor to `ANIM.FTL` is in [engine-diff.md](engine-diff.md#end-of-the-game).
 
 Port: `startend_run_endgame_sensor` in `src/ui/startend.c` sets `g_session.won`, plays `ENDA.DAT` from the disk A folder with `anim_play`, waits for a key or a click, and shows the CSB screen.
 
@@ -283,24 +267,7 @@ The CSB engine has no new sound in `Graphics.DAT`. New samples exist only in the
 
 ## Engine tables
 
-The port reads all rule and view tables from the `KAOS.FTL` image. CSB has no `KAOS.FTL`. A search of `APPB.FTL` found the DM table bytes:
-
-| Table | DM address | CSB address | Content |
-|---|---|---|---|
-| Sounds | `0x100d52` | `0x10122a` | Identical |
-| Creature info | `0x10192e` | `0x101e32` | Identical |
-| Object info | `0x101068` | `0x10156a` | Identical |
-| Weapon info | `0x1014a0` | `0x1019a2` | Identical |
-| Armour info | `0x1015b4` | `0x101ab6` | Identical |
-| Food values | `0x1016d2` | `0x101bd6` | Identical |
-| Spells | `0x103c84` | `0x1046c2` | Identical |
-| Object aspects | `0x102c68` | `0x1037fa` | Identical |
-| Creature aspects | `0x102e58` | `0x1039e8` | Identical |
-| Thing record sizes | `0x101048` | `0x10154a` | Identical |
-| New-game extras | `0x101058` | `0x10155a` | Identical |
-| Action sets | `0x103d4c` | `0x1047ac` | 6-byte records. `csb_image.c` converts them to the 8-byte DM layout. |
-
-[engine-diff.md](engine-diff.md#equal-tables-at-new-addresses) lists the CSB addresses of the view tables, the input tables, and the escape tables. `g_csb_copies` (`src/data/csb_image.c`) copies them.
+The port reads all rule and view tables from the `KAOS.FTL` image. CSB has no `KAOS.FTL`; `csb_image.c` builds a KAOS-layout image from the `APPB.FTL` tables. [engine-diff.md](engine-diff.md#equal-tables-at-new-addresses) lists the CSB addresses of the view tables, the input tables, and the escape tables. `g_csb_copies` (`src/data/csb_image.c`) copies them.
 
 ## Loaders
 

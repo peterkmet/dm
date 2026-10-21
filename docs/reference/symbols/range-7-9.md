@@ -220,17 +220,9 @@ Range 8 covers `0x11d842`–`0x123ae2` (101 functions). The order follows the Re
 
 ### Common structures
 
-#### Timeline event (10 bytes, `TimelineEvent`)
+#### Timeline event (10 bytes)
 
-| Offset | Size | Field |
-|---|---|---|
-| 0 | long | Bits 24–31: map index. Bits 0–23: game time. |
-| 4 | byte | Event type. 0 = free slot. |
-| 5 | byte | Priority. Champion events store the champion index here. |
-| 6 | word | Data B. Square events: byte 6 = map X, byte 7 = map Y. |
-| 8 | word | Data C. Square events: byte 8 = cell, byte 9 = effect. |
-
-A free slot keeps the index of the next free slot in the word at offset 0. The free list ends with `0xffff`.
+The layout is in [game-state.md](../../rules/game-state.md#timeline).
 
 #### Sensor (thing type 3, 8 bytes)
 
@@ -254,35 +246,13 @@ Group generators (type 6) reuse word 4 bits 7–10 as creature count (bit 3 of t
 
 #### Square byte (current map)
 
-Bits 5–7 hold the square type (0 wall, 1 corridor, 2 pit, 3 stairs, 4 door, 5 teleporter, 6 fake wall). Bit 4: the square has things. Other bits depend on the type:
-
-- Door: bits 0–2 hold the door state. 0 open, 1–3 partly closed, 4 closed, 5 destroyed.
-- Pit: bit 3 open, bit 0 imaginary, bit 2 invisible.
-- Teleporter: bit 3 open (active).
-- Fake wall: bit 2 open, bit 0 imaginary.
-- Stairs: bit 2 up.
+See [range-4-6.md](range-4-6.md#square-byte).
 
 ### Movement (`move_*`)
 
 `move_get_move_result(thing, src_x, src_y, dst_x, dst_y)` moves a thing between squares. It is the central movement function. `thing = 0xffff` moves the party. `src_x < 0` means "add only". `dst_x < 0` means "remove only". The function returns 1 when the moved group died or left the map. For groups it can also return an active group code.
 
-Algorithm:
-
-1. When a group moves on the party map, `move_is_killed_by_projectile_impact` runs first. When it returns true, the function returns 1.
-2. Store the destination. For the party set `g_party_map_x/y`. Choose a teleporter scope mask: 1 creature, 2 party, 3 object.
-3. Loop at most 99 times over the destination square:
-   - Teleporter (type 5, open bit 3): the teleporter thing is the first thing of the square. Check its scope bits (byte 2 bits 5–6). Read target X (byte 3 bits 0–4), target Y (word 2 bits 5–9), target map (byte 4). Byte 2 bit 7 is audible: play sound 14. Byte 2 bit 4 selects absolute rotation; bits 2–3 hold the rotation. The party turns with `champion_set_party_direction`. Objects rotate their cell. Stop when the teleporter points to itself.
-   - Open pit (type 2, bit 3 set, bit 0 clear), when the thing does not levitate: go one level down with `get_location_after_level_change(map, +1, &x, &y)`. The party takes `champion_damage_all(20, 0x30, 2)` and sound 7. When `g_use_rope_to_climb_down_pit` is set, each champion instead loses stamina `load × 25 / max_load + 1`. A falling group takes 20 damage through `group_damage_all_creatures`. Outcome 2 (all dead) ends the loop.
-   - Stairs (type 3) for things other than the party and projectiles: go one level up or down (bit 2 clear: down), then step out in the stairs exit direction. The new cell faces away from the stairs.
-   - Any other square ends the loop.
-4. A group that died, or that is not allowed on the target map (`is_creature_allowed_on_map`), drops its possessions and is deleted.
-5. Store the result in `g_move_result_map_x/y`, `g_move_result_map_index`, `g_move_result_cell`, and `g_move_result_direction`. The port returns them in a `MoveDestination`, and takes the move as a `Move` request.
-6. Party move to a new square: add a scent. The scent list holds 24 entries. When full, `party_delete_scent(0)` drops the oldest. A scent word holds X (bits 0–4), Y (bits 5–9), and map (bits 10–15). `champion_add_scent_strength` updates strengths with the time since `g_last_party_movement_time`.
-7. Remove the thing from the source with `sensor_process_thing_change(..., add=0)`. A levitating thing skips sensors and only unlinks.
-8. Add the thing at the destination:
-   - Party on a new map: set `g_new_party_map_index`. The game loop changes the map.
-   - Party on the same map: a group on the square drops its possessions and is deleted. Then sensors run with `add=1`.
-   - Group: when the square is free, play the creature move sound (`move_get_creature_sound`), add or remove the active group, link the group through the sensors, and call `group_start_wandering`. When the square is occupied, remove the group and create event 60/61 (`move_create_event_move_group`) to retry 5 ticks later.
+The algorithm (teleporters, pits, stairs, scents, sensors, active groups) is in [movement.md](../../rules/movement.md#move_get_move_result).
 
 `move_is_levitating(thing)` returns true for a group with the levitation attribute (creature attributes bit 5), and for projectiles (type 14) and explosions (type 15).
 
@@ -295,51 +265,7 @@ Algorithm:
 
 `sensor_add_event(type, x, y, cell, effect, time)` creates a square event on the current map. The priority byte depends on the effect: effect 0 → 1, effect 1 → 3, effect 2 → 2, effect 3 → 0.
 
-`sensor_trigger_effect(sensor, effect, x, y, cell)` runs a sensor:
-
-- Once only (byte 5 bit 2): clear the sensor type.
-- Remote effect: look up the event type from the target square type with `g_square_type_to_event_type` (`0x100d4a`: wall 6, corridor 5, pit 9, stairs 0, door 10, teleporter 8, fake wall 7). Only wall targets keep the target cell. The event time is `g_game_time + delay`.
-- Local effect: call `trigger_local_effect(word6 >> 4, x, y, cell)`.
-
-Local effects: 10 adds 300 experience in skill 8 (to the leader, or to all champions when `cell == -1`). Effects 1 and 2 store a rotation request in `g_sensor_rotation_effect*`. `sensor_process_rotation_effect` runs after each sensor pass. It moves the first sensor of the matching cell to the end of the sensor list of that cell.
-
-`sensor_process_thing_change(x, y, thing, party_on_square, add)` runs floor or wall sensors when a thing enters or leaves a square. It first scans the square: a group present, objects present, objects of the same type, objects of a different type. On a corridor (no wall), text things (type 2) print when the party enters. Floor sensor types:
-
-| Type | Name | Trigger |
-|---|---|---|
-| 1 | Theron party/creature/object | Anything enters or leaves (no other objects, no group). |
-| 2 | Theron party/creature | Party or group, no objects or group left. |
-| 3 | Party | Party enters. Non-zero data: only when the party faces direction `data − 1`. |
-| 4 | Object | Object of type `data` (no other of that type). |
-| 5 | Party on stairs | Party on a stairs square. |
-| 7 | Creature | A group. |
-| 8 | Party possession | `is_object_possessed(data)`. |
-| 9 | Version checker | True when `data < 37`. |
-
-On a wall square the same function handles objects in a cell: wall sensor types 1, 2 (any object), and 3 (specific object).
-
-The trigger value is XORed with "revert" (byte 5 bit 5). Effect 3 (hold) converts to set or clear. Otherwise the sensor triggers only when the value is true.
-
-`sensor_is_wall_triggered(x, y, cell)` handles a click on the front wall. Wall sensor types:
-
-| Type | Name |
-|---|---|
-| 1 | Ornament click. |
-| 2 | Click with any object (revert flag compares with "empty handed"). |
-| 3 | Click with specific object. |
-| 4 | Click with specific object removed (the object is consumed). |
-| 5 | AND/OR gate (event 6 only). |
-| 6 | Counter (event 6 only). |
-| 7–10, 14, 15 | Projectile launchers (event 6 only). |
-| 11 | Single object storage, rotate. |
-| 12 | Single object generator, rotate. |
-| 13 | Single object exchanger (alcove). |
-| 16 | Object exchanger. |
-| 17 | Click with specific object removed, the sensor is removed. |
-| 18 | End game (event 6 only). |
-| 127 | Champion portrait: `champion_add_candidate_to_party(data)`. |
-
-Only sensors for the clicked cell count. Data is the object type. The function returns true when any sensor triggered.
+`sensor_trigger_effect(sensor, effect, x, y, cell)` runs a sensor, `sensor_process_thing_change(x, y, thing, party_on_square, add)` runs the floor and wall sensors when a thing enters or leaves a square, and `sensor_is_wall_triggered(x, y, cell)` handles a click on the front wall. The sensor types, the triggers, and the effects are in [movement.md](../../rules/movement.md#sensors).
 
 ### Timeline (`timeline_*`)
 
@@ -399,19 +325,7 @@ Heap order (`is_before`): earlier time (bits 0–23) first. On equal time, the l
 
 Other types below 80 do nothing. The jump table is at `0x120a5e` (80 word offsets).
 
-Square event effects: 0 = set (open, activate), 1 = clear (close, deactivate), 2 = toggle. A handler resolves toggle against the current state.
-
-- Door animation (1): the door state moves one step per event: effect 0 decreases (opens), effect 1 increases (closes). Each step plays sound 2 and re-adds the event at time + 1, until state 0 or 4. When the door closes on the party, the party takes `champion_damage_all(5, 4, 2)` and the door goes back one step. A closing door hits a group that is not non-material when the creature height is at most the door state (a vertical door uses creature attributes bits 7–8, otherwise height 1): 5 damage, `group_process_events_29_to_41(x, y, -3, 0)`, sound 4.
-- Fake wall (7): effect 0 sets bit 2. Effect 1 clears it. Closing waits (re-adds at time + 1) while the party or a material group is on the square.
-- Teleporter (8), pit (9): effect 0 sets bit 3 and calls `timeline_move_teleporter_or_pit_square_things`. Effect 1 clears bit 3. The two handlers have identical code.
-- `timeline_move_teleporter_or_pit_square_things(x, y)` re-runs `move_get_move_result(thing, x, y, x, y)` for the party, the group, and each object. Projectiles and explosions get their event data updated from the `g_move_result_*` globals (in the port: from the `MoveDestination`).
-- Corridor (5): text things toggle visibility (byte 3 bit 0). The party sees new text as a message. Group generator sensors (type 6) create a group with `group_get_generated`, play sound 14 when audible, and disable themselves. A non-once-only generator re-enables through event 65 after its regeneration delay.
-- Wall (6): text things in the event cell toggle. Counter sensors (6) count up (effect 0, max 511) or down, and trigger at 0. AND/OR gates (5) set or clear bit `cell` of the data, and compare bits 4–7 with bits 0–3. Launchers in the event cell call `timeline_trigger_projectile_launcher`. Sensor 18 waits `delay × 60` frames, sets `g_fade_display_on_exit` (the game is won), and calls `endgame(1)`.
-- `timeline_trigger_projectile_launcher(sensor, event)`: types 7, 8, 14 launch one projectile, types 9, 10, 15 launch two. Types 8 and 10 launch explosions (`data − 128`). Types 14 and 15 launch objects from the launcher square (cells in front). Types 7 and 9 create objects with `get_object_for_launcher_or_generator`. Kinetic energy is word 6 bits 4–11. Step energy is word 6 bits 12–15. The attack is 100. A single projectile picks a random side cell. The projectile starts on the adjacent square in direction `cell` with `g_create_launcher_projectile` set.
-- Move group (60/61): when the party or a group still blocks the square, retry at time + 5. Lord Chaos (creature type 23) can instead step to a random adjacent free square (1 in 4).
-- Enable champion action (11): clear the action event index (`+0x2c`) and the "action disabled" flag, remove the action defense, redraw the action hand. When the last action was SHOOT (32) and the ready hand is empty, move ammunition from the quiver (slot 12, then 7–9).
-- Vi altar rebirth (13): byte 9 is the step. Step 2 creates explosion thing `0xffe4` at the altar, step 1 removes the bones (icon 0x93) of the champion, step 0 resurrects the champion (`champion_resurrect` (`0x113a12`), range 5). Each step re-adds the event.
-- Light (70): word 6 holds the signed light power. The handler applies one step of `g_light_power_to_light_amount` (`0x100cb4`) to the magical light amount (`g_party` + 0) and re-adds the rest 4 ticks later.
+Square event effects: 0 = set (open, activate), 1 = clear (close, deactivate), 2 = toggle. The rules of each handler are in [movement.md](../../rules/movement.md#timeline-dispatch).
 
 ### Commands (`command_*`, `highlight_*`)
 
@@ -497,21 +411,9 @@ Button codes from `input_event_handler`: 2 left press, 4 left release, 1 right p
 
 `menus_init` loads graphic 699 (action names: 44 zero-terminated strings) into `g_action_names`.
 
-Action set table `g_action_sets` (`0x103d4c`, 44 × 8 bytes, indexed by object info byte 3): bytes 0–2 action indices (`0xff` = none), bytes 4–5 minimum skill levels of actions 1 and 2 (bit 7 = the action needs charges). Byte 6 is copied to `0x103fea`, no reader is known.
+The action set table `g_action_sets` (`0x103d4c`) and the per-action tables at `0x103eac`–`0x103fb4` are in [tables.md](../../rules/tables.md#actions).
 
 `menus_set_acting_champion` selects the champion, builds the action list with `menus_set_action_list`, and draws the action names. An empty action hand uses action set 2. Actions 1 and 2 need the skill level in `g_action_skill_index`. Charged actions also need `menus_get_action_hand_charge_count > 0`.
-
-Per-action tables (44 bytes each, indexed by action):
-
-| Address | Global | Use |
-|---|---|---|
-| `0x103eac` | `g_action_disabled_ticks` | `champion_disable_action` duration. |
-| `0x103ed8` | `g_action_damage_factor` | Melee damage factor. |
-| `0x103f04` | `g_action_hit_probability` | Melee hit probability (bit 15 added for SHOOT-like actions). |
-| `0x103f30` | `g_action_stamina` | Stamina cost (plus a random bit). |
-| `0x103f5c` | `g_action_defense` | Signed defense modifier while the action runs. |
-| `0x103f88` | `g_action_skill_index` | Skill that the action trains. |
-| `0x103fb4` | `g_action_experience_gain` | Experience gain. |
 
 `menus_is_action_performed(champion, action)` runs the action against the square in the champion direction. Action indices: 2 CHOP, 4 BLOW HORN, 5 FLIP, 6 PUNCH, 7 KICK, 8 WAR CRY, 9 STAB (dagger), 10 CLIMB DOWN, 11 FREEZE LIFE, 13 SWING, 14 STAB (skill 5), 15 THRUST, 16 JAB, 17 PARRY, 18 HACK, 19 BERZERK, 20 FIREBALL, 21 DISPELL, 22 CONFUSE, 23 LIGHTNING, 24 DISRUPT, 25 MELEE, 27 INVOKE, 28 SLASH, 29 CLEAVE, 30 BASH, 31 STUN, 32 SHOOT, 33 SPELLSHIELD, 34 FIRESHIELD, 35 FLUXCAGE, 36 HEAL, 37 CALM, 38 LIGHT, 39 WINDOW, 40 SPIT, 41 BRANDISH, 42 THROW, 43 FUSE. Melee actions on a closed door bash the door (`group_is_door_destroyed_by_attack` (`0x11d5e0`)). Other melee actions call `menus_is_melee_action_performed`. The result goes into `g_action_damage`: −1 "can't reach", −2 "need ammo", otherwise damage. `menus_refresh_action_area` draws it with `menus_draw_action_damage`. After the action the function disables the champion action, decrements stamina, and adds experience.
 
@@ -525,23 +427,9 @@ Symbols are characters `0x60 + step × 6 + n`. Champion record `+0x21` holds the
 
 `menus_add_champion_symbol(n)` costs `g_symbol_base_mana_cost[step][n]` mana. For steps after the first, the cost is `base × g_symbol_mana_cost_multiplier[power] >> 3`. The power symbol is the first symbol.
 
-`g_spells` (`0x103c84`): 25 entries of 8 bytes.
+`g_spells` (`0x103c84`) is in [tables.md](../../rules/tables.md#spells-and-symbols).
 
-| Offset | Field |
-|---|---|
-| 0 | Long: symbols, first symbol in bits 24–31. Bits 24–31 = 0: the spell has no power symbol, compare only bits 0–23. |
-| 4 | Base required skill level. |
-| 5 | Skill index. |
-| 6 | Word: bits 0–3 kind (1 potion, 2 projectile, 3 other), bits 4–9 type, bits 10–15 action disabled ticks. |
-
-`menus_get_champion_spell_cast_result`:
-
-1. Find the spell (`menus_get_spell_from_symbols`). No match: message "meaningless spell".
-2. Power = first symbol − 0x5f (1–6). Required level = power + base level. Experience = `(random & 7) + 16 × level + 8 × (power − 1) × base + D3²`. The intended last term is `level²` (ReDMCSB). The compiled code squares register D3 before it stores the level in D3, so it uses a stale value from the caller. The port uses `level²` (`src/engine/magic.c`).
-3. When the skill level is too low, each missing level gives a failure chance against the current wisdom (champion offset `0x50`, `min(wisdom + 15, 115)`). A failure adds reduced experience and prints "needs more practice".
-4. Potion: needs an empty flask (icon 0xc3) in a hand, otherwise message "need flask" and return 3. The flask becomes potion `type` with power `power × 40 + random(16)`.
-5. Projectile: turn the champion to the party direction and shoot explosion `type − 128` with kinetic energy `bounded(21, (power + 2) × (4 + 2 × skill), 255)`. Type 4 doubles the skill.
-6. Other: 0 light, 1 darkness, 2 thieves eye (event 73), 3 invisibility (event 71), 4 party shield (event 74), 5 magic torch, 6 footprints (event 79), 7 zokathra (creates junk 10), 8 fire shield.
+`menus_get_champion_spell_cast_result` casts the spell; the rules are in [creatures.md](../../rules/creatures.md#spells). One compiler quirk: the experience term `level²` of ReDMCSB is `D3²` in the compiled code, which squares register D3 before it stores the level in D3, so it uses a stale value from the caller. The port uses `level²` (`src/engine/magic.c`).
 
 `menus_print_spell_failure_message`: type 0 = more practice (strings 0x33/0x34 for skill 3, otherwise 0x35/0x36), type 1 = meaningless (0x37/0x38), type 10 = need flask (0x39/0x3a).
 
@@ -776,48 +664,11 @@ A port with enough memory can use the first set and skip this search.
 - `save_file_write(buffer, n)` writes to `g_load_file`.
 - `save_read_summed_block` and `save_write_summed_block` read or write a block and add the unsigned sum of its bytes to a 16-bit sum.
 
-#### Block cipher
+#### Block cipher, header, and file layout
 
-`savefile_xor_block(words, key, count)` encrypts and decrypts in place (XOR is symmetric). `save_block_checksum` computes the same sum without changes.
+`savefile_xor_block(words, key, count)` encrypts and decrypts in place, `save_block_checksum` computes the checksum, and `save_write_header` and `save_read_header` handle the 512-byte header. The cipher, the header fields, and the file layout are in [save.md](../../formats/save.md).
 
-```c
-sum = key;
-for (i = count; i != 0; i--) { old = *w; *w ^= key; sum += *w + old; key += i; w++; }
-```
-
-The checksum is the same for the plain and the encrypted data, because it adds both. `save_write_checked_block` computes the checksum, encrypts, writes, and decrypts again. `save_read_checked_block` reads, decrypts, and compares the checksum.
-
-#### Save header (512 bytes)
-
-`save_write_header` and `save_read_header` handle it. Offsets are bytes.
-
-| Offset | Size | Content |
-|---|---|---|
-| `0x000` | 256 | 32 groups of 4 random words `w0..w3`. The chain `acc = w3 ^ ((w1 ^ (w0 + acc)) − w2)`, start 0, gives the sum of the 128 plain words at `0x100`. The writer picks `w3` of the last group to make this true. |
-| `0x100` | 256 | Payload, encrypted with `savefile_xor_block`, key = word at `0x014`, 128 words. |
-| `0x12a` | 1 | `g_save_header_byte_12a` (default 1). |
-| `0x12b` | 1 | Platform. Written as 5. A load fails when it is 1. Stored in `g_save_platform`. |
-| `0x130` | 2 | 1 (the "save" choice). Not read. |
-| `0x132` | 4 | `g_game_id`. A random value at new game. A restart fails with "THAT'S NOT THE SAME GAME" when it differs. |
-| `0x136` | 32 | 16 random keys. Keys 0–4 encrypt the five blocks. |
-| `0x156` | 10 | 5 checksums of the five blocks. |
-| `0x176` | 2 | `g_save_format`. Must be 3. |
-| `0x178` | 2 | `g_dungeon_id` (10 for the DM dungeon; from the compressed dungeon header). |
-| `0x17a` | 134 | `g_save_header_extra` (`0x10406a`). Copied unchanged. Use not traced. |
-
-#### Save file layout
-
-1. Header (512 bytes).
-2. Five encrypted blocks with keys and checksums from the header:
-   1. Global state, 128 bytes: game time (long, +0), random seed (long, +4), leader hand object (+8), champion count (+10), party X (+12), Y (+14), direction (+16), map index (+18), leader index (+20), magic caster index (+22), `0x103180` (+24), `0x103182` (+26), event max count (+28), active group count (+30), `0x10314e` (long, +32), `0x103152` (long, +36), disabled movement ticks (+40), projectile disabled movement ticks (+42), last projectile direction (+44), max active group count (+46). The rest is 0.
-   2. Active groups: `max_active_group_count × 16` bytes.
-   3. Champions and party: `0x580` bytes = 4 × `0x140` champion records + 128 bytes from `0x101ed4`.
-   4. Timeline events: `event_max_count × 10` bytes.
-   5. Timeline index: `event_max_count × 2` bytes.
-3. Four champion portrait bitmaps, not encrypted. Size per bitmap = `((w + 15) & ~15) / 2 × h` with `w`, `h` at `g_portrait_width` (`0x102958`)/`0x10295a`. The pointers are at champion offset `0x114`.
-4. The dungeon in `Dungeon.DAT` format without compression: header (44), maps (count × 16), column first-thing indices, square first things, text data, 16 thing arrays, raw map data. Then a word: the byte sum of all dungeon parts.
-
-`save_game` removes the weight of the leader hand object from the leader load (champion offset `0x110`) for the time of the save. It calls `champion_portraits_to_interleaved` (`0x112f5c`) before the first write and `champion_portraits_from_interleaved` (`0x112ffe`) at the end (champion range).
+`save_game` removes the weight of the leader hand object from the leader load (champion offset `0x110`) for the time of the write.
 
 #### `save_game`
 
@@ -845,13 +696,7 @@ Returns 1 on success, −1 on cancel (restart path).
 4. Build the column pointer table `g_dungeon_map_data`: one pointer per map, then one pointer per column. Column `c` of map `m` starts at `raw + map.offset + c × height`.
 5. New game: `timeline_init`, `group_init_active_groups`.
 
-`decompress_dungeon` decodes a bit stream (MSB first, read in big-endian words). The first 20 bytes of the data after the 8-byte header are two tables: `t4` (4 bytes) and `t16` (16 bytes). The stream starts at byte 20. Codes:
-
-- `0` + 2 bits `i`: output `t4[i]`.
-- `10` + 4 bits `i`: output `t16[i]`.
-- `11` + 8 bits: output the literal byte.
-
-Stop after `size` output bytes. `decompress_get_bits` is the internal bit reader (register interface, not a C function).
+`decompress_dungeon` decodes the compressed file; the format is in [dungeon.md](../../formats/dungeon.md#compressed-file). `decompress_get_bits` is the internal bit reader (register interface, not a C function).
 
 #### Disk helpers
 

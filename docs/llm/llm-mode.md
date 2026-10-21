@@ -24,7 +24,7 @@ In turn-based mode, a program or an LLM plays the game through a Unix socket. Th
    build/dm --mode turnbased --control ~/.dm/control.sock
    ```
 
-   The game creates the directory of the socket when it does not exist. `--control` is optional; the default is `~/.dm/control.sock`. The game enters the dungeon at the start. The keyboard and the mouse do not control the game. Closing the window quits.
+   The game creates the directory of the socket when it does not exist. The game enters the dungeon at the start. The keyboard and the mouse do not control the game. Closing the window quits.
 
 3. Register the MCP server in Claude Code. Do this once. Run it from the repository root.
 
@@ -52,26 +52,15 @@ build/dm --adventure csb --mode turnbased --control ~/.dm/control.sock
 
 The game selects NEW ADVENTURE at the start. `new_game` starts it again. `state.adventure` is `"csb"`.
 
-1. The game starts in the prison (map 0, square 9,0). Recruit up to four champions at the mirrors, as in Dungeon Master.
-2. Send `save`. In the prison, the save creates the adventure: the save merges the party with `disk-b/MINI.DAT`, writes `CSBGAME.DAT`, and continues at the start of the CSB dungeon (map 4).
+1. The game starts in the prison (map 0, square 9,0). Recruit up to four champions at the mirrors.
+2. Send `save`. In the prison, the save creates the adventure ([manual](../manual.md#chaos-strikes-back)) and continues at the start of the CSB dungeon (map 4).
 3. The response of `save` is `{"ok":true}` only. Send `get_state` to see the new position.
 
 After that, `save` writes `CSBGAME.DAT` (the old file becomes `CSBGAME.BAK`), and `load` loads it. The save directory is the folder of `--saves`, otherwise the CSB data folder.
 
 ## MCP tools
 
-| Tool | Arguments | Result |
-|---|---|---|
-| `get_state` | none | `{ok, state}` |
-| `get_view` | none | `{ok, view}` |
-| `get_map` | none | `{ok, map}` |
-| `act` | `action`, `args` (object) | `{ok, ticks, stopped?, game_over, bumped?, action_damage?, health_lost?, look?, seen?, state, view}` |
-| `act_many` | `actions` (list) | `{ok, ticks, ran, stopped, error?, game_over, bumped?, action_damage? (list), health_lost?, seen?, state, view}` |
-| `wait` | `ticks` (1–5000, default 10) | `{ok, ticks, stopped, game_over, health_lost?, seen?, state, view}` |
-| `screenshot` | none | The screen as a 320 × 200 PNG image |
-| `save_game` | none | `{ok}` |
-| `load_game` | none | `{ok, state}` |
-| `new_game` | none | `{ok, state}` |
+The MCP tools are the commands of the [socket protocol](#socket-protocol), with the same arguments and results. Two names differ: `save_game` and `load_game` for `save` and `load`; `screenshot` takes no path and returns the image.
 
 The MCP server opens one socket connection per tool call. The timeout is 120 seconds.
 
@@ -387,7 +376,7 @@ The values of `action` for `act` and `act_many`.
 
 ## Play from the shell: dm-play
 
-`dm-play` sends one request to the socket and prints the response as compact JSON on one line. Use it from a shell, or let an LLM use it through a shell tool instead of MCP. The socket path comes from `DM_CONTROL`. The default is `~/.dm/control.sock`.
+`dm-play` sends one request to the socket and prints the response as compact JSON on one line. Use it from a shell, or let an LLM use it through a shell tool instead of MCP. The socket path comes from `DM_CONTROL` (the same default as `--control`).dm/control.sock`.
 
 ```sh
 uv run dm-play <cmd> [json-fields]

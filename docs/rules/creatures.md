@@ -204,6 +204,8 @@ Then the explosion disappears.
 
 ## Fixed original bugs
 
+Recorded in [dungeon.md](../formats/dungeon.md#deviations-from-the-original).
+
 Each fix has a short comment in the code.
 
 - `group_get_generated`: a group of several creatures starts its cell value from 0, not from a stale register.

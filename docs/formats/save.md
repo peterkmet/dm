@@ -192,7 +192,22 @@ Frees the decoded copy and clears `s`.
 
 ### CSB header
 
-With `g_adventure == ADVENTURE_CSB`, all functions use the CSB header: the payload key is at `0x3a` (word 29), and the fields from `0x12a` on are 2 bytes later. The extra bytes start at `0x17c`. `savefile_decode` also checks the block 2 checksum. See [data.md](../csb/data.md) "Save file".
+With `g_adventure == ADVENTURE_CSB`, all functions use the CSB header:
+
+| Field | DM offset | CSB offset | CSB value |
+|---|---|---|---|
+| Payload key | `0x014` (group 2, `w2`) | `0x03a` (group 7, `w1`) | Random |
+| Header byte (`SAVE_HEADER_HEADER_BYTE`) | `0x12a` | `0x12c` | Byte of the last load, default 1 |
+| Platform | `0x12b` | `0x12d` | 5. A load fails when the value is 1. |
+| Dialog choice | `0x130` | `0x132` | Not read by the load |
+| Game ID | `0x132` | `0x134` | `g_game_id` |
+| 16 keys | `0x136` | `0x138` | Keys 0–4 encrypt blocks 0–4 |
+| 5 checksums | `0x156` | `0x158` | |
+| Save format | `0x176` | `0x178` | 3. A load fails on other values. |
+| Dungeon ID | `0x178` | `0x17a` | From the dungeon header, default 10 |
+| Extra bytes | `0x17a`, 134 bytes | `0x17c`, 132 bytes | Copied unchanged |
+
+`savefile_decode` also checks the block 2 checksum. The CSB save file is `CSBGAME.DAT`; the other differences are in [data.md](../csb/data.md#save-file).
 
 ## Game state (`savegame.c`)
 

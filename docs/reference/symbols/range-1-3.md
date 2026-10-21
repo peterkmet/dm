@@ -137,7 +137,7 @@ Bitmap layout: 4 planes, not interleaved. Each plane is `((width + 15) & ~15) / 
 - `str_*` work like the C library. `str_find_char` returns null when the character is not found. `str_replace_char(src, insert, c, dst)` copies `src` to `dst` and replaces the first `c` with `insert`. It returns 1 when it found `c`. The language file names use it with `~`.
 - `bounded_value(min, value, max)` clamps `value`.
 - `scale_value(a, shift, b)` returns `(a * b) >> shift` with an unsigned 16×16 multiply. Callers use the low word.
-- Random: `seed = seed * 0xBB40E62D + 11`; the results are `(seed >> 8)` masked to 16, 1, or 2 bits. The port keeps the 32-bit wrap-around.
+- Random: the formula is in [game-state.md](../../rules/game-state.md#random-number-generator). The port keeps the 32-bit wrap-around.
 
 Emulator checks (`dmtools.emu`): `bounded_value(0, 15, 10) = 10`, `scale_value(100, 3, 50) = 625`, `rt_ldiv(-7, 2) = -3`, `rt_lmod(-7, 2) = -1`.
 

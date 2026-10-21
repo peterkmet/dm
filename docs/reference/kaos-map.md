@@ -158,18 +158,13 @@ File names in the data section:
 
 `load_dungeon` (`0x1260ee`) reads the dungeon. It follows `F0434_STARTEND_IsLoadDungeonSuccessful` in ReDMCSB:
 
-1. Optional 8-byte header with signature `0x8104`: the file is compressed. `decompress_dungeon` expands it.
-2. File header, 44 bytes (`g_dungeon_header`). Offset 2: raw map data size. Offset 4: map count. Offset 6: text data word count. Offset 8: start location of the party (X bits 0–4, Y bits 5–9, direction bits 10–11). Offset 10: square first thing count. Offset 12: thing count of each of the 16 thing types.
-3. Map descriptors, 16 bytes each (`g_dungeon_maps`).
-4. Column first-thing indices, square first things, text data.
-5. Thing data for each type. The record sizes are in `g_thing_data_byte_count`: 4, 6, 4, 8, 16, 4, 4, 4, 4, 8, 4, 0, 0, 0, 8, 4.
-6. Raw map data, then a checksum word.
+The file format is in [dungeon.md](../formats/dungeon.md).
 
 For a new game, the loader adds 300 free square-first-thing entries and free thing records.
 
 ### Saved games
 
-`save_game` (`0x125a44`) and `load_game` (`0x1265d4`) write and read blocks with `save_write_checked_block` and `save_read_checked_block`. Each block is obscured with `savefile_xor_block` (each word XOR the key; the key grows by the remaining word count) and protected with `save_block_checksum`. The blocks hold the party, the champions, the active groups, the timeline, and the dungeon. The trackdisk functions (`trackdisk_*`) detect drives and can format a save disk.
+`save_game` (`0x125a44`) and `load_game` (`0x1265d4`) write and read the save file; the format is in [save.md](../formats/save.md).
 
 ## Runtime library
 
@@ -194,12 +189,7 @@ The string functions (`str_length`, `str_copy`, `str_concat`, `str_compare`, `st
 
 `g_random_seed` (`0x100ef8`) starts with the long at offset `0x4c` of `IntuitionBase` (a time field).
 
-```c
-seed = seed * 0xBB40E62D + 11;
-random16    = (seed >> 8) & 0xFFFF;
-random_bit  = (seed >> 8) & 1;
-random_2bits = (seed >> 8) & 3;
-```
+The formula is in [game-state.md](../rules/game-state.md#random-number-generator).
 
 ## Main data structures
 

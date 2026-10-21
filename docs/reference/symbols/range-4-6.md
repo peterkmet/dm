@@ -27,23 +27,7 @@ A thing is a word:
 
 `0xfffe` ends a list. `0xffff` means "no thing". `get_thing_data(thing)` returns `g_thing_data[type] + g_thing_data_byte_count[type] * index`.
 
-Thing types and record sizes:
-
-| Type | Name | Bytes |
-|---|---|---|
-| 0 | Door | 4 |
-| 1 | Teleporter | 6 |
-| 2 | Text string | 4 |
-| 3 | Sensor | 8 |
-| 4 | Group | 16 |
-| 5 | Weapon | 4 |
-| 6 | Armour | 4 |
-| 7 | Scroll | 4 |
-| 8 | Potion | 4 |
-| 9 | Container | 8 |
-| 10 | Junk | 4 |
-| 14 | Projectile | 8 |
-| 15 | Explosion | 4 |
+The thing types and record sizes are in [dungeon.md](../../formats/dungeon.md#thing-lists).
 
 Every record starts with the next-thing word at offset 0. A free record has `0xffff` at offset 0.
 
@@ -99,12 +83,7 @@ The square thing lists start in `g_square_first_things` (one word for each squar
 
 `get_square_first_thing_index(x, y)` starts at the column entry and adds 1 for each square above `y` in the column that has bit 4 set.
 
-`link_thing_to_list(thing, list, x, y)`:
-
-1. Set the next word of `thing` to `0xfffe`.
-2. If `x < 0`, append `thing` to the list that starts at `list`.
-3. If the square has no list, set bit 4. Add 1 to the first-thing index of every later column of the dungeon (`g_dungeon_column_count` columns). Insert the thing into `g_square_first_things` at the square index. The last entry of `g_square_first_things` must be `0xffff`, or the game calls `fatal_error(0x48)`.
-4. Otherwise append `thing` to the end of the square list.
+`link_thing_to_list(thing, list, x, y)` adds a thing to a square list or to a plain list; the steps are in [movement.md](../../rules/movement.md#thing-lists).
 
 `unlink_thing_from_list` is the inverse. When the list becomes empty, it clears bit 4, removes the entry, writes `0xffff` to the last entry, and subtracts 1 from the later column indices.
 
@@ -116,14 +95,7 @@ The square thing lists start in `g_square_first_things` (one word for each squar
 
 ### Text decoding
 
-`decode_text(dst, text_thing, mode)` decodes 5-bit codes. Each word of `g_dungeon_text_data` holds three codes: bits 10–14, 5–9, 0–4.
-
-- Mode 0: inscription. Mode 1: message (output starts with a newline). Mode 2: scroll. Bit 15 of the mode decodes an invisible text.
-- Codes 0–25 are letters `A`–`Z` (inscriptions keep the raw code). 26 is space and 27 is `.` (not for inscriptions).
-- Code 28 is the line separator: `0x80` for inscriptions, a space for messages, a newline for scrolls.
-- Code 29 takes the next code as an index into `g_escape_replacement_chars` (2 bytes each).
-- Code 30 takes the next code as an index into `g_inscription_escape_strings` (inscriptions) or `g_message_escape_strings` (8 bytes each).
-- Code 31 ends the text. Inscriptions end with `0x81`, other texts with NUL.
+`decode_text(dst, text_thing, mode)` decodes the 5-bit codes of `g_dungeon_text_data`. The codes are in [dungeon.md](../../formats/dungeon.md#text-decoding).
 
 ### Random ornaments
 
@@ -172,31 +144,13 @@ ordinal = allowed && index < count ? index + 1 : 0;
 
 ### Creature info
 
-`g_creature_info` (`0x10192e`) has `0x1a` bytes for each creature type:
-
-| Offset | Size | Meaning |
-|---|---|---|
-| 0 | byte | Aspect index. |
-| 1 | byte | Attack sound ordinal. |
-| 2 | word | Attributes: bits 0–1 size (1 means two creatures share a half square), bit 2 side attack, bit 3 prefer back row, bit 4 attack any champion, bits 7–8 height, bit 9 drops fixed possessions, bit 11 sees invisible, bit 12 night vision, bit 13 archenemy. |
-| 4 | word | Graphic info: bit 2 flip when not attacking, bit 9 flip when attacking, bit 10 flip during attack, bits 12–13 horizontal offset range, bits 14–15 vertical offset range. |
-| 6 | byte | Movement ticks. |
-| 7 | byte | Attack ticks. |
-| 8 | byte | Defense (255 is invulnerable). |
-| 9 | byte | Base health. |
-| 10 | byte | Attack. |
-| 11 | byte | Poison attack. |
-| 12 | byte | Dexterity. |
-| 14 | word | Ranges: bits 0–3 sight, bits 8–11 smell, bits 12–15 attack. |
-| 16 | word | Properties: bits 4–7 fear resistance, bits 8–11 experience, bits 12–15 wariness. |
-| 18 | word | Resistances: bits 8–11 poison. |
-| 20 | word | Animation ticks: bits 4–7 non-attack, bits 8–11 attack. |
+`g_creature_info` (`0x10192e`) has `0x1a` bytes for each creature type. The fields are in [tables.md](../../rules/tables.md#creature-info).
 
 ### Group AI
 
 `group_process_events_29_to_41` follows ReDMCSB F0209. The port uses the ReDMCSB structure with these KAOS details:
 
-- Off the party map, a group only handles event types 32, 33, 37, and 38. It moves in a random direction and adds a new event 37 later by `max(16 * |map − party map|, 2 * movement ticks)`.
+- Off the party map, a group only handles event types 32, 33, 37, and 38 ([creatures.md](../../rules/creatures.md#group-events)).
 - The function stores the current group in `g_current_group_map_x`, `g_current_group_map_y`, `g_current_group_thing`, `g_current_group_distance_to_party`, and the two directions to the party. The port keeps the square and thing in `last_turn` and the distance and directions in `GroupTurn`. The movement test results go to `g_group_movement_blocked_by_*`, `g_flux_cages`, and `g_flux_cage_count`.
 - `unblocked_distance` walks a line from the group to the party with fixed point slope (`* 64`). It calls `is_view_party_blocked` or `is_smell_party_blocked` for each square.
 - `is_creature_attacking` has a jump table at `0x10d75a` for creature types below 25 that cast spells. Ghidra cannot recover it; the disassembly shows the cases. The port has them in `CreatureSpell` (`src/engine/group.c`).
@@ -280,14 +234,7 @@ Attribute flags at `0x30`: `0x0008` disable action, `0x0010` male, `0x0080` name
 
 ### Rules
 
-- Skill level (`champion_get_skill_level(champion, skill | flags)`): returns 1 while the party sleeps. Experience is the long of the skill plus the temporary experience (flag `0x8000` ignores the temporary part). For a hidden skill, add the base skill `(skill − 4) / 4` and halve. Level starts at 1 and adds 1 for each halving while experience ≥ 500. Without flag `0x4000`, add object bonuses (action hand icons 27 and 28, neck icons 120, 124, 121, 122 for specific skills).
-- Experience (`champion_add_skill_experience`): halve for skills 4–11 when the last creature attack is more than 150 ticks ago. Multiply by the map difficulty when it is not 0. Double for hidden skills when the last creature attack is less than 25 ticks ago. On a new level, raise statistics, maximum health, stamina, and mana, set `g_champion_skill_level_up`, and print the message.
-- Maximum load: `champion_get_stamina_adjusted_value(current_strength * 8 + 100)`. Subtract 1/8 when the champion has a wound (1/4 with a leg wound). Add 1/16 with icon 119 on the neck. Round up to a multiple of 10.
-- Luck (`champion_is_lucky`) changes the current luck by ±2 within its minimum and maximum each time.
-- Damage pipeline: `champion_add_pending_damage` adds to `g_champion_pending_damage` and `g_champion_pending_wounds`. The main loop calls `champion_apply_pending_damage`, which subtracts the damage, kills the champion at 0 health, draws the damage, and schedules event 12 after 5 ticks.
-- `champion_apply_time_effects` runs every 64 ticks (16 while sleeping). It ages scents, regenerates mana, decrements temporary experience, consumes food and water, decrements stamina, regenerates health, and moves current statistics toward their maximum every 256 ticks (64 while sleeping).
-- Candidate data: `champion_add_candidate_to_party` decodes the text on the portrait square. Line 1 is the name, lines 2–3 the title, then `M`/`F`, then 4-character values for health, stamina, and mana, then 2-character statistic values, then one character for each hidden skill. `champion_get_decoded_value` reads each character as `c − 'A'` (4 bits). A hidden skill gets `125 << (c − 'A')` experience. Each base skill is the sum of its 4 hidden skills.
-- Portraits are stored interleaved in a saved game. `champion_portraits_to_interleaved` runs before `save_game` writes. `champion_portraits_from_interleaved` runs after the write and after `load_game` reads. Interleaved means: for each row, for each 16-pixel column, the 4 plane words. Both functions assume a portrait 2 words wide.
+The skill level, the experience, the load, the luck, the damage pipeline, and the time effects are in [champions.md](../../rules/champions.md). The candidate data of a portrait square is in [champions.md "Recruiting"](../../rules/champions.md#recruiting). The interleaved portraits of a saved game are in [save.md](../../formats/save.md#portraits).
 
 ## Video driver interface (VDEO, `FTL_DRIA_Video`)
 

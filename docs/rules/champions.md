@@ -41,7 +41,7 @@ The possessions stay in the wall square list until the player accepts the candid
 |---|---|
 | `PANEL_CANCEL` | Removes the candidate. When it was the only champion, the party has no leader and no caster. |
 | `PANEL_RESURRECT` | Unlinks the possessions from the wall square. Disables the mirror sensor (`rec_sensor_set_type` to `SENSOR_DISABLED`). Prints "<name> RESURRECTED." |
-| `PANEL_REINCARNATE` | As resurrect, then the name entry (below). After OK, the game clears all experience. It adds 1 to the current and maximum value of a random statistic 12 times. Prints "<name> REINCARNATED." The turn-based mode skips the name entry and keeps the old name. |
+| `PANEL_REINCARNATE` | As resurrect, then the name entry (below). After OK, the game clears all experience. It adds 1 to the current and maximum value of a random statistic 12 times. Prints "<name> REINCARNATED." The turn-based mode skips the name entry and keeps the old name ([deviations](../formats/dungeon.md#deviations-from-the-original)). |
 
 With the first champion, the time of the last party move becomes the game time.
 

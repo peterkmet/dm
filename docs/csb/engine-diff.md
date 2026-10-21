@@ -347,18 +347,7 @@ File names: `DF0:CSBGame.dat` and `DF0:CSBGame.bak` (C`0x10013a`, `0x10014a`), o
 
 The cipher (`savefile_xor_block`, C`0x128720`), the checksum (C`0x128752`), the checked blocks (C`0x1287c2`, `0x128786`), and the summed blocks (C`0x128810`, `0x128856`) are the same as DM. The blocks are the same: globals (128 bytes, same layout), active groups, champions and party (`0x580` bytes), timeline events, timeline index, 4 portraits, dungeon.
 
-The header differs (`save_read_header` C`0x1289c4`, `load_game` C`0x129b3e`):
-
-| Field | DM offset | CSB offset |
-|---|---|---|
-| Payload key | `0x014` | `0x03a` (C`0x128a14`) |
-| Platform byte (load fails when 1) | `0x12b` | `0x12d` |
-| Game ID (long) | `0x132` | `0x134` |
-| Block keys | `0x136` | `0x138` |
-| Block checksums | `0x156` | `0x158` |
-| Save format (must be 3) | `0x176` | `0x178` (C`0x129e5c`) |
-| Dungeon ID | `0x178` | `0x17a` |
-| Copied extra header | `0x17a`, 134 bytes | `0x17c`, 132 bytes |
+The header differs (`save_read_header` C`0x1289c4`, `load_game` C`0x129b3e`); the offsets are in [save.md](../formats/save.md#csb-header).
 
 `save_game` (C`0x128cc0`) writes the fields at the CSB offsets: dialog choice `0x132`, extra header `0x17c` (`0x84` bytes), game ID `0x134`, platform `0x12d` = 5, header byte `0x12c`, save format `0x178`, dungeon ID `0x17a`, block keys `0x138`, block checksums `0x158`. Then it calls `save_write_header` (C`0x128a42`). A prison save has dungeon ID 12; a save of the adventure has 13 (see [new-adventure.md](new-adventure.md#summary)).
 
@@ -377,7 +366,7 @@ Other load and save differences:
 
 Port changes: `src/engine/savefile.c` (header offsets, file names), `src/engine/savegame.c` (active group count, champion bytes `0x118`–`0x11d`), `src/ui/startend.c` (save dialog).
 
-Port start of a game: NEW ADVENTURE starts the prison (`Dungeon.DAT`). A save in the prison merges the party with `disk-b/MINI.DAT`, writes `CSBGAME.DAT`, and loads it (`src/engine/savegame.c` `savegame_make_adventure`). The original needs a restart with the utility disk for this step. The merge rules and the `MINI.DAT` format: [new-adventure.md](new-adventure.md).
+Port start of a game: NEW ADVENTURE starts the prison, and a save in the prison creates the adventure ([manual](../manual.md#chaos-strikes-back)).
 
 ### Entrance and start
 

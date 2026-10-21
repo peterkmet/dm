@@ -272,7 +272,7 @@ dependency group (version 23). [format]
 `make` (clang) and `make windows` (MinGW-w64 GCC) build with 0 warnings under `-Wall -Wextra -Werror
 -Wshadow -Wmissing-prototypes -Wstrict-prototypes -Wvla -Wimplicit-fallthrough`.
 
-`make check` runs `ruff`, `tests/standard/` (with the format check) and the full suite. The checks of
+`make check` runs the checks ([development.md](development.md#coding-standard)). The checks of
 `tests/standard/test_standard.py`, by their allowlist key:
 
 | Key | Fails on |

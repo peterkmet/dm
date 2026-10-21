@@ -17,12 +17,7 @@ move_party_enter_dungeon();
 
 ## Game loop order
 
-The game loop calls these functions in this order on each tick:
-
-1. `move_process_new_party_map()`. When `g_session.new_party_map` is not −1, the party map changes, the party enters its square on the new map, and `g_session.new_party_map` becomes −1.
-2. `event_process_expired()`. Repeat step 1 while `g_session.new_party_map` is not −1.
-3. Increment `g_game_time`.
-4. The command step calls `move_party(command)` or `move_turn_party(command)`.
+The tick order is in [architecture.md](../architecture.md#the-tick). The movement part: `move_process_new_party_map()` changes the party map when `g_session.new_party_map` is not −1 (the party enters its square on the new map), then `event_process_expired()` runs; step 1 repeats while `g_session.new_party_map` is not −1. The command step calls `move_party(command)` or `move_turn_party(command)`.
 
 ## Current map
 

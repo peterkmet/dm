@@ -262,7 +262,7 @@ While a candidate is shown, only `recruit` is accepted. While the party sleeps, 
 
 ### Chest
 
-A chest in the action hand (slot 1) of the open inventory opens in the panel. `state.inventory.panel` is `chest`, and `state.inventory.chest` lists the chest slots that hold an object. The chest slots are 30–37: slot 30 is the first chest slot box, slot 37 the last. `take_from_slot`, `put_in_slot`, and `look` with `slot` use the same numbers. The action clicks the chest slot box in the panel, as a player does. The game rules apply: an object that does not fit in a chest (for example a sword) stays in the leader hand. Slot 38 and higher, or a chest slot without an open chest, gives `slot out of range`. When the chest leaves the action hand, or the inventory closes, the chest closes.
+A chest in the action hand (slot 1) of the open inventory opens in the panel. `state.inventory.panel` is `chest`, and `state.inventory.chest` lists the chest slots that hold an object. The chest slots are 30–37 (see the slot numbers above). `take_from_slot`, `put_in_slot`, and `look` with `slot` use the same numbers. The action clicks the chest slot box in the panel, as a player does. The game rules apply: an object that does not fit in a chest (for example a sword) stays in the leader hand. Slot 38 and higher, or a chest slot without an open chest, gives `slot out of range`. When the chest leaves the action hand, or the inventory closes, the chest closes.
 
 ### Look
 
