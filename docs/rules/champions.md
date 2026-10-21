@@ -70,7 +70,7 @@ The name entry (`champion_start_rename` … `champion_rename_ok`) clears the nam
 1. Skills 4–11 get half the experience when the last creature attack is more than 150 ticks ago.
 2. The map difficulty (descriptor byte 12, bits 4–7) multiplies the experience when it is not 0.
 3. Hidden skills get double experience when the last creature attack is less than 25 ticks ago.
-4. The skill experience increases. The temporary experience increases by `bounded(1, experience / 8, 100)` while it is below 32000. A hidden skill also adds the experience to its base skill.
+4. The skill experience increases. The temporary experience increases by `bounded_value(1, experience / 8, 100)` while it is below 32000. A hidden skill also adds the experience to its base skill.
 5. When the base skill level (without objects and temporary experience) increases, the champion gains a level:
 
 | Base skill | Strength max | Dexterity max | Wisdom max | Mana max | Health gain `h` | Stamina gain `s` |
@@ -91,8 +91,8 @@ The name entry (`champion_start_rename` … `champion_rename_ok`) clears the nam
 |---|---|
 | `champion_get_maximum_load` | `champion_adjust_by_stamina(strength × 8 + 100)`. A wound removes 1/8 (1/4 with a leg wound). Elven Boots on the feet add 1/16. The result rounds up to a multiple of 10 (tenths of a kilogram). |
 | `champion_get_movement_ticks` | Below the maximum load: 2, or 3 when the load is above 5/8 of the maximum. Otherwise `(load - max) × 4 / max + 4`. A feet wound adds 1 (2 when overloaded). Boots of Speed subtract 1. |
-| `champion_get_dexterity` | Dexterity + `random16() & 7`, minus `load × (dexterity / 2) / max_load`, at least 2, halved while sleeping, then `bounded(1 + (r & 7), value / 2, 100 - (r & 7))`. |
-| `champion_get_strength(index, hand)` | Strength + `random16() & 15`, adjusted by the weight of the hand object. A weapon adds its strength and 2 × the levels of swing (swing classes), throw (classes 1–15), and shoot (classes 16–111). Then stamina adjustment, halved by a wound of the hand, and `bounded(0, value / 2, 100)`. |
+| `champion_get_dexterity` | Dexterity + `random16() & 7`, minus `load × (dexterity / 2) / max_load`, at least 2, halved while sleeping, then `bounded_value(low, value / 2, high)`. Two more draws give `high = 100 - (random16() & 7)`, then `low = (random16() & 7) + 1`. |
+| `champion_get_strength(index, hand)` | Strength + `random16() & 15`, adjusted by the weight of the hand object. A weapon adds its strength and 2 × the levels of swing (swing classes), throw (classes 1–15), and shoot (classes 16–111). Then stamina adjustment, halved by a wound of the hand, and `bounded_value(0, value / 2, 100)`. |
 
 ## Wound defense
 
@@ -102,7 +102,7 @@ The name entry (`champion_start_rename` … `champion_rename_ok`) clears the nam
 2. Add `random16() % (vitality / 8 + 1)` (halved for sharp attacks), the action defense, the champion shield (Ya potion), and the party shield.
 3. Armour in a body slot (2–5) adds its defense. A sharp attack uses `defense × (sharp resistance + 4) / 8`.
 4. A wound of the slot subtracts `random_2bits() + 8`. Sleeping halves the value.
-5. The result is `bounded(0, value / 2, 100)`.
+5. The result is `bounded_value(0, value / 2, 100)`.
 
 ## Damage
 
@@ -251,7 +251,7 @@ The influence roll is `random16() % (influence level + bonus)`. The bonus and th
 1. Stamina cost: half the weight, bounded 1–10, plus half of each 10 above (`throwing_stamina_cost`). The action hand is disabled for 4 ticks.
 2. Experience to the throw skill: 8 for objects, 12 for weapons, plus kinetic energy / 4 for weapons of class 0–12.
 3. Kinetic energy (a byte): `level + e / 2 + random(16) + e` with `e` = strength + the weapon kinetic energy (class 0–12) or 1.
-4. Attack: `bounded(40, random(32) + 8 × level, 200)`. Step energy: `max(5, 11 - level)`.
+4. Attack: `bounded_value(40, random(32) + 8 × level, 200)`. Step energy: `max(5, 11 - level)`.
 5. The projectile starts in the front cell of the side and flies in the party direction. The party cannot move in that direction for 4 ticks.
 
 ### Charges

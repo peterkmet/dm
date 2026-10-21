@@ -104,7 +104,7 @@ The checksum is weak. A change that sets a bit in the plain word and clears the 
 | 26 | 2 | `g_timeline.first_unused` |
 | 28 | 2 | `g_timeline.capacity` |
 | 30 | 2 | `g_active_group_count` |
-| 32 | 4 | `0x10314e`, the last creature attack time (suggested name, not in the symbol table) |
+| 32 | 4 | `g_last_creature_attack_time` |
 | 36 | 4 | `g_last_party_movement_time` |
 | 40 | 2 | `g_disabled_movement_ticks` |
 | 42 | 2 | `g_projectile_disabled_movement_ticks` |

@@ -372,7 +372,7 @@ The values of `action` for `act` and `act_many`.
 - `sleep`: let the party sleep
 - `wake`: wake the party
 - `swap_champions`: swap two champions
-- `look`: look at a square
+- `look`: look at an object
 
 ## Play from the shell: dm-play
 

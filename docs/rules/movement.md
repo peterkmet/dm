@@ -242,7 +242,7 @@ Event types that other pages describe:
 | 12 | `hide_damage_received` | [champions.md](champions.md) |
 | 13 | `process_vi_altar_rebirth` | [champions.md](champions.md) |
 | 25 | `explosion_process_step_event` | [creatures.md](creatures.md) |
-| 29–41 | `group_process_reaction_event` | [creatures.md](creatures.md) |
+| 29–41 | `group_process_event` | [creatures.md](creatures.md) |
 | 48, 49 | `projectile_process_move_event` | [creatures.md](creatures.md) |
 | 60, 61 | `group_process_move_event` | [creatures.md](creatures.md) |
 | 75 | `champion_poison` | [champions.md](champions.md) |

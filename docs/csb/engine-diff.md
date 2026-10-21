@@ -122,13 +122,7 @@ DM pads each byte array to an even length. CSB does not. The content is equal, b
 
 ### Graphics.DAT
 
-CSB `Graphics.DAT` has 728 items. DM has 749. The item numbers up to 727 have the same meaning, so the graphic ids in `src/data/include/ids.h` stay valid. These items differ:
-
-- Item 700 (strings) and item 699 (action names) are empty in CSB. Items 737 and 747 (French and German strings) do not exist.
-- Item 694 (object names) ends each name with a byte that has bit 7 set. DM separates the names with NUL. 33 names differ, for example 23 BOLT BLADE → STORM, 158 BRO POTION → ANTIVENIN, 174 DRUMSTICK → SHANK.
-- Pictures and creature graphics differ in items 2–5, 10, 11, 26, 42–47, 329, 330, 371, 378, 504, 550, 588–669. Items 602 and 669 are 3 × 3 dummies in CSB. These need no code change.
-- Item 696 is 16 bytes shorter (9160 against 9176). Zones 437 and 438 (the endgame buttons) are missing. All other 554 zones that `layout_get_zone` resolves give the same boxes (`tests/differential/test_csb_engine.py`).
-- The header width of raw (non-bitmap) items 671–711 is 1–3 smaller in CSB. The port uses the item size, not the header width (`sound_get_sample`, `src/engine/sound.c`).
+CSB `Graphics.DAT` has 728 items. DM has 749. The item numbers up to 727 have the same meaning, so the graphic ids in `src/data/include/ids.h` stay valid. [Chaos Strikes Back data](data.md#item-comparison) lists the items that differ.
 
 ## Differences and the port
 

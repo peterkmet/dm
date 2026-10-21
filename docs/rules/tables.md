@@ -145,7 +145,7 @@ Each table ends where the next named table starts. The tests check this.
 | Offset | Field | Meaning |
 |---|---|---|
 | 0 | `weight` | Weight in tenths of a kilogram. |
-| 1 | `weapon_class` | Below 16: melee and thrown classes. 16–31: arrows (need launcher class 10). 32–47: sling stones (need launcher class 11). |
+| 1 | `weapon_class` | Below 16: melee and thrown classes; 10 is bow ammunition, 11 sling ammunition. 16–31: bows. 32–47: slings. |
 | 2 | `strength` | Weapon strength. |
 | 3 | `kinetic_energy` | Kinetic energy of a thrown or shot weapon. |
 | 4 | `attributes` | Bits 8–12 projectile aspect ordinal (0 = use the object aspect). Bits 0–7 shoot attack (ReDMCSB name, not traced). |

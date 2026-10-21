@@ -32,7 +32,7 @@ Usage: dm [options]
 
 - `--saves DIR` also holds the quick save and `SETTINGS.TXT`. The folder must exist.
 - `--control` defaults to `~/.dm/control.sock`.
-- The advanced mode takes the filter of the options menu, not `--filter`. The image is sharpest when the window scale is a multiple of the filter factor.
+- `--filter` takes priority over the filter of the options menu. The image is sharpest when the window scale is a multiple of the filter factor.
 - The environment variable `DM_AUTO_ENTER=1` skips the start screens and the entrance. The tests use it.
 
 ## Start screens

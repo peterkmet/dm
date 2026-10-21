@@ -54,7 +54,7 @@ Changed items (same index, different content):
 | 504, 550 | Objects 6 (drumstick), 52 (conduit) | Different size |
 | 588–602, 607–608, 627–650, 653–662, 664 | Creature graphics | Different sizes. 600–602, 649 are 3 × 3 placeholders. |
 | 669 | Creature 25 (Lord Order) | 3 × 3 placeholder |
-| 671–693, 701–711 | Sound samples | Same size. Only the first word differs (see [Sounds](#sounds)). |
+| 671–693, 701–711 | Sound samples | Same size. The header width and the first word differ (see [Sounds](#sounds)). |
 | 694 | Object names, NUL-terminated | Object names, last character has bit 7 set |
 | 696 | Layout | Zones 437 and 438 are not present |
 | 699 | Action names | Empty (0 bytes) |
@@ -74,7 +74,7 @@ Object names (item 694). The CSB engine reads 199 names at `0x108280` (graphic i
 
 33 of the 199 CSB names differ from DM. Examples: 23–24 STORM (DM BOLT BLADE), 25–26 RA BLADE (FURY), 38 SIDE SPLITTER (DELTA), 41 DRAGON FANG (THE INQUISITOR), 62–64 STAFF OF IRRA, CROSS OF NETA, SERPENT STAFF, 174 SHANK (DRUMSTICK).
 
-Action names and texts (items 699 and 700). CSB has no text in these items. The CSB engine has the texts in the `APPB.FTL` data area. Examples: the action names start near `0x1048c0` as one NUL-separated list. `WAKE UP` and `GAME FROZEN` are at `0x104680`. `GAME LOADED, READY TO PLAY.` is at `0x104d70`. A pointer table refers to some texts. [engine-diff.md "Text"](engine-diff.md#text) maps the CSB texts to the DM indices of item 700. The CSB engine does not push `0x2bb` (699). DM pushes it at `0x1220b8`.
+Action names and texts (items 699 and 700). CSB has no text in these items. The CSB engine has the texts in the `APPB.FTL` data area. Examples: the action names start at `0x1048b4` as one NUL-separated list. `WAKE UP` and `GAME FROZEN` are at `0x104680`. `GAME LOADED, READY TO PLAY.` is at `0x104d70`. A pointer table refers to some texts. [engine-diff.md "Text"](engine-diff.md#text) maps the CSB texts to the DM indices of item 700. The CSB engine does not push `0x2bb` (699). DM pushes it at `0x1220b8`.
 
 Layout (item 696). A check compares the zone records with `dmcsb.graphics.decode_lay1`. The range `400–438` becomes `400–436`. All other records are equal. `startend.c` uses zone 437 (`ZONE_RESTART_BUTTON`) and zone 438 (`ZONE_QUIT_BUTTON`) for THE END screen.
 
@@ -243,7 +243,7 @@ The CSB engine takes the sounds from `Graphics.DAT`, as DM does.
 
 - The CSB sound table at `0x10122a` has 35 entries of 12 bytes. It is byte-identical to the DM table at `0x100d52` (all 35 entries are equal). The graphic indices are 671–712.
 - The CSB init `0x1091ce` reads each sample graphic, sets the length to the graphic size - 2, and keeps the data after the first word. The play routine `0x109258` uses the length and the period `72800 / rate` (`0x11c60`).
-- In 26 sample items, the first word differs from DM by 1 or 2. The sample data is identical. The CSB engine does not read this word. `sound.c` does not read it.
+- In 26 sample items, the header width and the first word are 1 or 2 smaller than in DM. The sample data is identical. The CSB engine does not read this word. `sound_get_sample` (`src/engine/sound.c`) uses the item size, not the header width or this word.
 
 The CSB engine has no new sound in `Graphics.DAT`. New samples exist only in the animation files (`SD` chunks, `Sound/*.amg`) and in `MIDI/NAKED.AMG`.
 
