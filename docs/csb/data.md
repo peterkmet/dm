@@ -16,7 +16,7 @@ All addresses in this page are image addresses after `dm-ftl` with base `0x10000
 |---|---|---|
 | `Graphics.DAT` | 728 items, not 749. Same container format. Text items 699 and 700 are empty. Item 694 uses a different string encoding. | `gfx_open` and `gfx_expand` read and decode all items. `csb_text.c` builds the text items from `APPB.FTL`. |
 | `Dungeon.DAT` | A 2-level start dungeon with 24 champion mirrors, dungeon ID 12. Same format. | `dungeon_load` loads it. |
-| Save file | `CSBGame.dat`. Header fields are 2 bytes later. The payload key is at a different offset. Blocks, cipher, and dungeon part are the same. | `savefile.c` reads and writes the CSB header when `g_adventure` is `ADVENTURE_CSB`. |
+| Save file | `CSBGAME.DAT`. Header fields are 2 bytes later. The payload key is at a different offset. Blocks, cipher, and dungeon part are the same. | `savefile.c` reads and writes the CSB header when `g_adventure` is `ADVENTURE_CSB`. |
 | Endgame | `ENDA.DAT`, an animation file that `ANIM.FTL` plays. No credits screen. | `anim.c` plays `ENDA.DAT`. |
 | Sounds | Same 35 sounds, same graphic items, same sound table. | `sound.c` works with the CSB items. |
 | Engine tables | No `KAOS.FTL`. `APPB.FTL` holds the tables at different addresses. | `csb_image.c` builds a KAOS-layout image from the `APPB.FTL` tables. |
@@ -143,7 +143,7 @@ The CSB `save_game` is at `0x128cc0` (jump table slot `0xb6a(A5)`). The CSB `loa
 
 ### File names
 
-`DF0:CSBGame.dat` and `DF0:CSBGame.bak` (strings at `0x10013a`, `0x10014a`). The utility modules use `DF0:CSBGAME.DAT` and `DF0:CSBGAME.BAK`.
+`DF0:CSBGAME.DAT` and `DF0:CSBGAME.BAK` (strings at `0x10013a`, `0x10014a`). The utility modules use `DF0:CSBGAME.DAT` and `DF0:CSBGAME.BAK`.
 
 ### Same as DM
 
@@ -195,7 +195,7 @@ The chunk dispatcher of `ANIM.FTL` is `0x100d1a`: a switch table at `0x100d30` (
 | `DL` | `0x100846` | Delta frame: the blitter first copies the shown screen into the back buffer (`0x1017bc`), then the same decoder draws the frame. Skip commands keep the old pixels. Pad word `0xff81` before the size. Parameter as `EN`. | Yes |
 | `SD` | `0x10087a` | Sample: adds the payload to the sample table (max. 32). Payload: length word, then the 8-bit sample data. | Yes |
 | `SO` | `0x1008f2` | Plays sample number parameter (1-based) at Paula period 650 (`0x101406`). The two bytes after the chunk header give the volumes: (byte + 1) >> 2. `SO` has no payload in `ENDA.DAT`, so the two volume bytes are the first two bytes of the next tag, `DL` (volumes 17 and 19). | Done. UNVERIFIED: which volume is the left channel. |
-| `FO` | `0x100b64` | Loop start: pushes the loop (count parameter − 1, start = the second chunk after `FO`) onto a stack of 16 loops. The chunk after `FO` runs once. | Yes |
+| `FO` | `0x100b64` | Loop start: pushes the loop (count parameter - 1, start = the second chunk after `FO`) onto a stack of 16 loops. The chunk after `FO` runs once. | Yes |
 | `NE` | `0x100be2` | End of a pass: decrements the count. When the count was 0, it pops the loop and skips the two chunks after `NE`. | Yes |
 | `BN` | `0x100c7e` | Goes back to the loop start. | Yes |
 | `BR` | `0x10073a` | The parameter allows a stop by key or click (`0x10104e`, input types 1 and `0x11`). `ENDA.DAT` has 0: no stop. | Not used (always 0 in `ENDA.DAT`) |
@@ -260,7 +260,7 @@ Item 0 is the sequence: item numbers, ended by `0xff` (`1,1,2,2,1,1,2,2,3,4,3,4,
 The CSB engine takes the sounds from `Graphics.DAT`, as DM does.
 
 - The CSB sound table at `0x10122a` has 35 entries of 12 bytes. It is byte-identical to the DM table at `0x100d52` (all 35 entries are equal). The graphic indices are 671–712.
-- The CSB init `0x1091ce` reads each sample graphic, sets the length to the graphic size − 2, and keeps the data after the first word. The play routine `0x109258` uses the length and the period `72800 / rate` (`0x11c60`).
+- The CSB init `0x1091ce` reads each sample graphic, sets the length to the graphic size - 2, and keeps the data after the first word. The play routine `0x109258` uses the length and the period `72800 / rate` (`0x11c60`).
 - In 26 sample items, the first word differs from DM by 1 or 2. The sample data is identical. The CSB engine does not read this word. `sound.c` does not read it.
 
 The CSB engine has no new sound in `Graphics.DAT`. New samples exist only in the animation files (`SD` chunks, `Sound/*.amg`) and in `MIDI/NAKED.AMG`.

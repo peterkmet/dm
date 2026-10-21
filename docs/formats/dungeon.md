@@ -13,7 +13,7 @@ if (!dungeon_load("game/Dungeon.DAT"))
     return 1;
 ```
 
-`dungeon_load` loads the dungeon for a new game. It returns 1 on success and 0 on error. Call `tables_load("game/KAOS.FTL")` (`tables.h`) first: the loader and `dungeon_decode_text` read the new-game extras table (`0x101058`) and the escape tables (`0x1016ea`, `0x1017ea`, `0x10182a`) from the KAOS image. Without KAOS, `dungeon_load` returns 0. A new call frees the previous dungeon.
+`dungeon_load` loads the dungeon for a new game. It returns false on error. Call `tables_load("game/KAOS.FTL")` (`tables.h`) first: the loader and `dungeon_decode_text` read the new-game extras table (`0x101058`) and the escape tables (`0x1016ea`, `0x1017ea`, `0x10182a`) from the KAOS image. Without KAOS, `dungeon_load` returns 0. A new call frees the previous dungeon.
 
 ## Compressed file
 
@@ -36,7 +36,7 @@ When the first word is not `0x8104`, the file is not compressed. The loader then
 - `11` + 8 bits: output the literal byte.
 - The decoder stops after `byte_count` output bytes.
 
-The original has no `src_size` argument. The port adds it. The function returns 0 when the bit stream ends before `byte_count` bytes. It never reads past the end of the input.
+The original has no `src_size` argument. The port adds it. The function returns false when the bit stream ends before `byte_count` bytes. It never reads past the end of the input.
 
 All three files on the disk are compressed.
 
@@ -80,7 +80,7 @@ The loader sets `g_party_map_x`, `g_party_map_y`, and `g_party_direction` from o
 | 0 | word | Raw map data offset of the map. |
 | 6 | byte | X offset of the map in the dungeon. |
 | 7 | byte | Y offset of the map. |
-| 8 | word | Bits 0–5: level. Bits 6–10: width − 1. Bits 11–15: height − 1. |
+| 8 | word | Bits 0–5: level. Bits 6–10: width - 1. Bits 11–15: height - 1. |
 | 10–15 | bytes | Ornament, creature, and door counts and sets. See [range-4-6.md](../reference/symbols/range-4-6.md#map-descriptor). |
 
 ### Squares
@@ -126,14 +126,14 @@ The original writes all extra records, even past the limit. The port stops at th
 
 ## Validation
 
-`dungeon_load` returns 0 and leaves no dungeon in memory (all globals `NULL`, `dungeon_map_count()` returns 0) in these cases:
+`dungeon_load` returns false and leaves no dungeon in memory (all globals `NULL`, `dungeon_map_count()` returns 0) in these cases:
 
 - KAOS is not loaded, or the file cannot be read.
 - The file is shorter than 8 bytes, or the decompressed size is 0 or larger than 1 MB.
 - A compressed file ends before the decompressed size is reached.
 - A part is longer than the remaining data.
 - The map count is 0.
-- The square first thing count is larger than `0xffff − 300`.
+- The square first thing count is larger than `0xffff - 300`.
 - A thing count is larger than the limit (1024, 768 for explosions).
 - A map does not fit in the raw map data (offset + width × height > raw map data size).
 - The checksum is present and wrong.
@@ -143,7 +143,7 @@ The original writes all extra records, even past the limit. The port stops at th
 
 ## Text decoding
 
-`dungeon_decode_text(dst, dst_size, text_thing, mode)` ports `0x10b312`. The port adds `dst_size`. It returns 1 on success. It returns 0 when the text offset is outside the text data, when the text has no end code, or when the text does not fit in `dst_size` bytes. A text that does not fit is cut; the end byte is written. The text string record has a word at offset 2: bit 0 is the visible flag, bits 3–15 are the word offset into the text data.
+`dungeon_decode_text(dst, dst_size, text_thing, mode)` ports `0x10b312`. The port adds `dst_size`. It returns false when the text offset is outside the text data, when the text has no end code, or when the text does not fit in `dst_size` bytes. A text that does not fit is cut; the end byte is written. The text string record has a word at offset 2: bit 0 is the visible flag, bits 3–15 are the word offset into the text data.
 
 The function decodes only a visible text, or any text when bit 15 of `mode` is set. Modes:
 

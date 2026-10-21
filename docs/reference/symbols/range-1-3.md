@@ -102,7 +102,7 @@ The port replaces this group with a save directory and returns fixed values.
 ## File I/O (`0x1061b8`–`0x1062ca`)
 
 - `file_open_read` and `file_open_write` return a dos file handle (`BPTR`), or 0.
-- `file_seek(fh, pos)` seeks from the start and always returns −1.
+- `file_seek(fh, pos)` seeks from the start and always returns -1.
 - `file_tell(fh)` (`0x10625a`) returns the current position. It does not move. No code calls it.
 - `file_size` seeks to the end and back.
 - `file_read`, `file_write` return 1 when all bytes transfer. The parameter order is handle, size, buffer.
@@ -169,7 +169,7 @@ The pointer uses hardware sprites 4–7 as two attached pairs (32 pixels wide, 1
 - `g_mouse_sprite_data` (chip, `0x640` bytes) holds 5 shapes of `0x140` bytes. Slot 0 is empty (hidden pointer). Slots 1–4 are the shapes: 0 = arrow, 1 = hand, 2 = object, 3 = champion icon. Each shape has 4 sprites of `0x50` bytes (control words, 18 lines of 2 words, end words).
 - `build_mouse_pointer_sprite(bitmap, shape)` converts a 4-plane bitmap to the sprite format.
 - `build_mouse_pointer_bitmap` adds a shadow. It offsets the recolored copy by `g_pointer_shadow_dx`, `g_pointer_shadow_dy` and swaps colors 0 and 12 (`g_pointer_swap_colors_0_12`).
-- `get_mouse_pointer_shape_for_position(x, y)` returns −1 (hidden), or the shape. It checks the 16 entries of `g_mouse_pointer_zones` (`x, y, width, height, shape, champion`). A champion value of 1–4 selects a champion; values 9–12 also select the champion name area.
+- `get_mouse_pointer_shape_for_position(x, y)` returns -1 (hidden), or the shape. It checks the 16 entries of `g_mouse_pointer_zones` (`x, y, width, height, shape, champion`). A champion value of 1–4 selects a champion; values 9–12 also select the champion name area.
 - Tracking box: `mouse_set_tracking_box(box, command)` stores a box and a command. When the pointer leaves the box, the next shape check calls `command_process_click(x, y, command)`.
 - `mouse_process_champion_icon_click(cell)` starts or ends the drag of a champion icon. The first click picks the icon up. The second click swaps the champions of the two cells. `mouse_cancel_champion_icon_drag` drops the icon on its start cell.
 - `update_mouse_pointer_sprites` runs in the copper interrupt. It changes and moves the sprites. The hot spot comes from `g_mouse_pointer_hotspots`.
@@ -190,32 +190,32 @@ The port draws the pointer into the frame after the game image.
 
 | Offset | Size | Field |
 |---|---|---|
-| 0 | word | Graphics.DAT index of the sample. −1 = disabled. |
+| 0 | word | Graphics.DAT index of the sample. -1 = disabled. |
 | 3 | byte | Rate value. Period = `0x11c60 / rate` (72800 / rate). |
 | 4 | byte | Priority. |
 | 6, 7 | byte | Not decoded. |
 | 8 | long | Sample pointer (loaded on first use). |
 
-The sample data starts 2 bytes after the graphic start. The length is the graphic size − 2.
+The sample data starts 2 bytes after the graphic start. The length is the graphic size - 2.
 
 - `sound_get_volume(map_x, map_y, volumes)` rotates the offset from the party into party space. It returns 0 when the source is more than 12 squares away. Otherwise it reads left and right volumes from `g_sound_volume_table` (25 × 25).
-- `sound_request_play(sound, x, y, mode)`: mode 0 plays now, mode 1 queues the sound for `sound_play_pending` (two slots, louder or higher priority wins), mode ≥ 2 adds timeline event type 20 at `g_game_time + mode − 1`.
+- `sound_request_play(sound, x, y, mode)`: mode 0 plays now, mode 1 queues the sound for `sound_play_pending` (two slots, louder or higher priority wins), mode ≥ 2 adds timeline event type 20 at `g_game_time + mode - 1`.
 - `audio_play_sample(sound, volumes)` (high byte left, low byte right) picks a free pair. When both pairs play, it replaces the quieter pair (`sound_compare_loudness`). It stops the pair, writes both channels, and starts them together.
-- `sound_compare_loudness(a, b)` puts each left+right sum in a class (< 15, < 26, or more) and returns 1, 0, or −1.
+- `sound_compare_loudness(a, b)` puts each left+right sum in a class (< 15, < 26, or more) and returns 1, 0, or -1.
 - `sound_disable_unloaded` disables the sound groups (19, 9, 7 entries) whose flag at `0x1001d7`–`0x1001d9` is 0.
 
 ## Text (`0x109116`–`0x109b4e`)
 
 `text_print_to_bitmap(bitmap, width, x, y, fg, bg, text, height)` is hand-written assembly:
 
-- Glyphs are 6 pixels wide and 6 lines high. `y` is the baseline; the glyph starts at line `y − 4`.
+- Glyphs are 6 pixels wide and 6 lines high. `y` is the baseline; the glyph starts at line `y - 4`.
 - `g_font_bitmap` (`0x300` bytes, graphic `0x2b7`) has 6 rows of 128 bytes, one byte per character.
 - It writes directly to the 4 planes. It clears the character cell with the masks `g_glyph_masks_left` and `g_glyph_masks_right`, then sets the planes for `fg` (glyph pixels) and `bg` (other pixels in the cell). It uses a jump table per color.
 - `text_print_to_viewport` and `text_print_to_viewport_zone` use background color 12.
 
 Other functions:
 
-- `text_get_zone_size` returns width `n * g_text_char_width − g_text_char_gap` and height `g_text_line_height − g_text_baseline_gap`.
+- `text_get_zone_size` returns width `n * g_text_char_width - g_text_char_gap` and height `g_text_line_height - g_text_baseline_gap`.
 - `text_get_next_word_line` copies words up to `max_width` pixels and returns the width.
 - `text_print_to_bitmap_zone`, `text_print_padded_to_bitmap`, and `text_print_padded_to_bitmap_zone` take any bitmap. The padded forms add spaces up to `length` (buffer of 80 bytes).
 
@@ -223,11 +223,11 @@ The text metric globals at `0x102962`–`0x102976` come from the layout data.
 
 ## Message area
 
-The message area has 4 rows at the bottom of the screen (zone `0xf`). `g_message_area_cursor_row` and `g_message_area_cursor_x` hold the cursor. Each row has an expiry time in `g_message_area_row_expiry` (`g_game_time + 70`, −1 = empty). `message_area_clear_expired_rows` clears expired rows.
+The message area has 4 rows at the bottom of the screen (zone `0xf`). `g_message_area_cursor_row` and `g_message_area_cursor_x` hold the cursor. Each row has an expiry time in `g_message_area_row_expiry` (`g_game_time + 70`, -1 = empty). `message_area_clear_expired_rows` clears expired rows.
 
 When the cursor is on row 3 and a new row is necessary:
 
-1. `message_area_create_new_row` clears `g_message_area_row_bitmap` and sets `g_message_area_scroll_line` to `g_message_area_row_height − 1`.
+1. `message_area_create_new_row` clears `g_message_area_row_bitmap` and sets `g_message_area_scroll_line` to `g_message_area_row_height - 1`.
 2. Text goes into the row bitmap, not to the screen.
 3. Each vblank scrolls the area one pixel line up (`copy_bytes` per plane) and copies one more line of the row bitmap to the bottom. A full row takes 7 frames.
 4. When text arrives after the scroll, `g_message_area_copy_pending` tells the vblank handler to copy the whole row bitmap.

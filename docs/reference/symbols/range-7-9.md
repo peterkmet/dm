@@ -12,7 +12,7 @@ Three functions do all rectangle copies in KAOS. `blit_bitmap` is the entry poin
 
 #### Bitmap and box formats
 
-- A bitmap pointer points to the pixel data. The word at offset −4 is the width. The word at offset −2 is the height.
+- A bitmap pointer points to the pixel data. The word at offset -4 is the width. The word at offset -2 is the height.
 - The pixel data has 4 bitplanes. The planes follow each other (not interleaved). One plane is `((width + 15) / 16) * 2 * height` bytes. Bit 15 of a word is the leftmost pixel. Plane 0 holds bit 0 of the color index.
 - A box is 4 words: `x, y, width, height`.
 - `box_to_bounds` converts a box to bounds: `x1, x2, y1, y2`. The bounds are inclusive.
@@ -40,8 +40,8 @@ for (y = box.y; y < box.y + box.height; y++)
 Hardware details that a port can ignore:
 
 - `blit_bitmap` waits for the video beam when the destination is the screen. When the box is 64 rows or more, it splits the copy into 2 strips (64–127 rows) or 3 strips (128 rows or more). Before the first strip, it waits until the beam is below the strip. `g_blit_skip_beam_wait` cancels one wait.
-- `blit_raw` uses a temporary mask buffer at `g_video + 0x138`. For a color key, two blits make the mask: blit 1 compares planes 0 and 1 with key bits 0 and 1, blit 2 adds planes 2 and 3. Two more blits set the mask bits to the left of `x1` and to the right of `x2`. The tables `g_blit_mask_from_pixel` (`0xffff >> i`) and `g_blit_mask_before_pixel` (`~(0xffff >> i)`) supply the edge masks. Then 4 blits (one per plane) use minterm `0xB8`: `D = mask ? C : A`, where A is the shifted source and C is the destination.
-- An opaque copy with equal source and destination shift and no partial edge words uses 4 plain copies (minterm `0xF0`).
+- `blit_raw` uses a temporary mask buffer at `g_video + 0x138`. For a color key, two blits make the mask: blit 1 compares planes 0 and 1 with key bits 0 and 1, blit 2 adds planes 2 and 3. Two more blits set the mask bits to the left of `x1` and to the right of `x2`. The tables `g_blit_mask_from_pixel` (`0xffff >> i`) and `g_blit_mask_before_pixel` (`~(0xffff >> i)`) supply the edge masks. Then 4 blits (one per plane) use minterm `0xb8`: `D = mask ? C : A`, where A is the shifted source and C is the destination.
+- An opaque copy with equal source and destination shift and no partial edge words uses 4 plain copies (minterm `0xf0`).
 
 #### `blit_box_filled_with_masked_bitmap`
 
@@ -59,7 +59,7 @@ Port: for each destination pixel in the box, take the pattern pixel, skip it whe
 
 `load_current_map_graphics` (ReDMCSB `F0096`) runs after each map change.
 
-- It reads the map descriptor (`g_current_map`): byte 0x0a low nibble = floor ornament count, byte 0x0b low nibble = wall ornament count − 1 (the loop uses `<=`), byte 0x0d low nibble = door ornament count, high nibble = creature type count, byte 0x0e = door sets 0 and 1, byte 0x0f low nibble = floor set, high nibble = wall set.
+- It reads the map descriptor (`g_current_map`): byte 0x0a low nibble = floor ornament count, byte 0x0b low nibble = wall ornament count - 1 (the loop uses `<=`), byte 0x0d low nibble = door ornament count, high nibble = creature type count, byte 0x0e = door sets 0 and 1, byte 0x0f low nibble = floor set, high nibble = wall set.
 - `load_floor_set` loads graphics `0x4e + 2 * set` (floor) and `0x4f + 2 * set` (ceiling) into layout slots `g_wall_set_layout_ids[0]` and `[1]`. `g_current_floor_set` prevents reloads.
 - `load_wall_set` loads 7 door frame graphics (`0x56 + 0x28 * set` …) and 15 wall graphics (`0x5d + 0x28 * set` …). `g_current_wall_set` prevents reloads.
 - When the mirrored-wall memory option (`0x1001d5`) is on, `copy_wall_bitmap_and_flip_horizontal` makes 15 mirrored wall bitmaps in `g_wall_set_flipped_layout_ids`. Bitmaps with a width that is not a multiple of 16 get a realignment shift of `16 - (width & 15)`.
@@ -81,7 +81,7 @@ Port: for each destination pixel in the box, take the pattern pixel, skip it whe
 `draw_dungeon_view(direction, map_x, map_y)` (ReDMCSB `F0128`):
 
 1. Clear the viewport when `g_viewport_needs_clear` is set.
-2. Clear `g_dungeon_view_clickable_boxes` (6 boxes: cells 0–3, alcove, wall ornament or door button). Box x = −1 means empty.
+2. Clear `g_dungeon_view_clickable_boxes` (6 boxes: cells 0–3, alcove, wall ornament or door button). Box x = -1 means empty.
 3. Allocate `g_temp_bitmap`.
 4. `g_use_flipped_wall_bitmaps = (map_x + map_y + direction) & 1`. When set: draw the ceiling (zone 700) normal and the floor (zone 701) mirrored, and swap in the mirrored wall IDs (save in `g_wall_set_layout_ids_saved`). When clear: draw the ceiling mirrored and the floor normal.
 5. Draw objects only (no walls) of D4L, D4R, D4C with `draw_objects_creatures_projectiles_explosions`, view squares 17, 18, 16, cell order `0x0001`.
@@ -89,20 +89,20 @@ Port: for each destination pixel in the box, take the pattern pixel, skip it whe
 
 | Function | Square | Forward, right | View square | Wall ornament view walls |
 |---|---|---|---|---|
-| `draw_square_d3l2` | D3L2 | 3, −2 | 14 | 0 (right side) |
+| `draw_square_d3l2` | D3L2 | 3, -2 | 14 | 0 (right side) |
 | `draw_square_d3r2` | D3R2 | 3, +2 | 15 | 1 (left side) |
-| `draw_square_d3l` | D3L | 3, −1 | 12 | 2 (right side), 4 (front) |
+| `draw_square_d3l` | D3L | 3, -1 | 12 | 2 (right side), 4 (front) |
 | `draw_square_d3r` | D3R | 3, +1 | 13 | 3 (left side), 6 (front) |
 | `draw_square_d3c` | D3C | 3, 0 | 11 | 5 (front) |
-| `draw_square_d2l2` | D2L2 | 2, −2 | 9 | wall and field only |
+| `draw_square_d2l2` | D2L2 | 2, -2 | 9 | wall and field only |
 | `draw_square_d2r2` | D2R2 | 2, +2 | 10 | wall and field only |
-| `draw_square_d2l` | D2L | 2, −1 | 7 | 7, 9 |
+| `draw_square_d2l` | D2L | 2, -1 | 7 | 7, 9 |
 | `draw_square_d2r` | D2R | 2, +1 | 8 | 8, 11 |
 | `draw_square_d2c` | D2C | 2, 0 | 6 | 10 |
-| `draw_square_d1l` | D1L | 1, −1 | 4 | 12 |
+| `draw_square_d1l` | D1L | 1, -1 | 4 | 12 |
 | `draw_square_d1r` | D1R | 1, +1 | 5 | 13 |
 | `draw_square_d1c` | D1C | 1, 0 | 3 | 14 (front, clickable) |
-| `draw_square_d0l` | D0L | 0, −1 | 1 | none |
+| `draw_square_d0l` | D0L | 0, -1 | 1 | none |
 | `draw_square_d0r` | D0R | 0, +1 | 2 | none |
 | `draw_square_d0c` | D0C | 0, 0 | 0 | none |
 
@@ -143,11 +143,11 @@ View square tables (24 bytes each, index = view square):
 
 | Table | Content |
 |---|---|
-| `g_view_square_lane` | −3…+3 (left/right offset). |
+| `g_view_square_lane` | -3…+3 (left/right offset). |
 | `g_view_square_depth` | 0–4. |
-| `g_view_square_object_coord_index`, `g_view_square_alcove_object_coord_index` | Object coordinate set index, or −1. |
-| `g_view_square_creature_coord_index` | Creature coordinate set index, or −1. |
-| `g_view_square_explosion_coord_index` | Explosion coordinate set index, or −1. |
+| `g_view_square_object_coord_index`, `g_view_square_alcove_object_coord_index` | Object coordinate set index, or -1. |
+| `g_view_square_creature_coord_index` | Creature coordinate set index, or -1. |
+| `g_view_square_explosion_coord_index` | Explosion coordinate set index, or -1. |
 | `g_view_square_field_aspect_index` | Index into `g_field_aspects`. |
 
 View squares: 0 D0C, 1 D0L, 2 D0R, 3 D1C, 4 D1L, 5 D1R, 6 D2C, 7 D2L, 8 D2R, 9 D2L2, 10 D2R2, 11 D3C, 12 D3L, 13 D3R, 14 D3L2, 15 D3R2, 16 D4C, 17 D4L, 18 D4R.
@@ -167,7 +167,7 @@ View squares: 0 D0C, 1 D0L, 2 D0R, 3 D1C, 4 D1L, 5 D1R, 6 D2C, 7 D2L, 8 D2R, 9 D
 #### Helpers
 
 - `draw_wall_set_bitmap`, `_opaque`, `_flipped`: draw a layout bitmap into the viewport at a zone. Transparent color 10, none, or 10 with a horizontal mirror.
-- `get_flipped_bitmap` and `get_scaled_flipped_bitmap` return a native bitmap, or a derived bitmap that is scaled (scale/32 per axis, 32 = native), recolored with a palette-change table, and mirrored (flip bit 0 horizontal, bit 1 vertical). They use the derived bitmap cache. Index −1 uses `g_temp_bitmap`.
+- `get_flipped_bitmap` and `get_scaled_flipped_bitmap` return a native bitmap, or a derived bitmap that is scaled (scale/32 per axis, 32 = native), recolored with a palette-change table, and mirrored (flip bit 0 horizontal, bit 1 vertical). They use the derived bitmap cache. Index -1 uses `g_temp_bitmap`.
 - `blit_in_zone` draws a bitmap at a zone. A mirrored bitmap moves right by `16 - (width & 15)`, because the mirror works on whole words.
 - `draw_wall_ornament` returns nonzero for an alcove. For the D1C front wall it also sets `g_facing_alcove`, `g_facing_vi_altar`, `g_facing_fountain`, draws text inscriptions (graphic 0x102 font, text from the inscription thing), and draws the champion portrait (graphic 0x1a, `g_champion_portrait_ordinal`).
 - `draw_door` copies the door graphic to `g_temp_bitmap`, adds the door ornament, mirrors at random for doors with attribute bit 2, and draws the door at a vertical offset that depends on the door state (1–4).
@@ -186,10 +186,10 @@ Explosion things are `0xff80 + type`: 0 fireball, 1 slime, 2 lightning bolt, 3 h
 - `projectile_create(thing, x, y, cell, direction, kinetic_energy, attack, step_energy)` gets a free type-14 thing, links it to the square, and adds an event at `game_time + 1`. The event type is 49 when `g_create_launcher_projectile` is set, otherwise 48 (ignore impacts on the first step). Event word at +8: bits 11–15 x, 6–10 y, 4–5 direction, 0–3 step energy. Event word at +6: the projectile thing. When no thing is free, the object drops to the square.
 - `explosion_create(thing, attack, x_combo, y_combo, cell)`: a combo value ≥ 0x100 holds `(x + 1) << 8 | target`. It adds event 25 after 1 tick (5 for rebirth step 1). Fireball and lightning damage the party or the creatures on the square at once: `damage = random((attack >> 1) + 1) + (attack >> 1) + 2`, halved for lightning.
 - `projectile_process_events_48_to_49` moves a projectile one square per event. Each step subtracts the step energy from kinetic energy and attack. Zero kinetic energy drops the object.
-- `has_impact_occurred(impact_type, x, y, cell, thing)`: impact type −2 = party, −1 = creature, ≥ 0 = wall or door. A flask projectile (potion 0x13 or 0x03) becomes a fireball or poison cloud explosion.
+- `has_impact_occurred(impact_type, x, y, cell, thing)`: impact type -2 = party, -1 = creature, ≥ 0 = wall or door. A flask projectile (potion 0x13 or 0x03) becomes a fireball or poison cloud explosion.
 - `projectile_get_impact_attack` returns the attack value. It sets `g_projectile_attack_type` (1 fire, 3 sharp, 5 magic, 7 lightning) and `g_projectile_poison_attack`.
 - `projectile_get_impact_count` deletes all projectiles in a cell that hit, and returns the count.
-- `explosion_process_event_25` applies the explosion effect, then removes it. Poison cloud and smoke repeat with less attack (−3 or −40) until they fade. Rebirth step 1 becomes step 2. Harm non-material damages non-material creatures. Lord Chaos (type 23) gets damage per creature. A fireball destroys a door with `group_is_door_destroyed_by_attack`.
+- `explosion_process_event_25` applies the explosion effect, then removes it. Poison cloud and smoke repeat with less attack (-3 or -40) until they fade. Rebirth step 1 becomes step 2. Harm non-material damages non-material creatures. Lord Chaos (type 23) gets damage per creature. A fireball destroys a door with `group_is_door_destroyed_by_attack`.
 
 ### Group helpers and teleporter rotation
 
@@ -197,7 +197,7 @@ ReDMCSB `GROUP.C` tail and `MOVESENS.C` head.
 
 - `group_is_fluxcage_on_square(x, y)`: true when an explosion of type 50 is on the square.
 - `group_get_lord_chaos_on_square(x, y)`: the group thing when creature type 23 (Lord Chaos) is there, otherwise 0.
-- `group_fluxcage_action(x, y)`: creates a fluxcage (type 50) and event 24 after 100 ticks, which removes it. When Lord Chaos is on an adjacent square and 3 fluxcages surround him, it sends event −3 to his group.
+- `group_fluxcage_action(x, y)`: creates a fluxcage (type 50) and event 24 after 100 ticks, which removes it. When Lord Chaos is on an adjacent square and 3 fluxcages surround him, it sends event -3 to his group.
 - `group_fuse_action(x, y)` (`0x11cda2`): creates a harm non-material explosion. When Lord Chaos is on the square and 4 fluxcages surround him, it starts the fuse endgame sequence (`0x125132`). Otherwise Lord Chaos moves to a random free adjacent square.
 - `get_square_distance`: Manhattan distance.
 - `group_is_destination_visible(direction, sx, sy, dx, dy)`: true when the destination is in the 90° cone in that direction.
@@ -242,7 +242,7 @@ The layout is in [game-state.md](../../rules/game-state.md#timeline).
 | 6 | 6–10 | Target map X. |
 | 6 | 11–15 | Target map Y. |
 
-Group generators (type 6) reuse word 4 bits 7–10 as creature count (bit 3 of this field set: random count `random16() % (n & 7)`) and word 6 bits 4–7 as health multiplier (0 = map difficulty from map byte 12 bits 4–7). Word 6 bits 8–15 hold the regeneration delay. A delay above 127 means `(delay − 126) × 64` ticks.
+Group generators (type 6) reuse word 4 bits 7–10 as creature count (bit 3 of this field set: random count `random16() % (n & 7)`) and word 6 bits 4–7 as health multiplier (0 = map difficulty from map byte 12 bits 4–7). Word 6 bits 8–15 hold the regeneration delay. A delay above 127 means `(delay - 126) × 64` ticks.
 
 #### Square byte (current map)
 
@@ -283,8 +283,8 @@ Heap order (`is_before`): earlier time (bits 0–23) first. On equal time, the l
 1. Type 0: return -1.
 2. A full timeline calls `fatal_error(0x2d)`.
 3. `find_mergeable` can merge the event:
-   - Square events 5–10: an event with the same time, map, and X/Y (and the same cell for type 6) gets the new effect byte. Return its index. An existing type 1 event (door animation) at the same time and place is deleted; a toggle effect in the new event becomes `1 − old effect`.
-   - New type 1 (door animation): an existing type 10 event at the same time and place with toggle effect gets effect `1 − new`. An existing type 1 event gets the new effect.
+   - Square events 5–10: an event with the same time, map, and X/Y (and the same cell for type 6) gets the new effect byte. Return its index. An existing type 1 event (door animation) at the same time and place is deleted; a toggle effect in the new event becomes `1 - old effect`.
+   - New type 1 (door animation): an existing type 10 event at the same time and place with toggle effect gets effect `1 - new`. An existing type 1 event gets the new effect.
    - New type 2 (door destruction): delete all type 1 and type 10 events of that square and map.
 4. Take a slot from the free list, copy 10 bytes, append the slot to the heap, and sift up.
 
@@ -302,7 +302,7 @@ Heap order (`is_before`): earlier time (bits 0–23) first. On equal time, the l
 | 8 | Teleporter | `timeline_process_event8_teleporter` |
 | 9 | Pit | `timeline_process_event9_pit` |
 | 10 | Door | `timeline_process_event10_door` (converts to type 1) |
-| 11 | Enable champion action | `timeline_process_event11_enable_champion_action`, then `timeline_move_weapon_from_quiver_to_slot(champion, byte6 − 1)` when byte 6 ≠ 0 |
+| 11 | Enable champion action | `timeline_process_event11_enable_champion_action`, then `timeline_move_weapon_from_quiver_to_slot(champion, byte6 - 1)` when byte 6 ≠ 0 |
 | 12 | Hide damage received | `timeline_process_event12_hide_damage_received` |
 | 13 | Vi altar rebirth | `timeline_process_event13_vi_altar_rebirth` |
 | 20 | Play sound | `sound_request_play(word8, byte6, byte7, 1)` |
@@ -352,7 +352,7 @@ Button codes from `input_event_handler`: 2 left press, 4 left release, 1 right p
 | 7–10 | Toggle inventory of champion 0–3. 11 closes the inventory. |
 | 12–15 | Click in champion status box 0–3. |
 | 16–19 | Set leader 0–3 (from status box). |
-| 20–65 | Click on slot box `command − 20` (hands, inventory, chest). |
+| 20–65 | Click on slot box `command - 20` (hands, inventory, chest). |
 | 70 | Click on mouth. |
 | 71 | Click on eye. |
 | 80 | Click in dungeon view. |
@@ -386,7 +386,7 @@ Button codes from `input_event_handler`: 2 left press, 4 left release, 1 right p
 
 #### Party movement
 
-`command_move_party(command)` charges every living champion `load × 3 / max_load + 1` stamina. It highlights the arrow zone `command + 0x43`. It computes the target square with `g_movement_arrow_to_step_forward_count` and `g_movement_arrow_to_step_right_count`. Stairs lead to `command_take_stairs`. Walls, closed doors (state not 0, 1, or 5), and solid fake walls block the move. A blocked move hurts the two champions on the side of the bump (1 damage, wounds `0x18`: torso and legs) and plays sound 15. A group on the target square blocks the move and gets event −1 (`group_process_events_29_to_41`). A successful move sets `g_disabled_movement_ticks` to the maximum movement ticks of the living champions.
+`command_move_party(command)` charges every living champion `load × 3 / max_load + 1` stamina. It highlights the arrow zone `command + 0x43`. It computes the target square with `g_movement_arrow_to_step_forward_count` and `g_movement_arrow_to_step_right_count`. Stairs lead to `command_take_stairs`. Walls, closed doors (state not 0, 1, or 5), and solid fake walls block the move. A blocked move hurts the two champions on the side of the bump (1 damage, wounds `0x18`: torso and legs) and plays sound 15. A group on the target square blocks the move and gets event -1 (`group_process_events_29_to_41`). A successful move sets `g_disabled_movement_ticks` to the maximum movement ticks of the living champions.
 
 `command_turn_party` turns the party. On stairs it takes the stairs. It removes the party from the square sensors before the turn and adds it after the turn.
 
@@ -415,9 +415,9 @@ The action set table `g_action_sets` (`0x103d4c`) and the per-action tables at `
 
 `menus_set_acting_champion` selects the champion, builds the action list with `menus_set_action_list`, and draws the action names. An empty action hand uses action set 2. Actions 1 and 2 need the skill level in `g_action_skill_index`. Charged actions also need `menus_get_action_hand_charge_count > 0`.
 
-`menus_is_action_performed(champion, action)` runs the action against the square in the champion direction. Action indices: 2 CHOP, 4 BLOW HORN, 5 FLIP, 6 PUNCH, 7 KICK, 8 WAR CRY, 9 STAB (dagger), 10 CLIMB DOWN, 11 FREEZE LIFE, 13 SWING, 14 STAB (skill 5), 15 THRUST, 16 JAB, 17 PARRY, 18 HACK, 19 BERZERK, 20 FIREBALL, 21 DISPELL, 22 CONFUSE, 23 LIGHTNING, 24 DISRUPT, 25 MELEE, 27 INVOKE, 28 SLASH, 29 CLEAVE, 30 BASH, 31 STUN, 32 SHOOT, 33 SPELLSHIELD, 34 FIRESHIELD, 35 FLUXCAGE, 36 HEAL, 37 CALM, 38 LIGHT, 39 WINDOW, 40 SPIT, 41 BRANDISH, 42 THROW, 43 FUSE. Melee actions on a closed door bash the door (`group_is_door_destroyed_by_attack` (`0x11d5e0`)). Other melee actions call `menus_is_melee_action_performed`. The result goes into `g_action_damage`: −1 "can't reach", −2 "need ammo", otherwise damage. `menus_refresh_action_area` draws it with `menus_draw_action_damage`. After the action the function disables the champion action, decrements stamina, and adds experience.
+`menus_is_action_performed(champion, action)` runs the action against the square in the champion direction. Action indices: 2 CHOP, 4 BLOW HORN, 5 FLIP, 6 PUNCH, 7 KICK, 8 WAR CRY, 9 STAB (dagger), 10 CLIMB DOWN, 11 FREEZE LIFE, 13 SWING, 14 STAB (skill 5), 15 THRUST, 16 JAB, 17 PARRY, 18 HACK, 19 BERZERK, 20 FIREBALL, 21 DISPELL, 22 CONFUSE, 23 LIGHTNING, 24 DISRUPT, 25 MELEE, 27 INVOKE, 28 SLASH, 29 CLEAVE, 30 BASH, 31 STUN, 32 SHOOT, 33 SPELLSHIELD, 34 FIRESHIELD, 35 FLUXCAGE, 36 HEAL, 37 CALM, 38 LIGHT, 39 WINDOW, 40 SPIT, 41 BRANDISH, 42 THROW, 43 FUSE. Melee actions on a closed door bash the door (`group_is_door_destroyed_by_attack` (`0x11d5e0`)). Other melee actions call `menus_is_melee_action_performed`. The result goes into `g_action_damage`: -1 "can't reach", -2 "need ammo", otherwise damage. `menus_refresh_action_area` draws it with `menus_draw_action_damage`. After the action the function disables the champion action, decrements stamina, and adds experience.
 
-`menus_is_group_frightened_by_action` (WAR CRY, BLOW HORN, CONFUSE, CALM, BRANDISH) compares `random16() % (skill + bonus)` with the creature fear resistance. A frightened group flees for `(16 − fear) × 4 / movement_ticks`.
+`menus_is_group_frightened_by_action` (WAR CRY, BLOW HORN, CONFUSE, CALM, BRANDISH) compares `random16() % (skill + bonus)` with the creature fear resistance. A frightened group flees for `(16 - fear) × 4 / movement_ticks`.
 
 `menus_refresh_action_area` runs every tick from the game loop. It also turns idle champions to the direction stored at `+0x28` (set by damage) when the flag at `+0x29` is set.
 
@@ -447,76 +447,76 @@ Each stub saves D3–D7/A2–A6, loads a library base into A6, moves the stack a
 
 | Stub | Library (global) | LVO | Amiga call and registers |
 |---|---|---|---|
-| `os_add_int_server` | exec (`g_sys_base`) | −168 | `AddIntServer(D0 intNum, A1 interrupt)` |
-| `os_add_port` | exec | −354 | `AddPort(A1 port)` |
-| `os_alert` | exec | −108 | `Alert(D7 alertNum, A5 parameters)`. A5 is overwritten. |
-| `os_alloc_mem` | exec | −198 | `AllocMem(D0 byteSize, D1 requirements)` |
-| `os_alloc_signal` | exec | −330 | `AllocSignal(D0 signalNum)` |
-| `os_avail_mem` | exec | −216 | `AvailMem(D1 requirements)` |
-| `os_change_sprite` | graphics (`g_gfx_base`) | −420 | `ChangeSprite(A0 vp, A1 sprite, A2 newData)` |
-| `os_check_io` | exec | −468 | `CheckIO(A1 ioRequest)` |
-| `os_close` | dos (`g_dos_base`) | −36 | `Close(D1 file)` |
-| `os_close_device` | exec | −450 | `CloseDevice(A1 ioRequest)` |
-| `os_close_library` | exec | −414 | `CloseLibrary(A1 library)` |
-| `os_cd_input_handler` | console device (`g_console_device`) | −42 | `CDInputHandler(A0 events, A1 consoleDevice)` |
-| `os_raw_key_convert` | console device | −48 | `RawKeyConvert(A0 event, A1 buffer, D1 length, A2 keyMap)` |
-| `os_date_stamp` | dos | −192 | `DateStamp(D1 date)` |
-| `os_delay` | dos | −198 | `Delay(D1 ticks)` |
-| `os_delete_file` | dos | −72 | `DeleteFile(D1 name)` |
-| `os_device_proc` | dos | −174 | `DeviceProc(D1 name)` |
-| `os_disable` | exec | −120 | `Disable()` |
-| `os_disown_blitter` | graphics | −462 | `DisownBlitter()` |
-| `os_display_alert` | intuition (`g_intuition_base`) | −90 | `DisplayAlert(D0 alertNumber, A0 string, D1 height)` |
-| `os_do_io` | exec | −456 | `DoIO(A1 ioRequest)` |
-| `os_enable` | exec | −126 | `Enable()` |
-| `os_examine` | dos | −102 | `Examine(D1 lock, D2 fileInfoBlock)` |
+| `os_add_int_server` | exec (`g_sys_base`) | -168 | `AddIntServer(D0 intNum, A1 interrupt)` |
+| `os_add_port` | exec | -354 | `AddPort(A1 port)` |
+| `os_alert` | exec | -108 | `Alert(D7 alertNum, A5 parameters)`. A5 is overwritten. |
+| `os_alloc_mem` | exec | -198 | `AllocMem(D0 byteSize, D1 requirements)` |
+| `os_alloc_signal` | exec | -330 | `AllocSignal(D0 signalNum)` |
+| `os_avail_mem` | exec | -216 | `AvailMem(D1 requirements)` |
+| `os_change_sprite` | graphics (`g_gfx_base`) | -420 | `ChangeSprite(A0 vp, A1 sprite, A2 newData)` |
+| `os_check_io` | exec | -468 | `CheckIO(A1 ioRequest)` |
+| `os_close` | dos (`g_dos_base`) | -36 | `Close(D1 file)` |
+| `os_close_device` | exec | -450 | `CloseDevice(A1 ioRequest)` |
+| `os_close_library` | exec | -414 | `CloseLibrary(A1 library)` |
+| `os_cd_input_handler` | console device (`g_console_device`) | -42 | `CDInputHandler(A0 events, A1 consoleDevice)` |
+| `os_raw_key_convert` | console device | -48 | `RawKeyConvert(A0 event, A1 buffer, D1 length, A2 keyMap)` |
+| `os_date_stamp` | dos | -192 | `DateStamp(D1 date)` |
+| `os_delay` | dos | -198 | `Delay(D1 ticks)` |
+| `os_delete_file` | dos | -72 | `DeleteFile(D1 name)` |
+| `os_device_proc` | dos | -174 | `DeviceProc(D1 name)` |
+| `os_disable` | exec | -120 | `Disable()` |
+| `os_disown_blitter` | graphics | -462 | `DisownBlitter()` |
+| `os_display_alert` | intuition (`g_intuition_base`) | -90 | `DisplayAlert(D0 alertNumber, A0 string, D1 height)` |
+| `os_do_io` | exec | -456 | `DoIO(A1 ioRequest)` |
+| `os_enable` | exec | -126 | `Enable()` |
+| `os_examine` | dos | -102 | `Examine(D1 lock, D2 fileInfoBlock)` |
 | `os_new_list` | none | — | `NewList(list)` (`amiga.lib`, inline code) |
 | `os_create_ext_io` | none | — | `CreateExtIO(port, size)` (`amiga.lib`): `AllocMem(size, MEMF_PUBLIC|MEMF_CLEAR)`, type 5, reply port at +14, length at +18 |
 | `os_delete_ext_io` | none | — | `DeleteExtIO(io)` (`amiga.lib`): poisons type, port and device fields, `FreeMem` |
 | `os_create_std_io` | none | — | `CreateStdIO(port)` = `CreateExtIO(port, 48)` |
 | `os_delete_std_io` | none | — | `DeleteStdIO(io)` = `DeleteExtIO(io)` |
-| `os_find_port` | exec | −390 | `FindPort(A1 name)` |
-| `os_find_task` | exec | −294 | `FindTask(A1 name)` |
-| `os_forbid` | exec | −132 | `Forbid()` |
-| `os_free_mem` | exec | −210 | `FreeMem(A1 memoryBlock, D0 byteSize)` |
-| `os_free_signal` | exec | −336 | `FreeSignal(D0 signalNum)` |
-| `os_free_sprite` | graphics | −414 | `FreeSprite(D0 pick)` |
-| `os_get_msg` | exec | −372 | `GetMsg(A0 port)` |
-| `os_get_sprite` | graphics | −408 | `GetSprite(A0 sprite, D0 pick)` |
-| `os_init_bitmap` | graphics | −390 | `InitBitMap(A0 bitMap, D0 depth, D1 width, D2 height)` |
-| `os_init_rastport` | graphics | −198 | `InitRastPort(A1 rp)` |
-| `os_load_view` | graphics | −222 | `LoadView(A1 view)` |
-| `os_lock` | dos | −84 | `Lock(D1 name, D2 accessMode)` |
-| `os_make_screen` | intuition | −378 | `MakeScreen(A0 screen)` |
-| `os_move_sprite` | graphics | −426 | `MoveSprite(A0 vp, A1 sprite, D0 x, D1 y)` |
-| `os_open` | dos | −30 | `Open(D1 name, D2 accessMode)` |
-| `os_open_device` | exec | −444 | `OpenDevice(A0 devName, D0 unit, A1 ioRequest, D1 flags)` |
+| `os_find_port` | exec | -390 | `FindPort(A1 name)` |
+| `os_find_task` | exec | -294 | `FindTask(A1 name)` |
+| `os_forbid` | exec | -132 | `Forbid()` |
+| `os_free_mem` | exec | -210 | `FreeMem(A1 memoryBlock, D0 byteSize)` |
+| `os_free_signal` | exec | -336 | `FreeSignal(D0 signalNum)` |
+| `os_free_sprite` | graphics | -414 | `FreeSprite(D0 pick)` |
+| `os_get_msg` | exec | -372 | `GetMsg(A0 port)` |
+| `os_get_sprite` | graphics | -408 | `GetSprite(A0 sprite, D0 pick)` |
+| `os_init_bitmap` | graphics | -390 | `InitBitMap(A0 bitMap, D0 depth, D1 width, D2 height)` |
+| `os_init_rastport` | graphics | -198 | `InitRastPort(A1 rp)` |
+| `os_load_view` | graphics | -222 | `LoadView(A1 view)` |
+| `os_lock` | dos | -84 | `Lock(D1 name, D2 accessMode)` |
+| `os_make_screen` | intuition | -378 | `MakeScreen(A0 screen)` |
+| `os_move_sprite` | graphics | -426 | `MoveSprite(A0 vp, A1 sprite, D0 x, D1 y)` |
+| `os_open` | dos | -30 | `Open(D1 name, D2 accessMode)` |
+| `os_open_device` | exec | -444 | `OpenDevice(A0 devName, D0 unit, A1 ioRequest, D1 flags)` |
 | `os_init_sys_base` | none | — | Copies the long at address 4 (ExecBase) into `g_sys_base`. |
-| `os_reboot` | exec | −150 | `SuperState()`, then SR = `0x2700`, writes `RESET; JMP` at address 0 and jumps there. This reboots the machine. Called from two places in the system-init range. |
-| `os_open_library` | exec | −552 | `OpenLibrary(A1 libName, D0 version)` |
-| `os_own_blitter` | graphics | −456 | `OwnBlitter()` |
-| `os_permit` | exec | −138 | `Permit()` |
+| `os_reboot` | exec | -150 | `SuperState()`, then SR = `0x2700`, writes `RESET; JMP` at address 0 and jumps there. This reboots the machine. Called from two places in the system-init range. |
+| `os_open_library` | exec | -552 | `OpenLibrary(A1 libName, D0 version)` |
+| `os_own_blitter` | graphics | -456 | `OwnBlitter()` |
+| `os_permit` | exec | -138 | `Permit()` |
 | `os_create_port` | none | — | `CreatePort(name, pri)` (`amiga.lib`): `AllocSignal(-1)`, `AllocMem(34, MEMF_PUBLIC|MEMF_CLEAR)`, `AddPort` when the name is not null. |
 | `os_delete_port` | none | — | `DeletePort(port)` (`amiga.lib`): `RemPort`, poisons fields, `FreeSignal`, `FreeMem(port, 34)`. |
-| `os_begin_io` | device in `io_Device` (+20) | −30 | `BeginIO(A1 ioRequest)` |
-| `os_put_msg` | exec | −366 | `PutMsg(A0 port, A1 message)` |
-| `os_read` | dos | −42 | `Read(D1 file, D2 buffer, D3 length)` |
-| `os_rect_fill` | graphics | −306 | `RectFill(A1 rp, D0 xMin, D1 yMin, D2 xMax, D3 yMax)` |
-| `os_rem_int_server` | exec | −174 | `RemIntServer(D0 intNum, A1 interrupt)` |
-| `os_rem_port` | exec | −360 | `RemPort(A1 port)` |
-| `os_rename` | dos | −78 | `Rename(D1 oldName, D2 newName)` |
-| `os_rethink_display` | intuition | −390 | `RethinkDisplay()` |
-| `os_seek` | dos | −66 | `Seek(D1 file, D2 position, D3 mode)` |
-| `os_set_a_pen` | graphics | −342 | `SetAPen(A1 rp, D0 pen)` |
-| `os_set_dr_md` | graphics | −354 | `SetDrMd(A1 rp, D0 drawMode)` |
-| `os_set_function` | exec | −420 | `SetFunction(A1 library, A0 funcOffset, D0 newFunction)` |
-| `os_set_rgb4` | graphics | −288 | `SetRGB4(A0 vp, D0 index, D1 r, D2 g, D3 b)` |
-| `os_unlock` | dos | −90 | `UnLock(D1 lock)` |
-| `os_wait_blit` | graphics | −228 | `WaitBlit()` |
-| `os_wait_io` | exec | −474 | `WaitIO(A1 ioRequest)` |
-| `os_wait_port` | exec | −384 | `WaitPort(A0 port)` |
-| `os_wait_tof` | graphics | −270 | `WaitTOF()` |
-| `os_write` | dos | −48 | `Write(D1 file, D2 buffer, D3 length)` |
+| `os_begin_io` | device in `io_Device` (+20) | -30 | `BeginIO(A1 ioRequest)` |
+| `os_put_msg` | exec | -366 | `PutMsg(A0 port, A1 message)` |
+| `os_read` | dos | -42 | `Read(D1 file, D2 buffer, D3 length)` |
+| `os_rect_fill` | graphics | -306 | `RectFill(A1 rp, D0 xMin, D1 yMin, D2 xMax, D3 yMax)` |
+| `os_rem_int_server` | exec | -174 | `RemIntServer(D0 intNum, A1 interrupt)` |
+| `os_rem_port` | exec | -360 | `RemPort(A1 port)` |
+| `os_rename` | dos | -78 | `Rename(D1 oldName, D2 newName)` |
+| `os_rethink_display` | intuition | -390 | `RethinkDisplay()` |
+| `os_seek` | dos | -66 | `Seek(D1 file, D2 position, D3 mode)` |
+| `os_set_a_pen` | graphics | -342 | `SetAPen(A1 rp, D0 pen)` |
+| `os_set_dr_md` | graphics | -354 | `SetDrMd(A1 rp, D0 drawMode)` |
+| `os_set_function` | exec | -420 | `SetFunction(A1 library, A0 funcOffset, D0 newFunction)` |
+| `os_set_rgb4` | graphics | -288 | `SetRGB4(A0 vp, D0 index, D1 r, D2 g, D3 b)` |
+| `os_unlock` | dos | -90 | `UnLock(D1 lock)` |
+| `os_wait_blit` | graphics | -228 | `WaitBlit()` |
+| `os_wait_io` | exec | -474 | `WaitIO(A1 ioRequest)` |
+| `os_wait_port` | exec | -384 | `WaitPort(A0 port)` |
+| `os_wait_tof` | graphics | -270 | `WaitTOF()` |
+| `os_write` | dos | -48 | `Write(D1 file, D2 buffer, D3 length)` |
 
 The game uses `os_delay(175)` (3.5 s) after it closes a saved game file.
 
@@ -530,7 +530,7 @@ The dialog system shows a message box with one to four choices. ReDMCSB calls it
 - `g_dialog_choice` (`0x10402a`). The command handler writes the clicked choice number here. The value 99 means "no choice yet".
 - `g_dialog_message_colors` (`0x104026`): text colors of message 1 (11) and message 2 (9).
 - `g_dialog_version_text` (`0x10402c`): the string `V3.6`. The dialog prints it in zone `0x1c2`.
-- `g_dialog_mouse_inputs` (`0x103bd4`): 8 pointers to mouse input tables. Index = `g_game_screen_inactive * 4 + choice_count − 1`.
+- `g_dialog_mouse_inputs` (`0x103bd4`): 8 pointers to mouse input tables. Index = `g_game_screen_inactive * 4 + choice_count - 1`.
 
 #### `dialog_draw(message1, message2, choice1, choice2, choice3, choice4)`
 
@@ -576,7 +576,7 @@ Ghidra drops the pointer argument of `memory_select_feature_set`. The real argum
 
 The list is `{0,3,4,5,2,1, reserve 120K}`, `{0,3,4,5,1}`, `{3,4,5,1}`, `{3,4,1}`, `{3,4}`, `{3}`, `{}`. `parse_memory_option_set` clears the six flags, reads one set, and returns true when more sets follow. `g_memory_options[1]` (`0x1001d5`) enables a second set of wall bitmaps for the mirrored view (`init_flipped_wall_bitmaps`; `draw_dungeon_view` reads the same flag). The meaning of the other flags is not traced.
 
-`check_memory_for_all_maps(is_last_set, reserve)` sets the flag at `0x10254e` (memory-check mode), calls `process_new_party_map` for every map, and takes the minimum of `0x102550 − reserve`. It keeps the best value in `g_best_free_memory` (`0x104154`, initial −10000000). When the last set still does not fit, it shows "OUT OF MEMORY. ~K NEEDED." (string `0x87`, value `(0x3ff − best) >> 10`) and calls `quit_game`. It returns true when the minimum is not negative.
+`check_memory_for_all_maps(is_last_set, reserve)` sets the flag at `0x10254e` (memory-check mode), calls `process_new_party_map` for every map, and takes the minimum of `0x102550 - reserve`. It keeps the best value in `g_best_free_memory` (`0x104154`, initial -10000000). When the last set still does not fit, it shows "OUT OF MEMORY. ~K NEEDED." (string `0x87`, value `(0x3ff - best) >> 10`) and calls `quit_game`. It returns true when the minimum is not negative.
 
 A port with enough memory can use the first set and skip this search.
 
@@ -681,12 +681,12 @@ A port with enough memory can use the first set and skip this search.
 
 #### `load_game`
 
-Returns 1 on success, −1 on cancel (restart path).
+Returns 1 on success, -1 on cancel (restart path).
 
 1. Set defaults: platform 5, byte `0x12a` = 1, format 3, dungeon ID 10. Allocate 4 portrait bitmaps (or reuse them on restart).
 2. Loaded game: show "PUT THE GAME SAVE DISK IN ~" with LOAD SAVED GAME and CANCEL, unless the save disk is already in the drive. Open `DMGAME~.DAT`, then `DMGAME~.BAK`, then `Dungeon~.FTL` (new game). Show "CAN'T FIND SAVED GAME!" when none opens. Read and check the header. Read the five blocks in order. Raise the max active group count to at least 110. Read the portraits. Then `load_dungeon`. When the backup was used, rename it back to `DMGAME~.DAT`. Show "LOADING GAME . . .".
 3. New game: `ensure_master_disk(0)`. Open `DungeonB~.dat` when `g_use_dungeon_b`, otherwise `Dungeon~.dat`. When this fails: `fatal_error(0x32)`, wait 180 frames, `quit_game`. Clear the champion count and the hand object. Set `g_game_id` from two random words. Then `load_dungeon`.
-4. On error show "THE GAME IS DAMAGED!" and quit (or return −1 on restart).
+4. On error show "THE GAME IS DAMAGED!" and quit (or return -1 on restart).
 
 #### `load_dungeon` and decompression
 

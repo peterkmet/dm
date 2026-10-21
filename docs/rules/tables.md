@@ -25,7 +25,7 @@ The image accessors read the loaded image at call time. They need `tables_load`.
 | `tables_get_champion_color` | `0x100ce0` | uint8 × 4 | Champion |
 | `tables_get_square_type_event` | `0x100d4a` | uint8 × 8 | Square type |
 | `tables_get_sound_graphic`, `tables_get_sound_rate`, `tables_get_sound_priority` | `0x100d52` (+0, +3, +4) | 12-byte record × 35 | Sound |
-| `tables_get_sound_volume` | `0x100696` | uint8 × 25 × 25 | Squares ahead, squares to the side (−12 to 12) |
+| `tables_get_sound_volume` | `0x100696` | uint8 × 25 × 25 | Squares ahead, squares to the side (-12 to 12) |
 | `tables_get_extra_things` | `0x101058` | uint8 × 16 | Thing type |
 | `tables_get_door_attributes` | `0x1016e2` | uint16 × 4 (attributes << 8, defense) | Door set |
 | `tables_get_message_escape`, `tables_get_inscription_escape` | `0x1016ea`, `0x10182a` | char[8] × 32 | Escape code |
@@ -76,12 +76,12 @@ The image accessors read the loaded image at call time. They need `tables_load`.
 | Accessor | Address | Record size | Count | Index |
 |---|---|---|---|---|
 | `tables_get_creature_info` | `0x10192e` | 26 | 27 | Creature type |
-| `tables_get_creature_sound` | `0x101bec` | 2 | 18 | `attack_sound_byte` − 1 |
+| `tables_get_creature_sound` | `0x101bec` | 2 | 18 | `attack_sound_byte` - 1 |
 | `tables_get_object_info` | `0x101068` | 6 | 180 | Object info index |
 | `tables_get_weapon_info` | `0x1014a0` | 6 | 46 | Weapon type |
 | `tables_get_armour_info` | `0x1015b4` | 4 | 58 | Armour type |
 | `tables_get_junk_weight` | `0x10169c` | 1 | 53 | Junk type |
-| `tables_get_food_value` | `0x1016d2` | 2 | 8 | Icon − `0xa8` |
+| `tables_get_food_value` | `0x1016d2` | 2 | 8 | Icon - `0xa8` |
 | `tables_get_spell` | `0x103c84` | 8 | 25 | Spell |
 | `tables_get_base_mana_cost` | `0x103c66` | 1 | 4 × 6 | Symbol step, symbol |
 | `tables_get_mana_multiplier` | `0x103c7e` | 1 | 6 | Power symbol |
@@ -102,7 +102,7 @@ Each table ends where the next named table starts. The tests check this.
 | Offset | Field | Meaning |
 |---|---|---|
 | 0 | `aspect_index` | Index for `tables_get_creature_aspect`. |
-| 1 | `attack_sound_byte` | 0 = no sound; otherwise the creature sound index + 1. The accessor returns the index, −1 for none. |
+| 1 | `attack_sound_byte` | 0 = no sound; otherwise the creature sound index + 1. The accessor returns the index, -1 for none. |
 | 2 | `attributes` | Bits 0–1 size, bit 2 side attack, bit 3 prefer back row, bit 4 attack any champion, bit 5 levitates, bit 6 non-material, bits 7–8 height, bit 9 drops fixed possessions, bit 11 sees invisible, bit 12 night vision, bit 13 archenemy. |
 | 4 | `graphic_info` | Bit 2 flip when not attacking, bit 9 flip when attacking, bit 10 flip during attack, bits 12–13 horizontal offset range, bits 14–15 vertical offset range. |
 | 6 | `movement_ticks` | Ticks between moves. |
@@ -125,7 +125,7 @@ Each table ends where the next named table starts. The tests check this.
 
 ## Creature sounds
 
-`CreatureSound`, 2 signed bytes per creature sound index (`attack_sound_byte` − 1). Byte 0 `attack` is the attack sound index. Byte 1 `movement` is the movement sound index. −1 = no sound. The count (18) is the highest `attack_sound_byte` in the creature table.
+`CreatureSound`, 2 signed bytes per creature sound index (`attack_sound_byte` - 1). Byte 0 `attack` is the attack sound index. Byte 1 `movement` is the movement sound index. -1 = no sound. The count (18) is the highest `attack_sound_byte` in the creature table.
 
 ## Object info
 

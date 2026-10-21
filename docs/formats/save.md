@@ -151,9 +151,9 @@ The header `src/engine/include/savefile.h` declares the API. All buffers keep th
 | `portraits` | 4 × 464 bytes. |
 | `dungeon`, `dungeon_size` | Dungeon parts and the byte sum word. The C code does not parse them. |
 
-### `int16_t savefile_decode(const uint8_t *file, uint32_t size, SaveFile *s)`
+### `bool savefile_decode(const uint8_t *file, uint32_t size, SaveFile *s)`
 
-Copies the file, decrypts the header and the blocks, and sets the pointers in `s` into the copy. Returns 1 on success. Returns 0 and clears `s` when one of these checks fails:
+Copies the file, decrypts the header and the blocks, and sets the pointers in `s` into the copy. Returns false and clears `s` when one of these checks fails:
 
 - The file is shorter than the header, the blocks, or the portraits.
 - The header chain does not equal the payload sum.
@@ -226,7 +226,7 @@ The save directory is the data directory (`--data`, default `game/`) or the fold
 
 The random header words come after the copy of the globals. Thus the saved random seed is the seed before the save, as in the original.
 
-`SavegameResult savegame_load(const char *dir)` returns `SAVEGAME_LOADED` (1), `SAVEGAME_MISSING` (0), or `SAVEGAME_DAMAGED` (−1):
+`SavegameResult savegame_load(const char *dir)` returns `SAVEGAME_LOADED` (1), `SAVEGAME_MISSING` (0), or `SAVEGAME_DAMAGED` (-1):
 
 1. Read `DMGAME.DAT`. When it is missing, read `DMGAME.BAK`.
 2. `savefile_decode`. Then `dungeon_load_saved` on the dungeon part. A failure gives `SAVEGAME_DAMAGED`.

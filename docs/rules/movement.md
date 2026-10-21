@@ -17,7 +17,7 @@ move_party_enter_dungeon();
 
 ## Game loop order
 
-The tick order is in [architecture.md](../architecture.md#the-tick). The movement part: `move_process_new_party_map()` changes the party map when `g_session.new_party_map` is not −1 (the party enters its square on the new map), then `event_process_expired()` runs; step 1 repeats while `g_session.new_party_map` is not −1. The command step calls `move_party(command)` or `move_turn_party(command)`.
+The tick order is in [architecture.md](../architecture.md#the-tick). The movement part: `move_process_new_party_map()` changes the party map when `g_session.new_party_map` is not -1 (the party enters its square on the new map), then `event_process_expired()` runs; step 1 repeats while `g_session.new_party_map` is not -1. The command step calls `move_party(command)` or `move_turn_party(command)`.
 
 ## Current map
 
@@ -30,7 +30,7 @@ Call `map_reset()` after `dungeon_load`. The current map pointers then point to 
 | `map_get_square(x, y)` | `0x10a8ac` | Square byte. Outside the map: a wall byte. The wall gets bit 1, 3, 2, or 0 when the adjacent square above, below, left, or right is a corridor or a pit. |
 | `get_square_type(x, y)` | — | `map_get_square(x, y) >> 5`. |
 | `map_is_square_open(x, y)` | `0x10bce6` | 1 for a corridor, pit, door, or teleporter. |
-| `map_get_level_change_location(place, delta)` | `0x10aa0c` | Finds the map on level `level + delta` that covers the same dungeon position. Returns the `Position` on that map, or map −1 and the unchanged square when no map matches. |
+| `map_get_level_change_location(place, delta)` | `0x10aa0c` | Finds the map on level `level + delta` that covers the same dungeon position. Returns the `Position` on that map, or map -1 and the unchanged square when no map matches. |
 | `map_get_stairs_exit_direction(x, y)` | `0x10aad2` | Bit 3 of the stairs square selects the axis (set: north–south). The exit side is the side that is not a wall or stairs. |
 | `map_get_square_first_thing(x, y)` | `0x10ac4e` | First thing, or `0xfffe`. |
 | `map_get_square_first_object(x, y)` | `0x10ac7c` | First thing with type 4 or higher. |
@@ -38,7 +38,7 @@ Call `map_reset()` after `dungeon_load`. The current map pointers then point to 
 | `map_link_thing_to_list(thing, list, x, y)` | `0x10acba` | See [Thing lists](#thing-lists). |
 | `map_unlink_thing_from_list(thing, list, x, y)` | `0x10adf4` | See [Thing lists](#thing-lists). |
 | `map_find_thing((Location){x, y}, THING_GROUP)` | `0x10bb5c` | First group thing, or `0xfffe`. |
-| `object_get_type(thing)` | `0x1079a4` | Object type from the object info table (`0x101068`). −1 for `0xffff` and for a thing that is not an object. |
+| `object_get_type(thing)` | `0x1079a4` | Object type from the object info table (`0x101068`). -1 for `0xffff` and for a thing that is not an object. |
 | `map_get_creature_attributes(group)` | `0x10a6e4` | Attribute word of the creature type (`0x10192e + type * 0x1a + 2`). |
 
 ### Thing lists
@@ -69,14 +69,14 @@ Call `map_reset()` after `dungeon_load`. The current map pointers then point to 
 
 1. Each living champion loses `load * 3 / maximum_load + 1` stamina (`champion_decrement_stamina`).
 2. On stairs, a backward move takes the stairs (`take_stairs`).
-3. The target square is the party square plus the step counts of the arrow (`0x103c56`: forward 1, 0, −1, 0; `0x103c5e`: right 0, 1, 0, −1), relative to the party direction.
+3. The target square is the party square plus the step counts of the arrow (`0x103c56`: forward 1, 0, -1, 0; `0x103c5e`: right 0, 1, 0, -1), relative to the party direction.
 4. A stairs target: the party leaves its square, moves onto the stairs square, and takes the stairs.
 5. These targets block the move: a wall, a door with state 2, 3, or 4, and a fake wall with bit 2 (open) and bit 0 (imaginary) clear. With champions, a group on the target also blocks the move.
 6. Otherwise the party moves with `move_get_move_result`. On stairs, the party only enters the new square. `g_disabled_movement_ticks` becomes the maximum of 1 and `champion_get_movement_ticks` of each living champion. `g_projectile_disabled_movement_ticks` becomes 0.
 
 `move_turn_party(command)` takes the stairs when the party is on stairs. Otherwise the party leaves the floor sensors of its square, turns (`rotate_party`), and enters the floor sensors again.
 
-`take_stairs(up)` removes the party from its square, sets `g_session.new_party_map` and the party square with `map_get_level_change_location` (−1 for up, +1 for down), and turns the party to the stairs exit direction of the new map.
+`take_stairs(up)` removes the party from its square, sets `g_session.new_party_map` and the party square with `map_get_level_change_location` (-1 for up, +1 for down), and turns the party to the stairs exit direction of the new map.
 
 `rotate_party(direction)` adds the direction change to the cell and the direction of each champion. The loop runs once even without champions, as in the original.
 
@@ -114,7 +114,7 @@ One square chain (`follow_square_chain`) serves every mover kind (`MOVER_PARTY`,
 After the loop:
 
 - The `MoveDestination` (when the caller gives one) holds the map, the square, the cell, and the projectile direction (the original `g_move_result_*` globals).
-- A party move to a new square adds a scent. The scent list keeps 24 entries. `party_add_scent_strength` updates the strengths. The original compares scent `i` with strength `count − 1 − i`. The port keeps this.
+- A party move to a new square adds a scent. The scent list keeps 24 entries. `party_add_scent_strength` updates the strengths. The original compares scent `i` with strength `count - 1 - i`. The port keeps this.
 - A group that died in a fall, or that reached a map that does not allow its creature type, drops its possessions and is deleted (`group_remove_after_move`).
 - A move to the same square does nothing when the party direction or the cell of an object or a group did not change.
 - The thing leaves the source square with `sensor_process_thing_change(..., 0)`. A levitating object (projectile, explosion) only unlinks.
@@ -158,7 +158,7 @@ The trigger rule: XOR the value with the revert bit (byte 5 bit 5). Effect 3 (ho
 
 ### Wall click
 
-`sensor_is_wall_triggered(x, y, cell)` handles a click on the front wall cell with the leader hand. The command step calls it. It returns 1 when a sensor triggered. Only sensors in the clicked cell count. Without a leader, only type 127 counts. `g_leader_empty_handed` is true when the leader hand is empty.
+`sensor_is_wall_triggered(x, y, cell)` handles a click on the front wall cell with the leader hand. The command step calls it. It returns true when a sensor triggered. Only sensors in the clicked cell count. Without a leader, only type 127 counts. `g_leader_empty_handed` is true when the leader hand is empty.
 
 | Type | Rule |
 |---|---|
@@ -191,7 +191,7 @@ The door state is bits 0–2 of the door square: 0 open, 1–3 partly closed, 4 
 - A closing door on the party square (state not 0) opens fully when the party has champions, damages the party (`champion_damage_all(5, 4, 2)`, sound 15), and tries again at time + 2.
 - A closing door with a group that is not non-material (creature attribute bit 6) goes back one step when the creature height is at most the state, plays sound 4, and tries again at time + 2. The height is 1, or creature attribute bits 7–8 for a door with bit 5 of byte 3.
 - Event 2 (door destruction): the state becomes 5.
-- `event_is_door_destroyed(at, attack, magic, ticks)` (`0x11d5e0`): force (`magic` false) needs door word bit 8. Magic needs door word bit 7. The attack must reach the door defense (low byte of `g_current_map_door_info[door type]`). The door must be closed (state 4). `ticks` 0 destroys the door at once. Otherwise event 2 destroys it after `ticks`. Returns 1 when the door breaks.
+- `event_is_door_destroyed(at, attack, magic, ticks)` (`0x11d5e0`): force (`magic` false) needs door word bit 8. Magic needs door word bit 7. The attack must reach the door defense (low byte of `g_current_map_door_info[door type]`). The door must be closed (state 4). `ticks` 0 destroys the door at once. Otherwise event 2 destroys it after `ticks`. Returns true when the door breaks.
 
 ## Pits, teleporters, and fake walls
 
@@ -201,7 +201,7 @@ The door state is bits 0–2 of the door square: 0 open, 1–3 partly closed, 4 
 
 ## Square events on corridors and walls
 
-- Event 5 (corridor): each text thing changes visibility (byte 3 bit 0). A text that becomes visible on the party square prints as a message. A group generator sensor (type 6) plays sound 14 when audible and disables itself. A generator that is not once-only and has a delay (byte 6) comes back with event 65 after the delay. A delay above 127 means `(delay − 126) * 64` ticks.
+- Event 5 (corridor): each text thing changes visibility (byte 3 bit 0). A text that becomes visible on the party square prints as a message. A group generator sensor (type 6) plays sound 14 when audible and disables itself. A generator that is not once-only and has a delay (byte 6) comes back with event 65 after the delay. A delay above 127 means `(delay - 126) * 64` ticks.
 - Event 65: the first disabled sensor of the square becomes type 6 again.
 - Event 6 (wall): texts in the event cell change visibility. A counter (sensor type 6) with data not 0 counts up (effect 0, up to 511) or down. It triggers at 0, or on each event with effect 3. An AND/OR gate (type 5) sets, clears, or toggles bit `cell` of its data, and compares bits 4–7 with bits 0–3. After the sensors, the cell sensors rotate when a local effect asked for it.
 

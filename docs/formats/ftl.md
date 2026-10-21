@@ -29,7 +29,7 @@ All values are big-endian.
 | `0x12` | 2 | Section count, less than `0x65` |
 | `0x14` | 12 × count | Section table |
 
-Header checksum: the 16-bit sum of `byte[i] * i` for `i` from 4 to `0x13`, plus `table[i] * ((i & 0xFF) + 1)` for every byte of the section table.
+Header checksum: the 16-bit sum of `byte[i] * i` for `i` from 4 to `0x13`, plus `table[i] * ((i & 0xff) + 1)` for every byte of the section table.
 
 Each section table entry:
 
@@ -55,12 +55,12 @@ A module has exactly one section of each tag:
 | `0x00` | 4 | Region size: bytes above the data base (jump table and uninitialized data) |
 | `0x04` | 4 | Data size: bytes of initialized data below the data base |
 | `0x08` | 4 | Jump table size in bytes |
-| `0x0C` | 4 | Jump table offset from the data base |
+| `0x0c` | 4 | Jump table offset from the data base |
 | `0x10` | 4 | Stack size |
 | `0x14` | 4 | Code size after unpacking |
 | `0x18` | 4 | Data section size |
-| `0x1C` | 2 | Always `1` on the v3.60 disk |
-| `0x1E` | 2 | Code packed flag: `1` means R# packed |
+| `0x1c` | 2 | Always `1` on the v3.60 disk |
+| `0x1e` | 2 | Code packed flag: `1` means R# packed |
 | `0x20` | 2 | Not used by the loader |
 | `0x22` | 2 | Info checksum |
 | `0x24` | 2 | Code checksum: 16-bit byte sum of the unpacked code |
@@ -76,7 +76,7 @@ Info checksum: the 16-bit word sum of the whole info section, minus the checksum
 | `0x00` | 2 | Not used by the loader |
 | `0x02` | 4 | RLE data length in bytes |
 | `0x06` | 4 | Relocation list length in bytes |
-| `0x0A` | | RLE data, then the relocation list |
+| `0x0a` | | RLE data, then the relocation list |
 
 RLE data is a list of 16-bit words. The loader copies each word. A word `0x0000` is followed by a count word. The loader then writes that number of extra zero bytes.
 
@@ -91,8 +91,8 @@ When the packed flag is `0`, the section is the code. When the flag is `1`, the 
 | `0x00` | 2 | Magic `0x5223` (`R#`) |
 | `0x02` | 2 | Not used by the unpacker |
 | `0x04` | 4 | Output length in 16-bit words |
-| `0x08` | `0xF00` | Table of `0x780` 16-bit words |
-| `0xF08` | | Nibble stream, high nibble first |
+| `0x08` | `0xf00` | Table of `0x780` 16-bit words |
+| `0xf08` | | Nibble stream, high nibble first |
 
 For each output word, read one nibble `v`:
 
@@ -114,4 +114,4 @@ data base = base + data size region (region size), jump table at jump table offs
 code base = data base + region size   code (code size)
 ```
 
-The loader writes one 8-byte entry for each exported function at `data base + jump table offset + 8 × i`. Bytes 2–7 of the entry are `JMP abs.l` (`0x4EF9`) to `code base + export offset`. The loader does not relocate code. Code reaches its globals through register `A5`, which holds the data base.
+The loader writes one 8-byte entry for each exported function at `data base + jump table offset + 8 × i`. Bytes 2–7 of the entry are `JMP abs.l` (`0x4ef9`) to `code base + export offset`. The loader does not relocate code. Code reaches its globals through register `A5`, which holds the data base.

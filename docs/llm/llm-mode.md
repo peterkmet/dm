@@ -149,7 +149,7 @@ The base skills.
 
 - `fighter`: melee and shooting skill
 - `ninja`: throwing and fast melee skill
-- `priest`: healing and defence skill
+- `priest`: healing and defense skill
 - `wizard`: spell skill
 
 ### Wounds
@@ -376,7 +376,7 @@ The values of `action` for `act` and `act_many`.
 
 ## Play from the shell: dm-play
 
-`dm-play` sends one request to the socket and prints the response as compact JSON on one line. Use it from a shell, or let an LLM use it through a shell tool instead of MCP. The socket path comes from `DM_CONTROL` (the same default as `--control`).dm/control.sock`.
+`dm-play` sends one request to the socket and prints the response as compact JSON on one line. Use it from a shell, or let an LLM use it through a shell tool instead of MCP. The socket path comes from `DM_CONTROL` (the same default as `--control`).
 
 ```sh
 uv run dm-play <cmd> [json-fields]

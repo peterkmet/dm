@@ -6,12 +6,12 @@ The sources are the decompiled modules in `reference/decomp/csb-a/` (disk A) and
 
 ## Summary
 
-1. The player starts disk A. A new game loads `Dungeon.dat`: the prison, dungeon ID 12. The player picks champions at the mirrors.
-2. The player saves the game. The save is `CSBGame.dat` with dungeon ID 12.
+1. The player starts disk A. A new game loads `Dungeon.DAT`: the prison, dungeon ID 12. The player picks champions at the mirrors.
+2. The player saves the game. The save is `CSBGAME.DAT` with dungeon ID 12.
 3. The player starts disk B (utility disk), opens the champion editor (`CEDT.FTL`), loads the saved game, and clicks MAKE NEW ADVENTURE.
 4. CEDT loads `MINI.DAT` from the utility disk. `MINI.DAT` is a complete CSB saved game (dungeon ID 13) with one placeholder champion.
 5. CEDT copies the champions of the saved game into the `MINI.DAT` state, resets them, and writes `CSBGAME.DAT` to the save disk.
-6. The player starts disk A again and resumes. The engine loads `CSBGame.dat` and plays the CSB dungeon.
+6. The player starts disk A again and resumes. The engine loads `CSBGAME.DAT` and plays the CSB dungeon.
 
 The dungeon text in the prison says the same: "FIRST CHOOSE YOUR CHAMPIONS...THEN SAVE THE GAME...THEN RESTART WITH THE UTILITY DISK." (text strings 24 and 25 of disk A `Dungeon.DAT`, read with `dmcsb`, the Dungeon Master tools by Cycl0ne).
 
@@ -21,7 +21,7 @@ The dungeon text in the prison says the same: "FIRST CHOOSE YOUR CHAMPIONS...THE
 
 | Disk | Module | Role |
 |---|---|---|
-| A | `APPB.FTL` | The CSB engine. New game: `Dungeon.dat`. Resume: `CSBGame.dat`, then `CSBGame.bak`. |
+| A | `APPB.FTL` | The CSB engine. New game: `Dungeon.DAT`. Resume: `CSBGAME.DAT`, then `CSBGAME.BAK`. |
 | B | `APPB.FTL` | Launcher. Holds the module names `ANIM`, `CEDT`, `HINT` (`0x101989`). Its menu logic is not traced. |
 | B | `CEDT.FTL` | Champion editor. LOAD CHAMPIONS, SAVE CHAMPIONS, MAKE NEW ADVENTURE, REVERT, UNDO, QUIT. |
 | B | `HINT.FTL` | Hint oracle. It names `CSBGAME.DAT` and `MINI.DAT`. Not traced. |
@@ -31,9 +31,9 @@ The dungeon text in the prison says the same: "FIRST CHOOSE YOUR CHAMPIONS...THE
 `load_game` of APPB A is `0x129b3e`.
 
 - The entrance command `0xc8` sets the new-game flag (`A5-0x4fa4`). Command `0xca` clears it (resume). See `0x125104`–`0x125130`.
-- New game (`0x129bc2`): open `DungeonMaster:Dungeon.dat` (`A5-0x144`). When the flag `A5-0xde` is set (command `0xc9`), open `DungeonMaster:DungeonB.dat` (`A5-0x160`) first. `DungeonB.dat` is not on the disk.
+- New game (`0x129bc2`): open `DungeonMaster:Dungeon.DAT` (`A5-0x144`). When the flag `A5-0xde` is set (command `0xc9`), open `DungeonMaster:DungeonB.dat` (`A5-0x160`) first. `DungeonB.dat` is not on the disk.
 - The dungeon loader `0x1295a0` reads the 8-byte compressed header. It copies the dungeon ID word (file offset 6) to `A5-0x42c`. The prison `Dungeon.DAT` has ID 12 (`0x000c`).
-- Resume (`0x129d42`): open `DF0:CSBGame.dat` (`A5-0x5022`), then `DF0:CSBGame.bak` (`A5-0x501e`).
+- Resume (`0x129d42`): open `DF0:CSBGAME.DAT` (`A5-0x5022`), then `DF0:CSBGAME.BAK` (`A5-0x501e`).
 - The loader reads the header with the CSB layout: keys at `+0x138`, checksums at `+0x158`, format at `+0x178`, dungeon ID at `+0x17a`. It rejects platform 1 and a format other than 3 (`0x129e4e`–`0x129e62`). It does not check the dungeon ID.
 - The save writer stores the header byte, platform 5, format, and dungeon ID at `0x12928c`–`0x12929e`. Thus a prison save has dungeon ID 12.
 
@@ -90,7 +90,7 @@ The header has the same structure as the DM header: 32 groups of 4 noise words, 
 
 ### Decode algorithm
 
-1. Header check (`0x108da2`): compute the header chain ([save.md](../formats/save.md#header-chain). Decrypt the 128 payload words with the cipher below and the key word. The chain must equal the 16-bit sum of the plain payload words.
+1. Header check (`0x108da2`): compute the header chain ([save.md](../formats/save.md#header-chain)). Decrypt the 128 payload words with the cipher below and the key word. The chain must equal the 16-bit sum of the plain payload words.
 2. Blocks (`0x108c62`): read each block, decrypt it with `0x108bfc(buf, key[i], words)`, and compare the returned sum with `checksum[i]`. Block sizes come from block 0: offset 46 is the maximum active group count, offset 28 is the event maximum count.
 3. Cipher (`0x108bfc`): the same as DM `savefile_xor_block` ([save.md](../formats/save.md#block-cipher)).
 4. Portraits: read 4 × 464 bytes without a change.
@@ -133,11 +133,11 @@ Then for each champion (record offsets of [game-state.md](../rules/game-state.md
 
 | Field | New value |
 |---|---|
-| `cell`, `direction` | Turned by `(mini party direction − game party direction)`, when that difference is not 0 |
+| `cell`, `direction` | Turned by `(mini party direction - game party direction)`, when that difference is not 0 |
 | `action_index` | 255 |
 | `symbol_step`, `symbols[0]` | 0 |
 | `direction_maximum_damage_received`, `maximum_damage_received`, `poison_event_count` | 0 |
-| `enable_action_event_index`, `hide_damage_received_event_index` | −1 |
+| `enable_action_event_index`, `hide_damage_received_event_index` | -1 |
 | `attributes` | `attributes & 0x10` |
 | `wounds`, `action_defense`, `load`, `shield_defense` | 0 |
 | Current health, stamina, mana | The maximum value |

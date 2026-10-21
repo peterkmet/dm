@@ -11,7 +11,7 @@ The port reads all game tables from the KAOS image at run time ([tables.md](tabl
 | Name | Values |
 |---|---|
 | Slots | `SLOT_HAND_READY` 0, `SLOT_HAND_ACTION` 1, `SLOT_HEAD` 2, `SLOT_TORSO` 3, `SLOT_LEGS` 4, `SLOT_FEET` 5, `SLOT_POUCH_2` 6, quiver 7–9 and 12, `SLOT_NECK` 10, `SLOT_POUCH_1` 11, `SLOT_BACKPACK_FIRST` 13 to 29. `SLOT_COUNT` is 30. Slots 30–37 (`SLOT_CHEST_FIRST`) are the open chest. |
-| Skills | Base skills `SKILL_FIGHTER` 0, `SKILL_NINJA` 1, `SKILL_PRIEST` 2, `SKILL_WIZARD` 3. Hidden skills 4–19. Hidden skill `s` belongs to base skill `(s − 4) / 4`. |
+| Skills | Base skills `SKILL_FIGHTER` 0, `SKILL_NINJA` 1, `SKILL_PRIEST` 2, `SKILL_WIZARD` 3. Hidden skills 4–19. Hidden skill `s` belongs to base skill `(s - 4) / 4`. |
 | Skill flags | `champion_get_skill_level` takes `ignore_modifiers` (original flag `0x4000`) and `ignore_temporary` (original flag `0x8000`). |
 | Wounds | Bit `n` is a wound of body slot `n` (0–5). |
 | Attack types | `ATTACK_RAW` 0, `ATTACK_FIRE` 1, `ATTACK_SELF` 2, `ATTACK_BLUNT` 3, `ATTACK_SHARP` 4, `ATTACK_MAGIC` 5, `ATTACK_PSYCHIC` 6, `ATTACK_LIGHTNING` 7. |
@@ -20,12 +20,12 @@ The port reads all game tables from the KAOS image at run time ([tables.md](tabl
 
 `champion_add_candidate_to_party(portrait)` runs when the party clicks a mirror (sensor type 127). It does nothing when the leader holds an object or the party has 4 champions.
 
-1. The new champion record is cleared. Action is `ACTION_NONE`. The two event indices are −1. Direction is the party direction.
+1. The new champion record is cleared. Action is `ACTION_NONE`. The two event indices are -1. Direction is the party direction.
 2. The cell is the first free cell, starting at the party direction and going clockwise.
 3. Food and water are `1500 + (random16() & 255)` each (two draws).
 4. All slots are empty.
 5. The text on the party square gives the name, title, sex, health, stamina, mana, statistics, and experience (`recruit_parse`, [recruit.h](../../src/engine/include/recruit.h)).
-6. The champion becomes the candidate (`g_session.candidate_champion_index`: index, −1 for none). The first champion becomes leader and magic caster.
+6. The champion becomes the candidate (`g_session.candidate_champion_index`: index, -1 for none). The first champion becomes leader and magic caster.
 7. The objects in the cell of the wall square that faces the party become the possessions:
    - Armour goes to the first body slot (head to feet) that accepts it, otherwise to the neck.
    - A weapon goes to the action hand.
@@ -47,7 +47,7 @@ With the first champion, the time of the last party move becomes the game time.
 
 The name entry (`champion_start_rename` … `champion_rename_ok`) clears the name and the title. No game time passes until OK. The name takes up to 7 characters; the 7th moves the input to the title. The title takes up to 19 characters. A field does not take a space as its first character. Return (next field) moves the input from a non-empty name to the title. Backspace deletes the character before the input; at the start of the title it deletes the last name character. OK does nothing while the name is empty. OK removes the trailing spaces of the name and refuses, without a message, the name of another party champion. Input comes from the panel keyboard, the letter keys, Space, Backspace, `,` `.` `;` `:` and Return; a right click anywhere enters a space. Only the OK button ends the entry.
 
-`champion_resurrect(index)` is the Vi altar rebirth. The champion takes a free cell when its cell is used, loses all objects, and gets `max(25, max_health − max_health / 64 − 1)` maximum health and half of it as current health.
+`champion_resurrect(index)` is the Vi altar rebirth. The champion takes a free cell when its cell is used, loses all objects, and gets `max(25, max_health - max_health / 64 - 1)` maximum health and half of it as current health.
 
 ## Skill level
 
@@ -76,7 +76,7 @@ The name entry (`champion_start_rename` … `champion_rename_ok`) clears the nam
 | Wizard | — | — | + r2 | + level × 1.5 + extra | level | max stamina / 32 |
 
 - `r1 = random_bit()`, `r2 = random_bit() + 1`, then a third bit for vitality: vitality maximum increases by that bit (and by `bit & level` except for the priest). Anti-fire maximum increases by `~level & random_bit()`.
-- Priest and wizard: extra mana is `min(random_2bits(), level − 1)`. Maximum mana stops at 900. Anti-magic maximum increases by `random_2bits()`.
+- Priest and wizard: extra mana is `min(random_2bits(), level - 1)`. Maximum mana stops at 900. Anti-magic maximum increases by `random_2bits()`.
 - Maximum health increases by `h + random16() % (h / 2 + 1)`, up to 999. Maximum stamina increases by `s + random16() % (s / 2 + 1)`, up to 9999.
 - `runtime.skill_level_up[base]` of the champion becomes true. The message area shows "<name> JUST GAINED A <SKILL> LEVEL!" in the champion color.
 
@@ -85,8 +85,8 @@ The name entry (`champion_start_rename` … `champion_rename_ok`) clears the nam
 | Function | Rule |
 |---|---|
 | `champion_get_maximum_load` | `champion_adjust_by_stamina(strength × 8 + 100)`. A wound removes 1/8 (1/4 with a leg wound). Elven Boots on the feet add 1/16. The result rounds up to a multiple of 10 (tenths of a kilogram). |
-| `champion_get_movement_ticks` | Below the maximum load: 2, or 3 when the load is above 5/8 of the maximum. Otherwise `(load − max) × 4 / max + 4`. A feet wound adds 1 (2 when overloaded). Boots of Speed subtract 1. |
-| `champion_get_dexterity` | Dexterity + `random16() & 7`, minus `load × (dexterity / 2) / max_load`, at least 2, halved while sleeping, then `bounded(1 + (r & 7), value / 2, 100 − (r & 7))`. |
+| `champion_get_movement_ticks` | Below the maximum load: 2, or 3 when the load is above 5/8 of the maximum. Otherwise `(load - max) × 4 / max + 4`. A feet wound adds 1 (2 when overloaded). Boots of Speed subtract 1. |
+| `champion_get_dexterity` | Dexterity + `random16() & 7`, minus `load × (dexterity / 2) / max_load`, at least 2, halved while sleeping, then `bounded(1 + (r & 7), value / 2, 100 - (r & 7))`. |
 | `champion_get_strength(index, hand)` | Strength + `random16() & 15`, adjusted by the weight of the hand object. A weapon adds its strength and 2 × the levels of swing (swing classes), throw (classes 1–15), and shoot (classes 16–111). Then stamina adjustment, halved by a wound of the hand, and `bounded(0, value / 2, 100)`. |
 
 ## Wound defense
@@ -109,18 +109,18 @@ The name entry (`champion_start_rename` … `champion_rename_ok`) clears the nam
    - Fire: anti-fire reduces the attack, then the party fire shield.
    - Self: defense is half the defense plus the ninja level.
    - Magic: anti-magic reduces the attack, then the party spell shield. Armour does not count.
-   - Psychic: attack × (115 − wisdom) / 64. Armour does not count.
-   - All except magic and psychic: attack × (130 − defense) / 64.
+   - Psychic: attack × (115 - wisdom) / 64. Armour does not count.
+   - All except magic and psychic: attack × (130 - defense) / 64.
 4. Wounds: a threshold is the vitality-adjusted value of `(random16() & 127) + 10`. While the threshold is below the attack, a random allowed body slot gets a wound and the threshold doubles.
 5. Damage wakes up a sleeping party.
 
-`champion_damage_all(attack, wounds, type)` gives each champion `max(1, attack − spread + random16() % (2 × spread))` with `spread = attack / 8 + 1`. It returns the number of champions hurt.
+`champion_damage_all(attack, wounds, type)` gives each champion `max(1, attack - spread + random16() % (2 × spread))` with `spread = attack / 8 + 1`. It returns the number of champions hurt.
 
 `champion_apply_pending_damage()` adds the pending wounds, subtracts the pending damage, and kills a champion at 0 health. A hurt champion gets event 12 (hide the damage) at time + 5, or the existing event moves to that time. A survivor keeps the damage in `damage_to_show`. The game loop reads it with `champion_take_damage_to_show(index)` and draws the splat on the status box (`status_draw_damage`).
 
 `champion_decrement_stamina(index, amount)`: stamina below 1 becomes 0 and gives raw damage of half the deficit. Stamina stops at the maximum.
 
-`champion_poison(index, attack)` gives raw damage `max(1, attack / 64)` and, when `attack − 1` is not 0, adds event 75 at time + 36 with `attack − 1`. `champion_unpoison` deletes the poison events of the champion.
+`champion_poison(index, attack)` gives raw damage `max(1, attack / 64)` and, when `attack - 1` is not 0, adds event 75 at time + 36 with `attack - 1`. `champion_unpoison` deletes the poison events of the champion.
 
 `champion_fall_damage(use_rope)` is the pit fall: `champion_damage_all(20, legs | feet, ATTACK_SELF)` and sound 7. With a rope, each living champion loses `load × 25 / max_load + 1` stamina instead.
 
@@ -150,7 +150,7 @@ Object modifiers (removed with the opposite sign):
 
 | Slot | Object | Effect |
 |---|---|---|
-| 0–12 | Cursed weapon or armour | Luck −3 |
+| 0–12 | Cursed weapon or armour | Luck -3 |
 | any | Rabbit's Foot | Luck +10 |
 | Action hand | Mace of Order | Strength +5 |
 | Action hand | Staff of Claws, staffs and wands, Delta, Vorpal Blade, The Inquisitor | Maximum mana +1 to +16 |
@@ -167,7 +167,7 @@ A statistic modifier changes the maximum, current, and minimum value.
 
 - Waterskin: with charges, water +800 (maximum 2048) and one charge less.
 - Food: the object record becomes free. Food increases by the food value of the icon (maximum 2048).
-- Potion: the potion becomes an empty flask. With power `p`, `amount = p / 25 + 8` and `d = ((511 − p) / ((p + 1) / 8 + 32)) / 2`:
+- Potion: the potion becomes an empty flask. With power `p`, `amount = p / 25 + 8` and `d = ((511 - p) / ((p + 1) / 8 + 32)) / 2`:
 
 | Potion | Effect |
 |---|---|
@@ -178,7 +178,7 @@ A statistic modifier changes the maximum, current, and minimum value.
 | Antivenin | Ends the poison |
 | Mon | Stamina + `max_stamina / d` |
 | Ya | Champion shield + `amount × 1.5` (a quarter of it when the shield is above 50). Event 72 removes it after `amount²` ticks. |
-| Ee | Mana + `2 × amount − 8`, at most 900. Above the maximum, half of the excess is lost. |
+| Ee | Mana + `2 × amount - 8`, at most 900. Above the maximum, half of the excess is lost. |
 | Vi | Health + `max_health / d`. Heals wounds at random. |
 | Water | Water +1600 |
 
@@ -191,9 +191,9 @@ The main loop calls `champion_apply_time_effects()` every 64 ticks (16 while the
 1. Scents that are not on the party square lose 1 strength. A first scent at strength 0 is deleted.
 2. A chance value is made from bits 6–8 of the game time (0–112).
 3. For each living champion that is not the candidate:
-   - Mana: when the wizard and priest levels plus wisdom are above the chance, mana increases by `max_mana / 40 + 1` (doubled while sleeping) and stamina decreases by `max(7, 16 − levels)` times that gain. Mana above the maximum decreases by 1.
+   - Mana: when the wizard and priest levels plus wisdom are above the chance, mana increases by `max_mana / 40 + 1` (doubled while sleeping) and stamina decreases by `max(7, 16 - levels)` times that gain. Mana above the maximum decreases by 1.
    - Temporary experience decreases by 1 in each skill.
-   - Food and water decrease. Fed champions regain stamina; starving champions (below −512) lose stamina. Food and water stop at −1024.
+   - Food and water decrease. Fed champions regain stamina; starving champions (below -512) lose stamina. Food and water stop at -1024.
    - Health: when stamina is at least a quarter of the maximum and vitality + 12 is above the chance, health increases by `max_health / 128 + 1` (doubled while sleeping, +50 % + 1 with the Ekkhard Cross).
    - Every 256 ticks (64 while sleeping), each current statistic moves toward its maximum.
    - When the party is awake and no creature attacked for 60 ticks, the champion turns to the party direction.
@@ -207,7 +207,7 @@ The code is in `src/engine/action.c`. The rules follow `action_is_action_perform
 `action_is_action_performed(champion, action)` runs one action against the square in front of the champion:
 
 1. The target group is the group on that square (`target_group` of `action_is_action_performed`).
-2. Stamina cost is `random_bit() + stamina`. For skills 16–19 and the wizard skill, the mana cost of a spell action is `7 − min(6, skill level)`.
+2. Stamina cost is `random_bit() + stamina`. For skills 16–19 and the wizard skill, the mana cost of a spell action is `7 - min(6, skill level)`.
 3. The action runs (table below).
 4. The action hand is disabled for the action ticks (event 11, `magic_disable_action`). Stamina decreases. The action skill gets the experience. A value of 0 skips each step.
 
@@ -220,10 +220,10 @@ The code is in `src/engine/action.c`. The rules follow `action_is_action_perform
 | Climb Down | With the rope, the party goes into the pit in front (no group there) without fall damage. Without the rope, the action adds no disabled ticks. |
 | Freeze Life | A blue magical box adds 30 freeze ticks, a green box 125; the box is used up. Other objects add 70 and use a charge. The maximum is 200. |
 | Fireball (150), Dispell (harm non-material, 150), Lightning (180), Spit (fireball, 250), Invoke | Shoots the explosion with the attack as kinetic energy. Invoke: attack `100 + random(128)`, spell by `random % 6`: 0 poison bolt, 1 poison cloud, 2 harm non-material, otherwise fireball. With less mana than the cost, attack becomes `max(2, mana × attack / cost)` and all mana is used. A failed cast halves the experience. Each uses a charge. |
-| Shoot | The bow (class 16–31) or sling (class 32–47) in the action hand shoots the arrow (class 10) or stone (class 11) of the ready hand. Kinetic energy is the sum of both weapons. Attack is `(shoot level + launcher attributes low byte) × 2`. Step energy is the launcher class minus 16 or 32. Without ammunition: `g_session.action_damage = −2`, no experience. |
+| Shoot | The bow (class 16–31) or sling (class 32–47) in the action hand shoots the arrow (class 10) or stone (class 11) of the ready hand. Kinetic energy is the sum of both weapons. Attack is `(shoot level + launcher attributes low byte) × 2`. Step energy is the launcher class minus 16 or 32. Without ammunition: `g_session.action_damage = -2`, no experience. |
 | Spellshield, Fireshield | `magic_cast_party_spell` for 280 ticks with mana. Success uses a charge. Failure quarters the experience and halves the disabled ticks. |
 | Fluxcage | `projectile_fluxcage_action` on the square in front. |
-| Heal | While mana remains: health + `min(10, heal level)`, mana − 2, experience + 2 (start 2). |
+| Heal | While mana remains: health + `min(10, heal level)`, mana - 2, experience + 2 (start 2). |
 | Light | Light power 2 now, event 70 takes it back after 2500 ticks. Uses a charge. |
 | Window | Thieves eye (event 73) for `random % (level + 8) + 5` ticks. Uses a charge. |
 | Throw | `is_object_thrown` from the action hand. The event 11 gets byte 6 = 2: when it runs, the next weapon of the quiver goes to the action hand. |
@@ -233,11 +233,11 @@ Block, Hit, and the other actions only add the action defense, the disabled tick
 
 ### Melee
 
-`is_melee_performed` plays sound 13 and needs a group with a creature in reach of the champion cell (`group_get_melee_target`: the creature index, −1 for none). A champion in a back cell cannot reach when a living champion stands in the front cell before it: `g_session.action_damage = −1` ("can't reach"). Disrupt hits only non-material creatures. Disrupt and the weapon with icon 40 add bit 15 to the hit probability, so the hit can reach non-material creatures. `group_get_melee_action_damage` ([creatures.md](creatures.md)) gives the damage, which goes into `g_session.action_damage` for the action area.
+`is_melee_performed` plays sound 13 and needs a group with a creature in reach of the champion cell (`group_get_melee_target`: the creature index, -1 for none). A champion in a back cell cannot reach when a living champion stands in the front cell before it: `g_session.action_damage = -1` ("can't reach"). Disrupt hits only non-material creatures. Disrupt and the weapon with icon 40 add bit 15 to the hit probability, so the hit can reach non-material creatures. `group_get_melee_action_damage` ([creatures.md](creatures.md)) gives the damage, which goes into `g_session.action_damage` for the action area.
 
 ### Fear
 
-The influence roll is `random16() % (influence level + bonus)`. The bonus and the experience are: Confuse 12 and 45, War Cry 3 and 12, Blow Horn 6 and 20, Brandish 6 and 30, Calm 7 and 35. When the roll is below the fear resistance, or the creature is fearless (15), the group stays and the experience is halved. Otherwise an attacking group stops its attack, the group flees, and the flee delay is `(16 − fear) × 4 / movement ticks`.
+The influence roll is `random16() % (influence level + bonus)`. The bonus and the experience are: Confuse 12 and 45, War Cry 3 and 12, Blow Horn 6 and 20, Brandish 6 and 30, Calm 7 and 35. When the roll is below the fear resistance, or the creature is fearless (15), the group stays and the experience is halved. Otherwise an attacking group stops its attack, the group flees, and the flee delay is `(16 - fear) × 4 / movement ticks`.
 
 ### Throwing
 
@@ -246,7 +246,7 @@ The influence roll is `random16() % (influence level + bonus)`. The bonus and th
 1. Stamina cost: half the weight, bounded 1–10, plus half of each 10 above (`throwing_stamina_cost`). The action hand is disabled for 4 ticks.
 2. Experience to the throw skill: 8 for objects, 12 for weapons, plus kinetic energy / 4 for weapons of class 0–12.
 3. Kinetic energy (a byte): `level + e / 2 + random(16) + e` with `e` = strength + the weapon kinetic energy (class 0–12) or 1.
-4. Attack: `bounded(40, random(32) + 8 × level, 200)`. Step energy: `max(5, 11 − level)`.
+4. Attack: `bounded(40, random(32) + 8 × level, 200)`. Step energy: `max(5, 11 - level)`.
 5. The projectile starts in the front cell of the side and flies in the party direction. The party cannot move in that direction for 4 ticks.
 
 ### Charges
@@ -257,7 +257,7 @@ The influence roll is `random16() % (influence level + bonus)`. The bonus and th
 
 | Event | Handler | Effect |
 |---|---|---|
-| 11 | `enable_champion_action` | The action hand works again. The action defense of `action_index` ends. After Shoot with an empty ready hand, the first matching ammunition of the quiver (slot 12, then 7–9) goes to the ready hand. Byte 6 ≠ 0 then moves the next weapon of the quiver to slot `byte 6 − 1` (`action_refill_from_quiver`). |
+| 11 | `enable_champion_action` | The action hand works again. The action defense of `action_index` ends. After Shoot with an empty ready hand, the first matching ammunition of the quiver (slot 12, then 7–9) goes to the ready hand. Byte 6 ≠ 0 then moves the next weapon of the quiver to slot `byte 6 - 1` (`action_refill_from_quiver`). |
 | 12 | `hide_damage_received` | Hides the damage number of the champion. |
 | 13 | `process_vi_altar_rebirth` | Cell byte = step. Step 2: rebirth explosion, next step after 5 ticks. Step 1: the bones of the champion (junk icon 147, champion index in the charges, in the event cell) disappear, next step after 1 tick; without bones the rebirth stops. Step 0: `champion_resurrect`. |
 | 75 | `champion_poison` | One poison step: the poison event count decreases, then `champion_poison(champion, word 6)`. |

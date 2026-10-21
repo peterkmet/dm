@@ -47,7 +47,7 @@ paragraph. A module with several `.c` files has one `<module>_internal.h` for it
 | `data/adventure.h` | `adventure_` | The adventure of the run: Dungeon Master or Chaos Strikes Back. |
 | `data/bytes.h` | `be16` `be32` `wr16` `wr32` | Big-endian access to the Amiga data: game files, save files, module images. |
 | `data/crc32.h` | `crc32_` | The CRC-32 checksum of PNG and zip: checks the game files and writes the screenshot chunks. |
-| `data/csb_image.h` | `csb_image_` | The CSB engine (APPB.FTL) as a KAOS-layout image: each table that the port reads sits at its DM address. |
+| `data/csb_image.h` | `csb_image_` | The CSB engine (APPB.FTL) as a KAOS-layout image: each table that the port reads is at its DM address. |
 | `data/csb_text.h` | `csb_text_` | The CSB texts as Graphics.DAT text items: CSB keeps them in the APPB data, not in items 699 and 700. |
 | `data/file.h` | `file_` | Whole-file reads and writes and file names: the C standard library only, no folder services. |
 | `data/ftl.h` | `ftl_` | The FTL module loader of the Amiga engine files: lays a module out in memory at its base address. |

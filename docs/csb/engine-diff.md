@@ -12,7 +12,7 @@ All addresses are image addresses. "K" marks a DM address, "C" marks a CSB addre
 - The CSB engine is the DM engine with a small set of changes. The game rule tables are byte-identical, except the action sets, the action experience gain, and the spells.
 - The two modules come from different compilers. CSB keeps local variables on the stack, and DM keeps them in registers. A byte compare of the code does not work. The function mapping uses code-generation independent features (see [Function mapping](#function-mapping)).
 - The large CSB changes are: inline English text instead of the string table in `Graphics.DAT`, the save file header, the end of the game (an `ENDA.DAT` animation in place of the DM victory screen), no Fuse and no Lord Chaos, a magic map (four new spells), and copy protection.
-- The CSB adventure starts from `CSBGame.dat`, which the utility disk (disk B, module `CEDT.FTL`) makes. A new game on disk A starts the prison (`Dungeon.DAT`, dungeon ID 12, see [new-adventure.md](new-adventure.md)). Champion import is in `CEDT.FTL`, not in the engine.
+- The CSB adventure starts from `CSBGAME.DAT`, which the utility disk (disk B, module `CEDT.FTL`) makes. A new game on disk A starts the prison (`Dungeon.DAT`, dungeon ID 12, see [new-adventure.md](new-adventure.md)). Champion import is in `CEDT.FTL`, not in the engine.
 
 ## Function mapping
 
@@ -92,7 +92,7 @@ These tables have the same bytes in CSB. Only the address changes.
 | `KAOS_DIRECTION_TO_STEP_EAST`, `KAOS_DIRECTION_TO_STEP_NORTH`, `KAOS_GROUP_DIRECTIONS_PACKED` | `0x101038`, `0x101040`, `0x10192a` | `0x10153a`, `0x101542`, `0x101e2e` |
 | `KAOS_MOVEMENT_ARROW_TO_STEP_FORWARD`, `..._RIGHT` | `0x103c56`, `0x103c5e` | `0x104694`, `0x10469c` |
 | `KAOS_KEYS_INTERFACE`, `KAOS_KEYS_MOVEMENT`, `KAOS_KEYS_SLEEPING`, `KAOS_KEYS_FROZEN` | `0x103948`, `0x103964`, `0x103980`, `0x10398c` | `0x1043c4`, `0x1043e0`, `0x1043fc`, `0x104408` |
-| Name entry: `KAOS_KEYS_NAME_ENTRY`, `KAOS_RENAME_CURSOR`, `KAOS_NAME_ENTRY_CHARACTERS`, `KAOS_NAME_UNDERSCORES`, `KAOS_TITLE_UNDERSCORES` | `0x103994`, `0x100cea`, `0x100cee`, `0x1024ba`, `0x1024c2` | `0x104410`, `0x1011c0`, `0x1011c4`, `0x102dd0`, `0x102dd8` (`champion_rename` C`0x116312`: A5−`0xd0e`, A5−`0x3f5e`, command + A5−`0x4002`, A5−`0x234e`, A5−`0x2346`) |
+| Name entry: `KAOS_KEYS_NAME_ENTRY`, `KAOS_RENAME_CURSOR`, `KAOS_NAME_ENTRY_CHARACTERS`, `KAOS_NAME_UNDERSCORES`, `KAOS_TITLE_UNDERSCORES` | `0x103994`, `0x100cea`, `0x100cee`, `0x1024ba`, `0x1024c2` | `0x104410`, `0x1011c0`, `0x1011c4`, `0x102dd0`, `0x102dd8` (`champion_rename` C`0x116312`: A5-`0xd0e`, A5-`0x3f5e`, command + A5-`0x4002`, A5-`0x234e`, A5-`0x2346`) |
 | `KAOS_ARROW_POINTER_BITMAP`, `KAOS_HAND_POINTER_BITMAP`, `KAOS_MOUSE_POINTER_ZONES`, `KAOS_MOUSE_POINTER_HOTSPOTS`, `KAOS_POINTER_SHADOW_COLORS` | `0x1002b0` … `0x1005fe` | `0x1005f0`, `0x100714`, `0x10084a`, `0x10091a`, `0x100984` |
 | `KAOS_DUNGEON_PALETTES` | `0x100aa6` | `0x100f78` |
 | `KAOS_LAYOUT_BITMAPS` | `0x1025f2` | `0x102f50` |
@@ -184,7 +184,7 @@ DM 3.60 takes all text from `Graphics.DAT` item 700 (`get_string`), action names
 | DM string (port id) | CSB source |
 |---|---|
 | 0–3 class names (`KAOS_BASE_SKILL_STRING_INDICES`) | Pointer table C`0x102d56`[4] in skill order: FIGHTER, NINJA, PRIEST, WIZARD |
-| 4–18 skill levels (`KAOS_SKILL_LEVEL_STRING_INDICES`) | Pointer table C`0x102524`[level − 2] |
+| 4–18 skill levels (`KAOS_SKILL_LEVEL_STRING_INDICES`) | Pointer table C`0x102524`[level - 2] |
 | 19 WAKE UP, 20 GAME FROZEN | C`0x104680`, C`0x104688` |
 | 21 PARTY FACING, 22–25 directions | C`0x1026ae`, pointer table C`0x102578`[4] |
 | 26–29 CONSUMABLE … CURSED, 30 AND, 31 BURNT OUT | C`0x10267c`, `0x102688`, `0x102692`, `0x10269a`, C`0x10264e`, C`0x1026a2` |
@@ -265,8 +265,8 @@ New spells (records 25–28 of `g_spells`, C`0x1046c2`, kind 4, skill 12):
 Cast (`menus_get_champion_spell_cast_result`, C`0x126e0e`, case kind 4 at C`0x12705c`):
 
 1. `is_magic_map_in_hand` (C`0x111080`) must be true for the object in the action hand (champion slot word `0xd6`). Otherwise the spell fails with message 11 and the function returns 3.
-2. `D6 = (power + 1) × 4`, power = power symbol − `0x5f`.
-3. Type 0: byte `0x118` += 1, duration 2·D6². Type 1: byte `0x119` += 1, D6 −= 2, duration 2·D6². Type 2: byte `0x11a` += 1, D6 −= (D6 >> 2) − 1, duration 2·D6².
+2. `D6 = (power + 1) × 4`, power = power symbol - `0x5f`.
+3. Type 0: byte `0x118` += 1, duration 2·D6². Type 1: byte `0x119` += 1, D6 -= 2, duration 2·D6². Type 2: byte `0x11a` += 1, D6 -= (D6 >> 2) - 1, duration 2·D6².
 4. Type 3 (C`0x1270de`): delete the first event 83 of this champion. Byte `0x11b` = party direction + 1. Word `0x11c` = x << 11 | y << 6 | map. Action disabled ticks = D6² >> 1, event duration = 4 × that value.
 5. C`0x1272d4`: the event time is game time + duration, on the party map. `timeline_add_event`. The event priority byte holds the champion index.
 
@@ -274,7 +274,7 @@ Checks of the cast (APPB disassembly):
 
 - The switch on the spell type is `rt_switch_range` 0–3 after C`0x127094`: type 0 C`0x1270a6`, 1 C`0x1270bc`, 2 C`0x1270ca`, 3 C`0x1270de`.
 - D6 is a 16-bit word. Types 0–2: duration = 2·D6² (`muls`, `add`). The action disabled ticks of types 0–2 come from the spell record, as for the other spells.
-- Type 3 looks for the first event 83 only when byte `0x11b` is not 0. The search runs over the slots 0 to `g_timeline.high_water` − 1 (C`0x103bd2`) and compares the type byte and the priority byte (champion index). Disabled ticks = (D6² as an unsigned word) >> 1.
+- Type 3 looks for the first event 83 only when byte `0x11b` is not 0. The search runs over the slots 0 to `g_timeline.high_water` - 1 (C`0x103bd2`) and compares the type byte and the priority byte (champion index). Disabled ticks = (D6² as an unsigned word) >> 1.
 - The failure (C`0x12706a`) prints message 11 and returns 3 before the experience and the action disable. C`0x127a1a` prints the champion name, then the text of the message. The CSB prefix text 59 is empty, so the port order (prefix, name, suffix) gives the same line.
 
 Timeline (`timeline_process`, C`0x12411e`): events 80, 81, 82 decrement champion bytes `0x118`, `0x119`, `0x11a` (C`0x124486`, `0x12449c`, `0x1244b2`). Event 83 clears byte `0x11b` (C`0x1244c8`).
@@ -298,7 +298,7 @@ Scroll panel (`draw_panel_scroll`, C`0x111764`):
 
 - `scroll_text_insert_creature_name` (C`0x1116a0`) replaces each "CREANAME" (C`0x102636`) in the scroll text with the name of the creature group in front of the party, or with "NO CREATURE". The name is the text of `group_get_thing` (C`0x10d7f0`) on the square one step ahead in the party direction: "NO CREATURE" (C`0x102654`) for no group, otherwise the creature name pointer of the group creature type (table C`0x102164`, port texts 108 + type). The first match sets the drawn panel content to 9.
 - When the first line (after the replacement) is "MAGICMAP": drawn panel content 10, graphic `0x18` in zone `0x65` with transparent color 8. Rune characters `0x72`–`0x75` (KU, ROS, DAIN, NETA) print in zones `0x267`–`0x26a` with `text_print_to_viewport_zone_color`: color 8 when the byte (`0x11a`, `0x119`, `0x118`, `0x11b`) is not 0, otherwise color 0, background 15.
-- A 7 × 7 grid. `get_zone_size(0x266)` (C`0x119616`) gives the top left point of the first square. The first row is 3 squares ahead of the party, the first column 3 squares to the left (`update_map_coordinates_after_relative_movement(dir, 3, −3)`). Columns step to the right (direction + 1), rows step back (direction + 2). With byte `0x11b` set, the grid uses the stored map (`set_current_map`), position, and direction (byte − 1), and `set_current_map(party map)` follows.
+- A 7 × 7 grid. `get_zone_size(0x266)` (C`0x119616`) gives the top left point of the first square. The first row is 3 squares ahead of the party, the first column 3 squares to the left (`update_map_coordinates_after_relative_movement(dir, 3, -3)`). Columns step to the right (direction + 1), rows step back (direction + 2). With byte `0x11b` set, the grid uses the stored map (`set_current_map`), position, and direction (byte - 1), and `set_current_map(party map)` follows.
 - The party square is drawn last, when the grid map is the party map. `magic_map_draw_square` (C`0x111140`, args x, y, direction, pixel x, pixel y) draws each square from tiles of graphic 12 (`magic_map_draw_cell`, C`0x1110e0`: tile & 15 and tile >> 4 select the 7 × 7 source, transparent color 10).
 - Tile size and gap (C`0x1032e6`–`0x1032ec`): width 7, height 7, gap x 1, gap y 1 in the APPB data. The code only reads them. Graphic 12 is 112 × 42 (16 × 6 tiles).
 
@@ -307,13 +307,13 @@ Scroll panel (`draw_panel_scroll`, C`0x111764`):
 1. `set_square_aspect` of the square in the map direction. The aspect words are element, square byte, first thing, then 4 words (wall sides, or door state, door thing index, floor ornament ordinal with the footprints bit `0x8000`).
 2. Border fill (`fill_viewport_box`, 1 pixel around the tile): color 8 when x and y are the party x and y (also on a stored map), otherwise color 4 when DAIN (`0x118`) is set, the element is not a wall, and the footprints bit is set.
 3. Blink flag: square type 6 (fake wall) with bit 0 (imaginary).
-4. The element: wall: tile 1 when ROS and blink and game time bit 1, otherwise tile 0 and for each side k with a wall ornament: tile `0x1a`+k for the Vi altar ornament (C`0x10220c`), `0x16`+k for an alcove, `0x1e`+k for a fountain. Corridor: tile 2, then tile `0x4e` + the global floor ornament index (C`0x1021e4`) of the floor ornament ordinal. Teleporter: tile 6 + `random_2bits`. Door (16 side, 17 front): tile `0xb` or `0xa`, + 2 without a door button (door byte 3 bit 6), + 4 when the door state is open or destroyed. Stairs (18, 19): tile `0x12` + ((stairs exit direction − direction) & 3), turned by 2 for stairs up. Pit: tile 3, tile 4 when invisible, tile 5 when invisible and ROS and game time bit 0.
-5. Only with DAIN or KU: the thing list from the first thing. A group with KU becomes the group of the square. With DAIN: the first projectile, the first explosion, and each junk of object type 197 (ZOKATHRA SPELL): tile `0x22` + ((cell − direction) & 3), + 4 when the element is a wall and the square does not blink.
+4. The element: wall: tile 1 when ROS and blink and game time bit 1, otherwise tile 0 and for each side k with a wall ornament: tile `0x1a`+k for the Vi altar ornament (C`0x10220c`), `0x16`+k for an alcove, `0x1e`+k for a fountain. Corridor: tile 2, then tile `0x4e` + the global floor ornament index (C`0x1021e4`) of the floor ornament ordinal. Teleporter: tile 6 + `random_2bits`. Door (16 side, 17 front): tile `0xb` or `0xa`, + 2 without a door button (door byte 3 bit 6), + 4 when the door state is open or destroyed. Stairs (18, 19): tile `0x12` + ((stairs exit direction - direction) & 3), turned by 2 for stairs up. Pit: tile 3, tile 4 when invisible, tile 5 when invisible and ROS and game time bit 0.
+5. Only with DAIN or KU: the thing list from the first thing. A group with KU becomes the group of the square. With DAIN: the first projectile, the first explosion, and each junk of object type 197 (ZOKATHRA SPELL): tile `0x22` + ((cell - direction) & 3), + 4 when the element is a wall and the square does not blink.
 6. A group whose creature attributes have bit `0x4000` clear: tile `0x4c` + game time bit 0.
-7. From the first projectile on: each projectile with `get_projectile_aspect` of its slot: −11 tile `0x32`, −12 `0x36`, −14 `0x3e`, −13 `0x3a`, −4 `0x2a` (+ 4 when bit 0 of the projectile event direction, event byte 9 bits 4–5, differs from bit 0 of the map direction), other negative values none; an aspect ≥ 0 with object type 197: `0x22`. The tile adds (cell − direction) & 3.
+7. From the first projectile on: each projectile with `get_projectile_aspect` of its slot: -11 tile `0x32`, -12 `0x36`, -14 `0x3e`, -13 `0x3a`, -4 `0x2a` (+ 4 when bit 0 of the projectile event direction, event byte 9 bits 4–5, differs from bit 0 of the map direction), other negative values none; an aspect ≥ 0 with object type 197: `0x22`. The tile adds (cell - direction) & 3.
 8. From the first explosion on: each explosion type 0 or 2: tile `0x42`; 6 or 7: `0x44` + `random_2bits`; 50: `0x48` + `random_2bits`; other types below 40: `0x43`; 40, 100, 101: none.
 
-The footprints bit (`set_square_aspect` C`0x10d630`–`0x10d654`): for a corridor, an open fake wall, a closed pit, an open imaginary pit, a door, and a teleporter, `champion_get_scent_ordinal` − 1 is in [`first_scent_index`, `last_scent_index`). Walls, closed fake walls, stairs, and other open pits have no footprints.
+The footprints bit (`set_square_aspect` C`0x10d630`–`0x10d654`): for a corridor, an open fake wall, a closed pit, an open imaginary pit, a door, and a teleporter, `champion_get_scent_ordinal` - 1 is in [`first_scent_index`, `last_scent_index`). Walls, closed fake walls, stairs, and other open pits have no footprints.
 
 `set_current_map` (C`0x10d666`) changes the map, its size, and its door types. The ornament lists, the alcove, Vi altar, and fountain indices, and the inscription index come from `load_current_map_graphics` of the party map. Thus a stored map of another level shows its squares with the ornament data of the party map. The port does the same.
 
@@ -338,12 +338,12 @@ Port: `magic.c` `cast_magic_map` (spell kind 4, failure message 11), `spells.c` 
 
 ### Champions
 
-- `champion_click_rebirth_panel` (C`0x11668e`), REINCARNATE: before the 12 random points, CSB sets each statistic 1–6 (current and maximum) to max(minimum, value − value/8) (C`0x1167e0`–`0x116854`). Then it divides health, stamina, and mana (current and maximum) by 4 (C`0x116856`–`0x11688e`). Port: `src/engine/champion.c` `reincarnate`. The CSB dungeon has no mirrors, so this code does not run in a normal CSB game (UNVERIFIED).
+- `champion_click_rebirth_panel` (C`0x11668e`), REINCARNATE: before the 12 random points, CSB sets each statistic 1–6 (current and maximum) to max(minimum, value - value/8) (C`0x1167e0`–`0x116854`). Then it divides health, stamina, and mana (current and maximum) by 4 (C`0x116856`–`0x11688e`). Port: `src/engine/champion.c` `reincarnate`. The CSB dungeon has no mirrors, so this code does not run in a normal CSB game (UNVERIFIED).
 - All other champion functions differ only in code generation: object modifiers, skill level, skill experience, luck, time effects, candidate, food and potions, object icons.
 
 ### Save and load
 
-File names: `DF0:CSBGame.dat` and `DF0:CSBGame.bak` (C`0x10013a`, `0x10014a`), on the volume `DungeonSave:` (C`0x10012c`). DM uses `DF0:DMGAME~.DAT` and `.BAK`.
+File name strings in the binary: `DF0:CSBGame.dat` and `DF0:CSBGame.bak` (C`0x10013a`, `0x10014a`), on the volume `DungeonSave:` (C`0x10012c`). DM uses `DF0:DMGAME~.DAT` and `.BAK`.
 
 The cipher (`savefile_xor_block`, C`0x128720`), the checksum (C`0x128752`), the checked blocks (C`0x1287c2`, `0x128786`), and the summed blocks (C`0x128810`, `0x128856`) are the same as DM. The blocks are the same: globals (128 bytes, same layout), active groups, champions and party (`0x580` bytes), timeline events, timeline index, 4 portraits, dungeon.
 
@@ -353,7 +353,7 @@ The header differs (`save_read_header` C`0x1289c4`, `load_game` C`0x129b3e`); th
 
 Other load and save differences:
 
-- `load_game` opens `CSBGame.dat`, then `CSBGame.bak`. Then it tries `DungeonMaster:Dungeon.FTL` (C`0x129d74`), which is not on the disk. A new game loads `Dungeon.DAT` of disk A: the prison (2622 bytes, compressed, signature `0x8104`).
+- `load_game` opens `CSBGAME.DAT`, then `CSBGAME.BAK`. Then it tries `DungeonMaster:Dungeon.FTL` (C`0x129d74`), which is not on the disk. A new game loads `Dungeon.DAT` of disk A: the prison (2622 bytes, compressed, signature `0x8104`).
 - The save dialog has CANCEL, SAVE AND PLAY, SAVE AND QUIT, and FORMAT FLOPPY (`save_game` C`0x128cc0`, `reference/decomp/csb-a/APPB.c` from line 36964). Without the floppy option (`A5-0x4b6` = 0), the dialog has 3 choices: 1 CANCEL, 2 SAVE AND PLAY, 3 SAVE AND QUIT. With the option, it has 4: 1 SAVE AND PLAY, 2 SAVE AND QUIT, 3 FORMAT FLOPPY, 4 CANCEL.
   - CANCEL closes the dialog.
   - SAVE AND PLAY and SAVE AND QUIT write the file. The header field dialog choice (`0x132`) is 1 for SAVE AND PLAY and 0 for SAVE AND QUIT.

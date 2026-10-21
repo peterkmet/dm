@@ -30,18 +30,18 @@ The timeline sends events 29–41 to `group_process_event(event)`. Other rules s
 
 | Event | Reaction | Meaning |
 |---|---|---|
-| 29 | −3 `REACTION_DANGER_ON_SQUARE` | Danger on the square: a closing door, a poison cloud, a fluxcage around Lord Chaos. |
-| 30 | −2 `REACTION_HIT_BY_PROJECTILE` | A projectile hit a creature of the group. |
-| 31 | −1 `REACTION_PARTY_IS_ADJACENT` | The party is next to the group, or a champion hit the group. |
+| 29 | -3 `REACTION_DANGER_ON_SQUARE` | Danger on the square: a closing door, a poison cloud, a fluxcage around Lord Chaos. |
+| 30 | -2 `REACTION_HIT_BY_PROJECTILE` | A projectile hit a creature of the group. |
+| 31 | -1 `REACTION_PARTY_IS_ADJACENT` | The party is next to the group, or a champion hit the group. |
 | 32 | — | Aspect update of the whole group. |
 | 33–36 | — | Aspect update of creature 0–3. |
 | 37 | — | Behavior update of the whole group. |
 | 38–41 | — | Behavior update of creature 0–3 (attacking group). |
 | 60, 61 | — | A group waits off the map until its square is free (61 plays the teleporter sound). |
 
-An aspect event is a behavior event − 5. When the next aspect update comes before the next behavior update, the group adds the aspect event. Byte 8 of the event keeps the delay to the behavior update.
+An aspect event is a behavior event - 5. When the next aspect update comes before the next behavior update, the group adds the aspect event. Byte 8 of the event keeps the delay to the behavior update.
 
-Off the party map a group only handles events 32, 33, 37, and 38. It moves one square in a random direction when it can. It adds the next event 37 after `max(16 × |map − party map|, 2 × movement ticks)` ticks.
+Off the party map a group only handles events 32, 33, 37, and 38. It moves one square in a random direction when it can. It adds the next event 37 after `max(16 × |map - party map|, 2 × movement ticks)` ticks.
 
 While Freeze Life is active, a group (not Lord Chaos) adds its event again 4 ticks later. Lord Chaos does nothing after the game is won.
 
@@ -91,8 +91,8 @@ An attacking creature (events 38–41) turns to the party, moves to the front ce
 `group_get_champion_damage(group, champion)` gives the melee damage:
 
 1. A sleeping party wakes up. The champion gets parry experience.
-2. The champion dodges by dexterity against `random(32) + creature dexterity + 2 × map difficulty + dodge bonus − 16`. Darkness and invisibility increase the dodge bonus. Luck (60 %) can also avoid the hit.
-3. The damage starts from `random(16) + creature attack + 2 × map difficulty − 2 × parry skill`, then gets a random spread.
+2. The champion dodges by dexterity against `random(32) + creature dexterity + 2 × map difficulty + dodge bonus - 16`. Darkness and invisibility increase the dodge bonus. Luck (60 %) can also avoid the hit.
+3. The damage starts from `random(16) + creature attack + 2 × map difficulty - 2 × parry skill`, then gets a random spread.
 4. `champion_add_pending_damage` applies armour by the attack type of the creature. A hit plays the damage sound of the champion.
 5. A poison attack poisons the champion half of the time.
 
@@ -139,7 +139,7 @@ Event 48 or 49 (`projectile_process_move_event`) moves a projectile one cell for
 
 1. Event 49 tests the party and the group on the square. A hit ends the projectile.
 2. The step energy is subtracted from the kinetic energy and from the attack. A projectile without kinetic energy drops to the square.
-3. A projectile in a front cell leaves the square. A wall, a closed fake wall, or stairs in front stop it with an impact.
+3. A projectile in a front cell leaves the square. Stairs, a wall, or a closed fake wall in front stop it with an impact.
 4. In a door square, a closed door stops it with an impact.
 5. The next event comes after 1 tick on the party map, 3 ticks on other maps.
 

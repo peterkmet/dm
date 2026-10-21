@@ -66,7 +66,7 @@ Record fields that the code in these ranges uses (word at offset 2 unless stated
 | 0 | long | Raw map data offset. |
 | 6 | byte | X offset of the map in the dungeon. |
 | 7 | byte | Y offset of the map. |
-| 8 | word | Bits 0–5: level. Bits 6–10: width − 1. Bits 11–15: height − 1. |
+| 8 | word | Bits 0–5: level. Bits 6–10: width - 1. Bits 11–15: height - 1. |
 | 10 | byte | Bits 0–3: floor ornament count. Bits 4–7: random floor ornament count. |
 | 11 | byte | Bits 0–3: wall ornament count. Bits 4–7: random wall ornament count. |
 | 12 | byte | Bits 4–7: difficulty. 0 means a lit map. The value multiplies skill experience. |
@@ -122,7 +122,7 @@ ordinal = allowed && index < count ? index + 1 : 0;
 | 4 | byte | Creature type. |
 | 5 | byte | Cells (2 bits for each creature, `0xff` for a centered creature). On the party map: index into `g_active_groups`. |
 | 6 | 4 words | Health of each creature. |
-| 14 | word | Bits 0–3: behavior (0 wander, 2/3 react, 5 flee, 6 attack, 7 approach). Bits 5–6: creature count − 1. Bits 8–9: direction. Bit 10: do not discard. |
+| 14 | word | Bits 0–3: behavior (0 wander, 2/3 react, 5 flee, 6 attack, 7 approach). Bits 5–6: creature count - 1. Bits 8–9: direction. Bit 10: do not discard. |
 
 `get_group_cells` and `get_group_directions` read the active group when the map is the party map. Otherwise they read the record. A group off the party map has one direction for all creatures. `g_group_directions_packed[d]` expands it to 2 bits for each creature.
 
@@ -167,7 +167,7 @@ Several callees are in range 7 ([range-7-9.md](range-7-9.md)): `get_square_dista
 - `fill_screen_zone_pattern` fills with a pattern (used to dim the screen behind the inventory and over an invisible champion portrait).
 - `flip_bitmap_horizontal_raw` reverses the byte order of each row and maps each byte through `g_byte_bit_reverse`.
 - `flip_bitmap_vertical_raw` (`0x113b6e`) swaps rows plane by plane.
-- `set_dungeon_view_palette`: if the map difficulty is 0, the palette index is 0. Otherwise it collects the light power of torches in both hands of all champions, sorts the 8 values, and adds `g_light_power_to_light_amount[power] >> (6 − i)` for the 5 strongest (the shift decreases for each torch). It adds `g_party.magical_light_amount`. The index is the first entry in `g_palette_light_thresholds` that is not greater than the sum, or 5 when the sum is below 1.
+- `set_dungeon_view_palette`: if the map difficulty is 0, the palette index is 0. Otherwise it collects the light power of torches in both hands of all champions, sorts the 8 values, and adds `g_light_power_to_light_amount[power] >> (6 - i)` for the 5 strongest (the shift decreases for each torch). It adds `g_party.magical_light_amount`. The index is the first entry in `g_palette_light_thresholds` that is not greater than the sum, or 5 when the sum is below 1.
 
 `g_panel_content` values: 1 food/water/poison, 2 skills and statistics, 3 object, 5 scroll, 6 chest, 7 resurrect/reincarnate, 8 rename.
 
@@ -189,8 +189,8 @@ Several callees are in range 7 ([range-7-9.md](range-7-9.md)): `get_square_dista
 | `0x28` | byte | Direction of the maximum damage received. |
 | `0x29` | byte | Maximum damage received. |
 | `0x2a` | byte | Poison event count. |
-| `0x2c` | word | Timeline index of the enable-action event (event 11), or −1. |
-| `0x2e` | word | Timeline index of the hide-damage event (event 12), or −1. |
+| `0x2c` | word | Timeline index of the enable-action event (event 11), or -1. |
+| `0x2e` | word | Timeline index of the hide-damage event (event 12), or -1. |
 | `0x30` | word | Attributes (redraw flags, see below). |
 | `0x32` | word | Wounds: bit 0 ready hand, 1 action hand, 2 head, 3 torso, 4 legs, 5 feet. |
 | `0x34` | word | Current health. |
@@ -200,8 +200,8 @@ Several callees are in range 7 ([range-7-9.md](range-7-9.md)): `get_square_dista
 | `0x3c` | word | Current mana. |
 | `0x3e` | word | Maximum mana. |
 | `0x40` | word | Action defense. |
-| `0x42` | word | Food (−1024 to 2048). |
-| `0x44` | word | Water (−1024 to 2048). |
+| `0x42` | word | Food (-1024 to 2048). |
+| `0x44` | word | Water (-1024 to 2048). |
 | `0x46` | 7 × 3 bytes | Statistics: luck, strength, dexterity, wisdom, vitality, anti-magic, anti-fire. Each has maximum, current, minimum. |
 | `0x5c` | 20 × 6 bytes | Skills: word temporary experience, long experience. 0–3 are the base skills (fighter, ninja, priest, wizard). 4–19 are the hidden skills. |
 | `0xd4` | 30 words | Slots (ReDMCSB order, consistent with `g_slot_masks`): 0 ready hand, 1 action hand, 2 head, 3 torso, 4 legs, 5 feet, 6 pouch 2, 7 quiver line 2, 8–9 quiver line 1, 10 neck, 11 pouch 1, 12 quiver line 1 slot 1, 13–29 backpack. |
@@ -289,7 +289,7 @@ A port replaces all of this with one 320 × 200 indexed framebuffer, a 16-color 
 ### Output
 
 - When `bitmap` is NULL, the target is the screen (`g_screen_bitmap`, 40 bytes for each row, plane size 8000), at X = 0, Y = 0.
-- Otherwise the target is a bitmap: `row_bytes = ((w + 15) & ~15) / 8`, `plane_size = row_bytes * h`. Plane `k` starts at `bitmap + k * plane_size`. Pixel `x` is bit `7 − (x & 7)` of byte `x / 8` of the row. Color bit `k` goes to plane `k`.
+- Otherwise the target is a bitmap: `row_bytes = ((w + 15) & ~15) / 8`, `plane_size = row_bytes * h`. Plane `k` starts at `bitmap + k * plane_size`. Pixel `x` is bit `7 - (x & 7)` of byte `x / 8` of the row. Color bit `k` goes to plane `k`.
 - The function does not write the 4-byte header. `decode_cached_graphic` writes it from `g_graphic_dimensions`.
 
 ### Commands
@@ -341,7 +341,7 @@ The four register helpers (`expand_fill_run`, `expand_copy_run_from_previous_row
 3. Put new items into the fast area (`g_fast_gfx_area`) until it is full, then into the chip area (`g_chip_gfx_area`). Items with flag `0x4000` always go to the chip area.
 4. Free items that the map does not need (`gfx_area_keep_or_evict`). Compact both areas (`gfx_area_compact`).
 5. In dry-run mode (`g_graphics_load_dry_run`), stop after the measurement. `g_graphics_spare_memory` then holds the free memory. `memory_select_feature_set` uses this mode to test every map.
-6. Read the new items from the file. Each item in an area ends with a word: the graphic index, or `−size` when the space is free.
+6. Read the new items from the file. Each item in an area ends with a word: the graphic index, or `-size` when the space is free.
 
 `g_graphic_cache[i]` (`0x102566`) points to the loaded packed item. Despite the name, it is not the bitmap cache.
 
@@ -399,7 +399,7 @@ Region header (`HeapRegion`, `0x1c` bytes, before the region memory):
 |---|---|---|
 | 1 (permanent) | Best-fit unclaimed region (`heap_find_best_fit`, smallest sufficient free space). Otherwise the fast arena when `(flags & 0x700) == flags`. Otherwise the top of the main arena. | Never. |
 | 0 (stack) | Top of the main arena (`g_main_arena_top` moves down). | `mem_free_top(size)`, last in first out. |
-| 2 (temporary) | Bottom of the free space of the main arena (`g_main_arena_top − g_main_arena_free`). | `mem_free_temp(size)`. |
+| 2 (temporary) | Bottom of the free space of the main arena (`g_main_arena_top - g_main_arena_free`). | `mem_free_temp(size)`. |
 
 The main arena calls `fatal_error(0x28)` when it is full. `alloc_bitmap(w, h, mode)` allocates `rowbytes * 4 * h + 4` bytes with flags 8 and writes the header. `free_bitmap` assumes mode 0.
 
@@ -414,7 +414,7 @@ The main arena calls `fatal_error(0x28)` when it is full. `alloc_bitmap(w, h, mo
 1. Word `0xfc0d`.
 2. Word `range_count`.
 3. `range_count` pairs of words: first and last zone number.
-4. For each range, `last − first + 1` zone records of 4 words: `type`, `parent`, `a`, `b`.
+4. For each range, `last - first + 1` zone records of 4 words: `type`, `parent`, `a`, `b`.
 
 `parse_layout` builds a linked list of chunks (`LayoutChunk`: next, first, last, records). `layout_find_zone(list, n)` returns the record of zone `n`, or NULL. Zone 0 does not exist.
 
@@ -425,23 +425,23 @@ Zone types:
 | 0–8 | A point (`a`, `b`) relative to the parent, with an alignment. |
 | 1 as a parent | A translation: add (`a`, `b`) to the position and to the clip rectangle. |
 | 9 | A size record: `a` is the width, `b` is the height. |
-| 10–18 | A point inside another zone: the parent is a point record whose parent is a size record. Alignment `type − 10` selects the reference point of that rectangle. (`a`, `b`) is an offset. |
+| 10–18 | A point inside another zone: the parent is a point record whose parent is a size record. Alignment `type - 10` selects the reference point of that rectangle. (`a`, `b`) is an offset. |
 
 Alignment codes for a box of size (`w`, `h`) at point (`x`, `y`):
 
 | Code | Alignment | Box origin |
 |---|---|---|
-| 0 | center | `x − (w+1)/2`, `y − (h+1)/2` |
+| 0 | center | `x - (w+1)/2`, `y - (h+1)/2` |
 | 1 | top left | `x`, `y` |
-| 2 | top right | `x + 1 − w`, `y` |
-| 3 | bottom right | `x + 1 − w`, `y + 1 − h` |
-| 4 | bottom left | `x`, `y + 1 − h` |
-| 5 | top center | `x − (w+1)/2`, `y` |
-| 6 | right center | `x + 1 − w`, `y − (h+1)/2` |
-| 7 | bottom center | `x − (w+1)/2`, `y + 1 − h` |
-| 8 | left center | `x`, `y − (h+1)/2` |
+| 2 | top right | `x + 1 - w`, `y` |
+| 3 | bottom right | `x + 1 - w`, `y + 1 - h` |
+| 4 | bottom left | `x`, `y + 1 - h` |
+| 5 | top center | `x - (w+1)/2`, `y` |
+| 6 | right center | `x + 1 - w`, `y - (h+1)/2` |
+| 7 | bottom center | `x - (w+1)/2`, `y + 1 - h` |
+| 8 | left center | `x`, `y - (h+1)/2` |
 
-The reference points for types 10–18 use the same codes on the rectangle (for example 12 is (`x + w − 1`, `y`)).
+The reference points for types 10–18 use the same codes on the rectangle (for example 12 is (`x + w - 1`, `y`)).
 
 `get_zone(bitmap, box, zone, &w, &h)`:
 
@@ -453,7 +453,7 @@ The reference points for types 10–18 use the same codes on the rectangle (for 
 
 `get_zone_box(zone, box)` uses the size record of the zone's parent as the box size. `get_zone_box_clipped(zone, box, wp, hp)` scales that size by `wp / 10000` and `hp / 10000` (10000 means full size). `get_zone_size(zone, &x, &y)` returns the position of a 1 × 1 box.
 
-Negative bitmap indices refer to `g_layout_bitmaps[−1 − i]` (14 bytes each): byte 0 kind (1 graphic index, 2 bitmap pointer), words at 2 and 4 (X, Y), words at 6 and 8 (width and height, 0 means "from the bitmap"), long at 10 (graphic index or bitmap pointer). `set_layout_bitmap` and `set_layout_graphic` change the long.
+Negative bitmap indices refer to `g_layout_bitmaps[-1 - i]` (14 bytes each): byte 0 kind (1 graphic index, 2 bitmap pointer), words at 2 and 4 (X, Y), words at 6 and 8 (width and height, 0 means "from the bitmap"), long at 10 (graphic index or bitmap pointer). `set_layout_bitmap` and `set_layout_graphic` change the long.
 
 `temp_box` returns one of 8 rotating static boxes (`g_temp_boxes`). A caller must not keep the pointer.
 

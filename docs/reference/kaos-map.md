@@ -115,7 +115,7 @@ KAOS touches the custom chips in few places. Most graphics go through the OS or 
 - CIA: no direct access.
 - Audio: through `audio.device` only.
 
-Bitmaps have a 4-byte header before the pixel data: width at offset −4, height at offset −2. The pixel data has 4 bitplanes. The size is `((width + 15) & ~15) / 2 * height` bytes (`bitmap_byte_count`). The screen is 320×200 (`g_screen_width`, `g_screen_height`). The viewport is 224×136 (`g_viewport_width`, `g_viewport_height`).
+Bitmaps have a 4-byte header before the pixel data: width at offset -4, height at offset -2. The pixel data has 4 bitplanes. The size is `((width + 15) & ~15) / 2 * height` bytes (`bitmap_byte_count`). The screen is 320×200 (`g_screen_width`, `g_screen_height`). The viewport is 224×136 (`g_viewport_width`, `g_viewport_height`).
 
 ## Memory management
 
@@ -199,7 +199,7 @@ The formula is in [game-state.md](../rules/game-state.md#random-number-generator
 | `g_party_map_x`, `g_party_map_y`, `g_party_direction`, `g_party_map_index` | words at `0x1001ec`, `0x1001ee`, `0x1001ea`, `0x1001f0` | Party position. |
 | `g_game_time` | long at `0x1001f8` | Game tick counter. |
 | `g_dungeon_header` | 44 bytes | See [Dungeon.DAT](#dungeondat). |
-| `g_dungeon_maps` | 16 bytes per map | Offset 0: raw data offset. Offset 8: width − 1 (bits 6–10), height − 1 (bits 11–15). Offsets 10–14: ornament, creature type, and door type counts, see [range-4-6.md](symbols/range-4-6.md#map-descriptor). |
+| `g_dungeon_maps` | 16 bytes per map | Offset 0: raw data offset. Offset 8: width - 1 (bits 6–10), height - 1 (bits 11–15). Offsets 10–14: ornament, creature type, and door type counts, see [range-4-6.md](symbols/range-4-6.md#map-descriptor). |
 | `g_current_map_data` | pointer per column | Square bytes of the current map. Bits 5–7: square type (0 wall, 1 corridor, 2 pit, 3 stairs, 4 door, 5 teleporter, 6 fake wall). Bit 4: the square has things. |
 | `g_thing_data[16]` | pointers | Thing records per type. A thing is a word: bits 10–13 type, bits 0–9 index, bits 14–15 cell. `0xfffe` is the end of a list. |
 | `g_active_groups` | 16 bytes per entry | Active creature groups. |
@@ -215,7 +215,7 @@ The linker keeps the source file order. The export numbers form groups that foll
 | # | Start | End | Count | Subsystems | Confidence | Key evidence |
 |---|---|---|---|---|---|---|
 | 1 | `0x104e6c` | `0x106372` | 79 | Runtime, system init and shutdown, input device, key queue, disk detection, file I/O | High | Exports 0–31 and 122–125. Library opens, `input.device` handler, dos stubs. |
-| 2 | `0x106374` | `0x1076f8` | 61 | Interrupts, palette, fills, strings, `setjmp`, blit wrappers, random, min/max | High | Exports 32–75. Writes to `COLOR` registers, LCG constant `0xBB40E62D`. |
+| 2 | `0x106374` | `0x1076f8` | 61 | Interrupts, palette, fills, strings, `setjmp`, blit wrappers, random, min/max | High | Exports 32–75. Writes to `COLOR` registers, LCG constant `0xbb40e62d`. |
 | 3 | `0x10770e` | `0x10a3a6` | 80 | Main loop, object icons, mouse pointer, sound, text and message area, trackdisk | High | Exports 76–121. `game_loop`, `audio.device`, `trackdisk.device`. |
 | 4 | `0x10a432` | `0x10e784` | 77 | Dungeon access, creature groups (AI events), string table | High | Exports 126–182. ReDMCSB DUNGEON.C and GROUP.C order. |
 | 5 | `0x10e7b2` | `0x111f82` | 68 | Fill helpers, inventory panels, champion part 1 | High | Exports 183–224, 237–240. Torch light, chests, scroll text, skills, damage. |

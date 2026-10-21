@@ -1,6 +1,6 @@
 # Ideas for later
 
-None of these is planned.
+These items are not planned.
 
 ## Small cleanups
 
