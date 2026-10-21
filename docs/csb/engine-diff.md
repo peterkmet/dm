@@ -18,14 +18,7 @@ All addresses are image addresses. "K" marks a DM address, "C" marks a CSB addre
 
 `docs/reference/csb-appb-symbols.csv` holds the CSB-to-DM function mapping.
 
-These steps made the mapping:
-
-1. Load both modules with `dmtools.ftl` and disassemble them with the Musashi disassembler of `machine68k`.
-2. DM function starts come from `kaos-symbols.csv`. CSB function starts come from the Ghidra output, the exports, `LINK` after `RTS`, and direct call targets.
-3. Each function becomes features: the ordered call targets (jump table and `BSR`/`JSR`), the ordered immediates as 16-bit words, the stack argument offsets, the referenced globals, and the count of conditional branches.
-4. A global alignment (Needleman-Wunsch) of the two address-ordered function lists gives the pairs. The linkers keep the source file order. A second pass uses the mapped calls. A call-graph pass adds callees that three paired callers replace in the same way.
-5. OS stubs pair by their library call offset (LVO). A list of pairs that a code reading proved adds more pairs.
-6. Globals: equal non-zero bytes of the two data sections, then globals at the same position in paired functions (at least 2 votes, 80 % agreement). A list of verified CSB globals adds more globals. Globals that only zero bytes support are not mapped, because equal zero bytes prove nothing.
+The mapping comes from a comparison of both modules: the disassembly (`machine68k`), the function starts, and for each function its call targets, immediates, stack arguments, referenced globals, and branch count. A global alignment of the two address-ordered function lists gives the pairs (the linkers keep the source file order); call-graph passes and LVO offsets add more; a list of pairs from code readings corrects the rest. Globals pair by equal data bytes and by their position in paired functions.
 
 ### Classes
 
@@ -307,11 +300,23 @@ Scroll panel (`draw_panel_scroll`, C`0x111764`):
 1. `set_square_aspect` of the square in the map direction. The aspect words are element, square byte, first thing, then 4 words (wall sides, or door state, door thing index, floor ornament ordinal with the footprints bit `0x8000`).
 2. Border fill (`fill_viewport_box`, 1 pixel around the tile): color 8 when x and y are the party x and y (also on a stored map), otherwise color 4 when DAIN (`0x118`) is set, the element is not a wall, and the footprints bit is set.
 3. Blink flag: square type 6 (fake wall) with bit 0 (imaginary).
-4. The element: wall: tile 1 when ROS and blink and game time bit 1, otherwise tile 0 and for each side k with a wall ornament: tile `0x1a`+k for the Vi altar ornament (C`0x10220c`), `0x16`+k for an alcove, `0x1e`+k for a fountain. Corridor: tile 2, then tile `0x4e` + the global floor ornament index (C`0x1021e4`) of the floor ornament ordinal. Teleporter: tile 6 + `random_2bits`. Door (16 side, 17 front): tile `0xb` or `0xa`, + 2 without a door button (door byte 3 bit 6), + 4 when the door state is open or destroyed. Stairs (18, 19): tile `0x12` + ((stairs exit direction - direction) & 3), turned by 2 for stairs up. Pit: tile 3, tile 4 when invisible, tile 5 when invisible and ROS and game time bit 0.
-5. Only with DAIN or KU: the thing list from the first thing. A group with KU becomes the group of the square. With DAIN: the first projectile, the first explosion, and each junk of object type 197 (ZOKATHRA SPELL): tile `0x22` + ((cell - direction) & 3), + 4 when the element is a wall and the square does not blink.
-6. A group whose creature attributes have bit `0x4000` clear: tile `0x4c` + game time bit 0.
-7. From the first projectile on: each projectile with `get_projectile_aspect` of its slot: -11 tile `0x32`, -12 `0x36`, -14 `0x3e`, -13 `0x3a`, -4 `0x2a` (+ 4 when bit 0 of the projectile event direction, event byte 9 bits 4–5, differs from bit 0 of the map direction), other negative values none; an aspect ≥ 0 with object type 197: `0x22`. The tile adds (cell - direction) & 3.
-8. From the first explosion on: each explosion type 0 or 2: tile `0x42`; 6 or 7: `0x44` + `random_2bits`; 50: `0x48` + `random_2bits`; other types below 40: `0x43`; 40, 100, 101: none.
+4. The element tile (table below).
+5. Things show only with DAIN or KU: the thing list from the first thing. A group with KU becomes the group of the square. With DAIN: the first projectile, the first explosion, and each Zokathra spell (junk of object type 197).
+
+| Element or thing | Tile |
+|---|---|
+| Wall | 0; 1 when ROS, the square blinks, and game time bit 1 is set. For each side k with an ornament: `0x16`+k alcove, `0x1a`+k Vi altar (C`0x10220c`), `0x1e`+k fountain. |
+| Corridor | 2, then `0x4e` + the global floor ornament index (C`0x1021e4`) of the floor ornament. |
+| Teleporter | 6 + `random_2bits`. |
+| Door (side 16, front 17) | `0xb` or `0xa`; +2 without a door button (door byte 3 bit 6); +4 when open or destroyed. |
+| Stairs (18, 19) | `0x12` + ((exit direction - direction) & 3); +2 for stairs up. |
+| Pit | 3; 4 when invisible; 5 when invisible, ROS, and game time bit 0. |
+| Zokathra spell (DAIN) | `0x22` + ((cell - direction) & 3); +4 when the element is a wall and the square does not blink. |
+| Group with creature attributes bit `0x4000` clear (KU) | `0x4c` + game time bit 0. |
+| Projectile (DAIN), by the aspect of its slot | -11: `0x32`; -12: `0x36`; -13: `0x3a`; -14: `0x3e`; -4: `0x2a`, +4 when bit 0 of the projectile event direction (event byte 9 bits 4–5) differs from bit 0 of the map direction; aspect ≥ 0 with object type 197: `0x22`; other negative aspects: none. Plus (cell - direction) & 3. |
+| Explosion (DAIN), by type | 0, 2: `0x42`; 6, 7: `0x44` + `random_2bits`; 50: `0x48` + `random_2bits`; other types below 40: `0x43`; 40, 100, 101: none. |
+
+The port draws the same tiles in `view_draw_magic_map` (`src/ui/view.c`).
 
 The footprints bit (`set_square_aspect` C`0x10d630`–`0x10d654`): for a corridor, an open fake wall, a closed pit, an open imaginary pit, a door, and a teleporter, `champion_get_scent_ordinal` - 1 is in [`first_scent_index`, `last_scent_index`). Walls, closed fake walls, stairs, and other open pits have no footprints.
 

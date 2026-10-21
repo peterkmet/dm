@@ -292,9 +292,16 @@ The champion `position` uses `front_left`, `front_right`, `back_right`, `back_le
 - `party`: `map`, `level`, `x`, `y`, `facing`, `darkness` (0 bright to 5 dark), `can_move`, `sleeping`, `dead`.
 - `leader` (index, or `null`), `leader_hand` (object or `null`).
 - `candidate`: the champion that a mirror shows, with the fields of a champion, or `null`. The candidate is not in the party: it is not in `champions[]` and is never the `leader`. Answer with `act recruit`.
-- `champions[]`: `index`, `name`, `title`, `alive`, `health`, `stamina`, `mana` (each `[current, maximum]`), `food`, `water`, `load_kg` (`[current, maximum]` in kg, one decimal), `position`, `poisoned`, `action_disabled`, `statistics`, `skills` (`{level, rank}` for fighter, ninja, priest, wizard), `wounds`, `slots[]` (`slot`, `where`, `object`), `actions` (action menu of the action hand), `runes` (chosen runes).
-- The values use the units of the game screen. The game stores stamina as ten times the shown value; `stamina` is the shown value. The game stores the load in tenths of a kilogram and shows it as `nn.n/ mm KG`, so `load_kg` is in kilograms. Health, mana, and statistics are not scaled. `food` and `water` are the stored values (the game shows them only as bars). The maximum is 2048; below 0 the champion starves or dies of thirst.
-- `rank` is the rank name that the eye panel shows for the level (from the string table of the game, for example `APPRENTICE`). It is `null` for level 1, because the game shows no rank then.
+- `champions[]`, one entry per party champion:
+  - `index`, `name`, `title`, `alive`, `position`, `poisoned`, `action_disabled`.
+  - `health`, `stamina`, `mana`: each `[current, maximum]`.
+  - `food`, `water`, `load_kg` (`[current, maximum]`).
+  - `statistics`, `wounds`.
+  - `skills`: `{level, rank}` for fighter, ninja, priest, wizard. `rank` is the rank name of the eye panel, for example `APPRENTICE`; `null` for level 1, because the game shows no rank then.
+  - `slots[]`: `slot`, `where`, `object`.
+  - `actions`: the action menu of the action hand. `runes`: the chosen runes.
+
+  Units: the values are the units of the game screen. `stamina` is the shown value (the game stores ten times that). `load_kg` is in kilograms with one decimal (the game stores tenths and shows `nn.n/ mm KG`). Health, mana, and statistics are not scaled. `food` and `water` are the stored values (the game shows them only as bars): the maximum is 2048; below 0 the champion starves or dies of thirst.
 - `action_menu`: `{champion, actions}` while a menu is open, otherwise `null`.
 - `spell`: `{caster, chosen, available[{symbol, name, mana}]}`, or `null`.
 - `inventory`: `{champion, panel, chest?}`, or `null`.
@@ -304,9 +311,17 @@ An object is `{name, kind}`. A scroll that a champion holds also has `text`.
 
 ### View fields
 
-- `squares[]`: the visible squares, `depth` 0–3 and `side` `left`, `center`, `right`. Each has `x`, `y`, `element` (`wall`, `floor`, `door`, `pit`, `stairs_up`, `stairs_down`, `teleporter`). A door has `door` and `button`. A square that is not a wall has `objects[]` (`cell`, `name`), `flying[]` (projectiles and explosions), and `creatures` (`type`, `count`) when a group is there. From depth 1, a floor square has `floor_ornament` when the view draws one: `grate`, `pressure_pad`, `moss`, `round_grate`, `round_pressure_pad`, `flame_pit`, `crack`, `tiny_pressure_pad`, or `puddle` (the index of the floor ornament graphics of the game). Another ornament gives its index as a number. The view draws no floor ornament on the party row, and a floor sensor without an ornament shows nothing, as on the screen.
+- `squares[]`: the visible squares, `depth` 0–3 and `side` `left`, `center`, `right`. Each has:
+  - `x`, `y`, `element`: `wall`, `floor`, `door`, `pit`, `stairs_up`, `stairs_down`, `teleporter`. A door has `door` and `button`.
+  - On a square that is not a wall: `objects[]` (`cell`, `name`), `flying[]` (projectiles and explosions), and `creatures` (`type`, `count`) when a group is there.
+  - `floor_ornament`, from depth 1, when the view draws one: `grate`, `pressure_pad`, `moss`, `round_grate`, `round_pressure_pad`, `flame_pit`, `crack`, `tiny_pressure_pad`, or `puddle`. Another ornament gives its index in the floor ornament graphics as a number. The party row has no floor ornament, and a floor sensor without an ornament shows nothing, as on the screen.
 - A `flying` entry is `{kind, name}`. A projectile has `kind` `projectile` and the object name, or `spell`. An explosion has `kind` `explosion`, `type` (the number of the game), and `name`: `fireball`, `slime`, `lightning`, `harm_non_material`, `open_door`, `poison_bolt`, `poison_cloud`, `smoke`, `fluxcage`, or `rebirth`. Another type gives its number as `name`.
-- A wall has `front_face` (the side that faces the party) and `side_face` (the side that faces the lane of the party) when the face shows something. A face is `{facing, text?, mirror?, switch?, lock?, torch_holder?, alcove?, fountain?, vi_altar?, ornament?}`. `facing` is the direction that the face points to. `switch` is a button or a lever. `lock` takes or holds an object: a keyhole or a slot. Its value names the picture, for example `iron_lock`, `gold_lock`, `sun_lock`, `eye_socket`, `gem_hole`, or `coin_slot`; a picture without a name gives its index in the wall ornament graphics. `torch_holder` is a wall holder for a torch. `ornament` is another ornament, also named by its picture, for example `creeper` or `manacles`.
+- A wall has `front_face` (the side that faces the party) and `side_face` (the side that faces the lane of the party) when the face shows something. A face is `{facing, text?, mirror?, switch?, lock?, torch_holder?, alcove?, fountain?, vi_altar?, ornament?}`:
+  - `facing`: the direction that the face points to.
+  - `switch`: a button or a lever.
+  - `lock`: a keyhole or a slot that takes or holds an object. The value names the picture, for example `iron_lock`, `gold_lock`, `sun_lock`, `eye_socket`, `gem_hole`, or `coin_slot`; a picture without a name gives its index in the wall ornament graphics.
+  - `torch_holder`: a wall holder for a torch.
+  - `ornament`: another ornament, named by its picture, for example `creeper` or `manacles`.
 - The faces are the faces that the dungeon view draws: the front face of a center wall from depth 1, the side face of a side wall from depth 1, and the front face of a side wall from depth 2. The side walls of depth 0 have no faces.
 - `piles[]`: `{cell, top, objects}` for each pile that `take_object` can reach now. `objects` lists every object of the pile, top first. `take_object` takes `objects[0]`, the same object as `top`.
 - `wall_ahead_clickable`, `alcove`, `fountain`, `vi_altar`.

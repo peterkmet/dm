@@ -45,7 +45,12 @@ The possessions stay in the wall square list until the player accepts the candid
 
 With the first champion, the time of the last party move becomes the game time.
 
-The name entry (`champion_start_rename` … `champion_rename_ok`) clears the name and the title. No game time passes until OK. The name takes up to 7 characters; the 7th moves the input to the title. The title takes up to 19 characters. A field does not take a space as its first character. Return (next field) moves the input from a non-empty name to the title. Backspace deletes the character before the input; at the start of the title it deletes the last name character. OK does nothing while the name is empty. OK removes the trailing spaces of the name and refuses, without a message, the name of another party champion. Input comes from the panel keyboard, the letter keys, Space, Backspace, `,` `.` `;` `:` and Return; a right click anywhere enters a space. Only the OK button ends the entry.
+The name entry (`champion_start_rename` … `champion_rename_ok`) clears the name and the title. No game time passes until OK.
+
+- Fields: the name takes up to 7 characters, the 7th moves the input to the title; the title takes up to 19. A field does not take a space as its first character.
+- Input: the panel keyboard, the letter keys, Space, `,` `.` `;` `:`; a right click anywhere enters a space.
+- Return moves the input from a non-empty name to the title. Backspace deletes the character before the input; at the start of the title it deletes the last name character.
+- OK does nothing while the name is empty. It removes the trailing spaces of the name and refuses, without a message, the name of another party champion. Only OK ends the entry.
 
 `champion_resurrect(index)` is the Vi altar rebirth. The champion takes a free cell when its cell is used, loses all objects, and gets `max(25, max_health - max_health / 64 - 1)` maximum health and half of it as current health.
 
