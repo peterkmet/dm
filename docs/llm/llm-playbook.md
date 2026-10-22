@@ -2,6 +2,8 @@
 
 You play the original Dungeon Master (Amiga v3.60). Your goal is to win: find the Firestaff and the Power Gem, and fuse Lord Chaos with them.
 
+When `state.adventure` is `"csb"`, you play Chaos Strikes Back, and your goal is to win that adventure. Recruit the champions in the prison, then send `save` to start the adventure ([LLM mode: turn-based play over MCP](llm-mode.md#play-chaos-strikes-back)). The CSB map spells need the magic map in the action hand.
+
 ## Your notes
 
 Your files in `playthroughs/current/player/` are your memory. Keep each file short and up to date. Each file starts with a header that says what to write and in which format: keep the header and follow it. For a new level, copy the header of `map_L1.md`. Limit: `lessons.md` and each map have at most 80 lines. When a file is longer, merge and shorten it before the end of the session.

@@ -108,6 +108,18 @@ An attacking creature (events 38–41) turns to the party, moves to the front ce
 
 `group_damage_all_creatures(group, x, y, attack)` hurts each creature with `attack ± attack / 8`.
 
+### Melee hits
+
+`group_get_melee_action_damage(melee)` resolves a melee hit of a champion on one creature. It returns the damage, or 0 for a miss.
+
+1. A dead champion does nothing. A creature with dexterity 255 (`CREATURE_NEVER_HITS`) is never hit. A non-material creature is hit only when the hit probability has bit 15 (`HIT_PROBABILITY_ALWAYS_HITS`).
+2. The defense is `(random16() & 31) + creature dexterity + 2 × map difficulty + 2 × g_party_light_level - 16`. The champion hits when the defense is below `champion_get_dexterity`, when `random_2bits()` is 0, or when `champion_is_lucky(75 - hit probability)` is true.
+3. The base damage is the strength of the action hand plus `random(strength / 2 + 1)`, times the damage factor / 32, plus `random16() & 31`, minus the armour. The armour is `(random16() & 31) + creature defense + 2 × map difficulty`. The Diamond Edge removes a quarter of the armour, the Hardcleave an eighth. A champion without strength has base damage 0.
+4. A base damage of 1 or less uses the weak hit rule (`weak_hit_damage`), which can give 0. A random spread then sets the final damage (`melee_hit_damage`). The Vorpal Blade halves it against a material creature.
+5. When `random16() & 63` is below the skill level, the damage becomes `2 × damage + 10`.
+6. On a hit, the creature takes the damage (`group_damage_creature`), the skill gets `creature experience × damage / 16 + 3` experience, and the stamina decreases by `4 + random_2bits()`. On a miss, the stamina decreases by `2 + random_bit()`.
+7. When a creature of the group survives, the group gets the reaction party-is-adjacent.
+
 ### Possessions
 
 - Fixed possessions: Skeleton, Stone Golem, Trolin, Animated Armour, Rock Pile, Pain Rat, Screamer, Magenta Worm, and Red Dragon drop fixed objects from a KAOS list. An entry with bit 15 drops half of the time. The objects of an Animated Armour are cursed.

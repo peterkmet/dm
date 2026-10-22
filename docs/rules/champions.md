@@ -238,7 +238,7 @@ Block, Hit, and the other actions only add the action defense, the disabled tick
 
 ### Melee
 
-`is_melee_performed` plays sound 13 and needs a group with a creature in reach of the champion cell (`group_get_melee_target`: the creature index, -1 for none). A champion in a back cell cannot reach when a living champion stands in the front cell before it. Then `g_session.action_damage` is -1 ("can't reach"). Disrupt hits only non-material creatures. Disrupt and the weapon with icon 40 add bit 15 to the hit probability, so the hit can reach non-material creatures. `group_get_melee_action_damage` ([Creature, projectile, and magic rules](creatures.md)) gives the damage, which goes into `g_session.action_damage` for the action area.
+`is_melee_performed` plays sound 13 and needs a group with a creature in reach of the champion cell (`group_get_melee_target`: the creature index, -1 for none). A champion in a back cell cannot reach when a living champion stands in the front cell before it. Then `g_session.action_damage` is -1 ("can't reach"). Disrupt hits only non-material creatures. Disrupt and the weapon with icon 40 add bit 15 to the hit probability, so the hit can reach non-material creatures. `group_get_melee_action_damage` ([Creature, projectile, and magic rules](creatures.md#melee-hits)) gives the damage, which goes into `g_session.action_damage` for the action area.
 
 ### Fear
 

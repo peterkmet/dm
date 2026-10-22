@@ -6,3 +6,7 @@ These items are not planned.
 
 - `light_depths` (`src/engine/explored.c`): the darkest light level hides the two far rows, the next light level one row. Write a finer rule if the LLM player needs it.
 
+
+## Documentation
+
+- `Graphics.DAT` has no format page in `docs/formats/`. The header is in [KAOS module map](reference/kaos-map.md#graphicsdat); the decoding is in `src/data/graphics.c`.

@@ -78,6 +78,7 @@ The loader sets `g_party_map_x`, `g_party_map_y`, and `g_party_direction` from o
 | Offset | Size | Content |
 |---|---|---|
 | `0x00` | word | Raw map data offset of the map. |
+| `0x02`–`0x05` | 4 bytes | The port does not read these bytes. |
 | `0x06` | byte | X offset of the map in the dungeon. |
 | `0x07` | byte | Y offset of the map. |
 | `0x08` | word | Bits 0–5: level. Bits 6–10: width - 1. Bits 11–15: height - 1. |
