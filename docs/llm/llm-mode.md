@@ -56,7 +56,7 @@ The game selects NEW ADVENTURE at the start. `new_game` starts it again. `state.
 2. Send `save`. In the prison, the save creates the adventure ([Player manual](../manual.md#chaos-strikes-back)) and continues at the start of the CSB dungeon (map 4).
 3. The response of `save` is `{"ok":true}` only. Send `get_state` to see the new position.
 
-After that, `save` writes `CSBGAME.DAT` (the old file becomes `CSBGAME.BAK`), and `load` loads it. The save directory is the folder of `--saves`, otherwise the CSB data folder.
+After that, `save` writes `CSBGAME.DAT` (the old file becomes `CSBGAME.BAK`), and `load` loads it.
 
 ## MCP tools
 
@@ -108,7 +108,7 @@ During a turn, each frame is a tick. The game does not wait 12 frames for input.
 
 ### Save and load
 
-There is one save slot. The save directory is the folder of `--saves`, otherwise the data directory (`game/`), the same as for the SAVE button of the game. A run uses `--saves playthroughs/current/game`. `save` and `load` use the same functions as the SAVE dialog and the RESUME button (`savegame_save`, `savegame_load`, `gameloop_start_loaded_game`).
+There is one save slot. The save directory is the folder of `--saves`, otherwise the data directory (`game/`, CSB `game-csb/`), the same as for the SAVE button of the game. A run uses `--saves playthroughs/current/game`. `save` and `load` use the same functions as the SAVE dialog and the RESUME button (`savegame_save`, `savegame_load`, `gameloop_start_loaded_game`).
 
 - `load` without a save file returns `{"ok": false, "error": "no saved game (use save first)"}`. Nothing changes.
 - `load` of a damaged file returns an error. After that, only `load` and `new_game` work, because the game state can be incomplete.
@@ -124,8 +124,6 @@ A batch runs many turns with one request. Each step is one `act` turn. After eac
 uv run dm-play act_many '["turn_left","move_forward",{"action":"take_object","args":{"cell":2}}]'
 ```
 
-The game does not find paths. Plan the path from your own map and send it as `act_many`.
-
 The response has `ran` (the number of turns that ran) and `stopped`:
 
 | `stopped` | Reason |
@@ -136,8 +134,8 @@ The response has `ran` (the number of turns that ran) and `stopped`:
 | `message` | The game printed a new message. |
 | `game_over` | The party died, or the game is won. |
 | `bumped` | A move did not change the party square (a wall, a closed door, a creature). See [Bump](#bump). The batch checks this before `damage`, because a bump into a wall hurts. |
-| `moved` | The dungeon moved the party: a teleporter, a pit, stairs. See [Displacement](#displacement). The batch checks this after `bumped` and before `damage`, because a pit fall hurts. |
-| `turned` | The dungeon turned the party: a spinner. See [Displacement](#displacement). The batch checks this after `moved`. |
+| `moved` | A displacement by a teleporter, a pit, or stairs ([Displacement](#displacement)). The batch checks this after `bumped` and before `damage`, because a pit fall hurts. |
+| `turned` | A displacement by a spinner ([Displacement](#displacement)). The batch checks this after `moved`. |
 | `failed` | An action cannot run. `error` gives the reason. The failed action is not in `ran`. |
 
 ### Bump
@@ -215,7 +213,7 @@ When the party dies or the game is won during a turn, the turn ends. The respons
 | `swap_champions` | `a`, `b` | Clicks the icon of champion `a`, then the icon of champion `b`. The two champions swap their cells. See `position` in the state. |
 | `look` | `champion`, `slot` (both optional) | Presses the eye of the open inventory and releases it. Without `slot`: the object in the leader hand. With `slot`: the empty leader hand takes the object of the slot (`champion`, default the open inventory), the eye looks, and the hand puts the object back. See [Look](#look). |
 
-Slot numbers: 0 ready hand, 1 action hand, 2 head, 3 torso, 4 legs, 5 feet, 6 pouch 2, 7–9 quiver 2–4, 10 neck, 11 pouch 1, 12 quiver 1, 13–29 backpack, 30–37 the open chest. `state.champions[].slots[]` lists only the slots that hold an object.
+Slot numbers: the index in [Slots](#slots); 30–37 are the open chest. `state.champions[].slots[]` lists only the slots that hold an object.
 
 While a mirror shows a candidate, `act` accepts only `recruit`. While the party sleeps, `act` accepts only `wake`. The `wait` command works at all times.
 
@@ -273,9 +271,9 @@ An object is `{name, kind}`. A scroll that a champion holds also has `text`.
 ### View fields
 
 - `squares[]`: the visible squares, `depth` 0–3 and `side` `left`, `center`, `right`. Each has:
-  - `x`, `y`, `element`: `wall`, `floor`, `door`, `pit`, `stairs_up`, `stairs_down`, `teleporter`. A door has `door` and `button`.
+  - `x`, `y`, `element` ([Square looks](#square-looks)). A door has `door` and `button`.
   - On a square that is not a wall: `objects[]` (`cell`, `name`), `flying[]` (projectiles and explosions), and `creatures` (`type`, `count`) when a group is there.
-  - `floor_ornament`, from depth 1, when the view draws one: `grate`, `pressure_pad`, `moss`, `round_grate`, `round_pressure_pad`, `flame_pit`, `crack`, `tiny_pressure_pad`, or `puddle`. Another ornament gives its index in the floor ornament graphics as a number. The party row has no floor ornament, and a floor sensor without an ornament shows nothing, as on the screen.
+  - `floor_ornament`, from depth 1, when the view draws one ([Floor ornaments](#floor-ornaments)). Another ornament gives its index in the floor ornament graphics as a number. The party row has no floor ornament, and a floor sensor without an ornament shows nothing, as on the screen.
 - A `flying` entry is `{kind, name}`. A projectile has `kind` `projectile` and the object name, or `spell`. An explosion has `kind` `explosion`, `type` (the number of the game), and `name`: `fireball`, `slime`, `lightning`, `harm_non_material`, `open_door`, `poison_bolt`, `poison_cloud`, `smoke`, `fluxcage`, or `rebirth`. Another type gives its number as `name`.
 - A wall has `front_face` (the side that faces the party) and `side_face` (the side that faces the lane of the party) when the face shows something. A face is `{facing, text?, mirror?, switch?, lock?, torch_holder?, alcove?, fountain?, vi_altar?, ornament?}`:
   - `facing`: the direction that the face points to.
@@ -305,7 +303,7 @@ The view shows what a player sees. Creature health is not in the view, because t
  2 ####D#####
 ```
 
-The map shows the same as the automap of the game: the squares that the party saw, with walls, floors, doors and their state, stairs, open pits, open teleporters, and pressure pads. It shows no wall features. A wall is `#`. What is on a wall (switches, locks, alcoves, fountains, texts) is in the view, with its side; keep it in your own map. The map shows the squares as they are now, even when they changed after you saw them.
+The map shows the same as the automap of the game: the squares that the party saw, with walls, floors, doors and their state, stairs, open pits, open teleporters, and pressure pads. It shows no wall features. A wall is `#`. What is on a wall (switches, locks, alcoves, fountains, texts) is in the view, with its side. The map shows the squares as they are now, even when they changed after you saw them.
 
 A floor square with a pressure pad (`pressure_pad`, `round_pressure_pad`, `tiny_pressure_pad`) is `_`.
 

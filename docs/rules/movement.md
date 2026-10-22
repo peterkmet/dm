@@ -71,7 +71,7 @@ Call `map_reset()` after `dungeon_load`. The current map pointers then point to 
 2. On stairs, a backward move takes the stairs (`take_stairs`).
 3. The target square is the party square plus the step counts of the arrow (`0x103c56`: forward 1, 0, -1, 0; `0x103c5e`: right 0, 1, 0, -1), relative to the party direction.
 4. A stairs target: the party leaves its square, moves onto the stairs square, and takes the stairs.
-5. These targets block the move: a wall, a door with state 2, 3, or 4, and a fake wall with bit 2 (open) and bit 0 (imaginary) clear. With champions, a group on the target also blocks the move.
+5. These targets block the move: a wall, a door with state 2, 3, or 4, and a fake wall with bit 2 (open) and bit 0 (imaginary) clear. With champions, a group on the target also blocks the move. A blocked move damages the two champions on the side of the move (`bump_into_wall`, `group_get_target_champion_index`).
 6. Otherwise the party moves with `move_get_move_result`. On stairs, the party only enters the new square. `g_disabled_movement_ticks` becomes the maximum of 1 and `champion_get_movement_ticks` of each living champion. `g_projectile_disabled_movement_ticks` becomes 0.
 
 `move_turn_party(command)` takes the stairs when the party is on stairs. Otherwise the party leaves the floor sensors of its square, turns (`rotate_party`), and enters the floor sensors again.
@@ -120,10 +120,6 @@ After the loop:
 - The thing leaves the source square with `sensor_process_thing_change(..., false)`. A levitating object (projectile, explosion) only unlinks.
 - The party on a new map sets `g_session.new_party_map`. The party on the same map enters the floor sensors. An object enters the square with its sensors. A projectile only links.
 - A group enters the square with `group_enter_square` (see [Creature, projectile, and magic rules](creatures.md)).
-
-### Champion functions
-
-Movement calls these functions of `src/engine/champion.c` and `src/engine/inventory.c` (see [Champion rules](champions.md)): `champion_decrement_stamina`, `champion_get_maximum_load`, `champion_get_movement_ticks`, `champion_damage_all`, `champion_fall_damage`, `party_delete_scent`, `champion_add_skill_experience`, `champion_add_candidate_to_party`, `inventory_put_hand_object`, `inventory_take_hand_object`, and `object_get_type`. `object_get_type` needs `tables_load()`.
 
 ## Sensors
 
@@ -252,9 +248,7 @@ The redraw calls of events 70–79 (the view palette, `status_draw_champion`) be
 
 Movement rules that the event table does not cover:
 
-- Groups move through `move_get_move_result`. A group that falls drops its dead creatures (`GroupFallDrops`).
 - Wall launchers (sensor types 7–10, 14, 15) launch in `projectile_trigger_launcher`. `projectile_is_killed_by_impact` runs in `move_get_move_result`.
-- A blocked move damages the two champions on the side of the move (`bump_into_wall`, `group_get_target_champion_index`).
 - Wall sensor type 12 creates an object (`projectile_get_launch_object`).
 - Wall sensor type 18 ends the game (`startend_run_endgame_sensor`).
 

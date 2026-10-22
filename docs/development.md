@@ -69,12 +69,6 @@ Each test module owns its state, so the tests run in any order and in parallel.
 - The tests replace the OS hooks of `data/os.h`. `dmtest.lib.set_folder_hooks` sets the folder hooks to Python
   functions, because the SDL code of `platform/app.c` that sets them is not in the library.
 
-To hide the format commit in `git blame`:
-
-```sh
-git config blame.ignoreRevsFile .git-blame-ignore-revs
-```
-
 ## Layout
 
 - `src/`: the port in five layers; see [Architecture](architecture.md).
@@ -87,7 +81,12 @@ git config blame.ignoreRevsFile .git-blame-ignore-revs
 
 [Coding standard](coding-standard.md) is the coding standard of the port. Follow it for every change in `src/`.
 
-- `make format` formats the C files. Run it before a commit.
+- `make format` formats the C files. Run it before a commit. To hide the format commit in `git blame`:
+
+  ```sh
+  git config blame.ignoreRevsFile .git-blame-ignore-revs
+  ```
+
 - `make check` runs `ruff`, `tests/standard` (with the format check), and the full suite.
 
 ## Add a game rule

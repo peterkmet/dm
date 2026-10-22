@@ -248,8 +248,7 @@ this document names.
 4. A struct field that points to owned memory says so in its comment; a module that opens or allocates has a
    close or free; `malloc` and `free` of one buffer stay in one module. [review only]
 5. Do not reproduce undefined register values, overflows or out-of-bounds reads of the original. Use a
-   defined value, mark it with a short comment, record it in [Dungeon.DAT format](formats/dungeon.md#deviations-from-the-original), mask it in the
-   tests. Keep a quirk of the original only when it changes what the player sees. [review only]
+   defined value, record it as in rule 9.3, and mask it in the tests. Keep a quirk of the original only when it changes what the player sees. [review only]
 6. Code that differs between Dungeon Master and Chaos Strikes Back tests `g_adventure == ADVENTURE_CSB`, or
    reads a table from the game data. No other way detects the adventure. [review only]
 

@@ -13,7 +13,7 @@ The sources are the decompiled modules in `reference/decomp/csb-a/` (disk A) and
 5. CEDT copies the champions of the saved game into the `MINI.DAT` state, resets them, and writes `CSBGAME.DAT` to the save disk.
 6. The player starts disk A again and resumes. The engine loads `CSBGAME.DAT` and plays the CSB dungeon.
 
-The dungeon text in the prison says the same: "FIRST CHOOSE YOUR CHAMPIONS...THEN SAVE THE GAME...THEN RESTART WITH THE UTILITY DISK." (text strings 24 and 25 of disk A `Dungeon.DAT`, read with `dmcsb`, the Dungeon Master tools by Cycl0ne).
+The floor text of the prison says the same ([Chaos Strikes Back data files](data.md#dungeondat)).
 
 `MINI.DAT` uses the cipher of the DM save file ([Save file format](../formats/save.md)), not a special one, with a header that is moved by 2 bytes. It is not compressed. CEDT does not change or randomize the dungeon.
 
@@ -22,9 +22,9 @@ The dungeon text in the prison says the same: "FIRST CHOOSE YOUR CHAMPIONS...THE
 | Disk | Module | Role |
 |---|---|---|
 | A | `APPB.FTL` | The CSB engine. New game: `Dungeon.DAT`. Resume: `CSBGAME.DAT`, then `CSBGAME.BAK`. |
-| B | `APPB.FTL` | Launcher. Holds the module names `ANIM`, `CEDT`, `HINT` (`0x101989`). Its menu logic is not traced. |
+| B | `APPB.FTL` | Launcher. Holds the module names `ANIM`, `CEDT`, `HINT` (`0x101989`). |
 | B | `CEDT.FTL` | Champion editor. LOAD CHAMPIONS, SAVE CHAMPIONS, MAKE NEW ADVENTURE, REVERT, UNDO, QUIT. |
-| B | `HINT.FTL` | Hint oracle. It names `CSBGAME.DAT` and `MINI.DAT`. Not traced. |
+| B | `HINT.FTL` | Hint oracle. It names `CSBGAME.DAT` and `MINI.DAT`. |
 
 ## Disk A: new game and resume
 
@@ -36,8 +36,6 @@ The dungeon text in the prison says the same: "FIRST CHOOSE YOUR CHAMPIONS...THE
 - Resume (`0x129d42`): open `DF0:CSBGAME.DAT` (`A5-0x5022`), then `DF0:CSBGAME.BAK` (`A5-0x501e`).
 - The loader reads the header with the CSB layout: keys at `+0x138`, checksums at `+0x158`, format at `+0x178`, dungeon ID at `+0x17a`. It rejects platform 1 and a format other than 3 (`0x129e4e`–`0x129e62`). It does not check the dungeon ID.
 - The save writer stores the header byte, platform 5, format, and dungeon ID at `0x12928c`–`0x12929e`. Thus a prison save has dungeon ID 12.
-
-Not traced: what command `0xc9` is bound to, and the `Dungeon.FTL` fallback at `0x129d74` (resume without a saved game).
 
 ## Disk B: MAKE NEW ADVENTURE
 
@@ -74,17 +72,16 @@ The header has the same structure as the DM header: 32 groups of 4 noise words, 
 - The payload key is word 29 (offset `0x3a`). DM uses word 10 (offset `0x14`).
 - The payload fields from `0x12a` on are 2 bytes later than in DM.
 
-| Field | DM offset | CSB offset | Value in MINI.DAT |
-|---|---|---|---|
-| Header byte | `0x12a` | `0x12c` | 1 |
-| Platform | `0x12b` | `0x12d` | 5 |
-| Dialog choice | `0x130` | `0x132` | 1 |
-| Game ID | `0x132` | `0x134` | `0x2f633134` |
-| 16 block keys | `0x136` | `0x138` | |
-| Block checksums | `0x156` | `0x158` | |
-| Save format | `0x176` | `0x178` | 3 |
-| Dungeon ID | `0x178` | `0x17a` | 13 |
-| Extra bytes | `0x17a` | `0x17c` | |
+The offsets are in [Save file format](../formats/save.md#csb-header).
+
+| Field | Value in MINI.DAT |
+|---|---|
+| Header byte | 1 |
+| Platform | 5 |
+| Dialog choice | 1 |
+| Game ID | `0x2f633134` |
+| Save format | 3 |
+| Dungeon ID | 13 |
 
 `0x108030` reads the header (`0x108d78`) and tries `0x108da2(header, 29)`. When the check fails, it restores the header and tries `0x108da2(header, 10)`. The result sets the layout in `slot+0x22`: 2 is CSB, 1 is DM. `0x10a1a2` then reads the format, the dungeon ID, and the platform. For format 3 with platform 4 or more, block 2 has `0x580` bytes and the file has 4 portraits of `0x1d0` bytes. Older platforms use a block 2 of `0xd00` bytes and no portraits.
 
@@ -146,7 +143,7 @@ Then for each champion (record offsets of [Game state](../rules/game-state.md)):
 | `temporary_experience` of each skill | 0 |
 | All 30 slots | `0xffff`: the champion has no objects |
 
-Before the merge clears a slot, `0x104cca` removes the stat bonus of the object from the champion. This call changes the record in slot 0, not the copy in slot 1. Thus a DM champion keeps an object bonus in the new adventure. The prison has no objects, so this does not change a prison party. The merge test does not cover an object with a bonus (unverified).
+Before the merge clears a slot, `0x104cca` removes the stat bonus of the object from the champion. This call changes the record in slot 0, not the copy in slot 1. Thus a DM champion keeps an object bonus in the new adventure. The prison has no objects, so this does not change a prison party.
 
 At the end, `0x1062b8` gives a champion a new cell when another champion has the same cell. The new cell is the lowest cell that no champion uses (`0x105bf0`).
 
@@ -178,7 +175,7 @@ Values in the new `CSBGAME.DAT`:
 
 ## Python tool
 
-The module `dmtools.csb_mini` makes the adventure in Python. The port does the same in `savegame_make_adventure` (`src/engine/savegame.c`). `tests/differential/test_csb_mini.py` checks the module against the original CEDT routines.
+The module `dmtools.csb_mini` makes the adventure in Python. The port does the same in `savegame_make_adventure` (`src/engine/savegame.c`).
 
 | File | Content |
 |---|---|
@@ -221,3 +218,5 @@ The synthetic game has two champions in the same cell and a different party dire
 - The menu of disk B `APPB.FTL`, `HINT.FTL`, the disk prompts, and the `.BAK` handling of CEDT are not traced.
 - The meaning of header bytes `0x100`–`0x127` (copied from the saved game) and of command `0xc9` (`DungeonB.dat`) is not known.
 - Conversion of an old champion block (`0xd00` bytes, `0x109cfc`) is not covered.
+- The merge test does not cover an object with a stat bonus.
+- The `Dungeon.FTL` fallback at `0x129d74` (resume without a saved game) is not traced.

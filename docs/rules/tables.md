@@ -163,7 +163,7 @@ Each table ends where the next named table starts. The tests check this.
 ## Junk weights and food values
 
 - Junk weight: 1 byte per junk type. Junk type 1 adds 2 for each charge (`inventory_get_object_weight`). Potions, scrolls, and containers have no weight table. `inventory_get_object_weight` uses fixed values for them.
-- Food value: 1 signed word per food icon `0xa8`–`0xaf`. Eating adds the value to the champion food, with a maximum of 2048.
+- Food value: 1 signed word per food icon `0xa8`–`0xaf`. Eating is in [Champion rules](champions.md#eating-and-drinking).
 
 ## Door info
 

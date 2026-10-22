@@ -252,7 +252,7 @@ The influence roll is `random16() % (influence level + bonus)`. The bonus and th
 2. Experience to the throw skill: 8 for objects, 12 for weapons, plus kinetic energy / 4 for weapons of class 0–12.
 3. Kinetic energy (a byte): `level + e / 2 + random(16) + e` with `e` = strength + the weapon kinetic energy (class 0–12) or 1.
 4. Attack: `bounded_value(40, random(32) + 8 × level, 200)`. Step energy: `max(5, 11 - level)`.
-5. The projectile starts in the front cell of the side and flies in the party direction. The party cannot move in that direction for 4 ticks.
+5. `projectile_shoot_from_champion` shoots the projectile ([Creature, projectile, and magic rules](creatures.md#champion-projectiles)).
 
 ### Charges
 

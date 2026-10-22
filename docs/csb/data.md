@@ -12,14 +12,16 @@ All addresses in this page are image addresses after `dm-ftl` with base `0x10000
 
 ## Summary
 
-| Area | Difference | Port module |
-|---|---|---|
-| `Graphics.DAT` | 728 items, not 749. Same container format. Text items 699 and 700 are empty. Item 694 uses a different string encoding. | `gfx_open` and `gfx_expand` read and decode all items. `csb_text.c` builds the text items from `APPB.FTL`. |
-| `Dungeon.DAT` | A 2-level start dungeon with 24 champion mirrors, dungeon ID 12. Same format. | `dungeon_load` loads it. |
-| Save file | `CSBGAME.DAT`. Header fields are 2 bytes later. The payload key is at a different offset. Blocks, cipher, and dungeon part are the same. | `savefile.c` reads and writes the CSB header when `g_adventure` is `ADVENTURE_CSB`. |
-| Endgame | `ENDA.DAT`, an animation file that `ANIM.FTL` plays. No credits screen. | `anim.c` plays `ENDA.DAT`. |
-| Sounds | Same 35 sounds, same graphic items, same sound table. | `sound.c` works with the CSB items. |
-| Engine tables | No `KAOS.FTL`. `APPB.FTL` holds the tables at different addresses. | `csb_image.c` builds a KAOS-layout image from the `APPB.FTL` tables. |
+| Area | Difference |
+|---|---|
+| `Graphics.DAT` | 728 items, not 749. Same container format. Text items 699 and 700 are empty. Item 694 uses a different string encoding. |
+| `Dungeon.DAT` | A 2-level start dungeon with 24 champion mirrors, dungeon ID 12. Same format. |
+| Save file | `CSBGAME.DAT`. Header fields are 2 bytes later. The payload key is at a different offset. Blocks, cipher, and dungeon part are the same. |
+| Endgame | `ENDA.DAT`, an animation file that `ANIM.FTL` plays. No credits screen. |
+| Sounds | Same 35 sounds, same graphic items, same sound table. |
+| Engine tables | No `KAOS.FTL`. `APPB.FTL` holds the tables at different addresses. |
+
+The port modules are in [Loaders](#loaders).
 
 ## Graphics.DAT
 
@@ -70,13 +72,13 @@ Result: `gfx_expand` decodes the CSB items without a CSB branch.
 
 ### Strings and layout
 
-Object names (item 694). The CSB engine reads 199 names at `0x108280` (it pushes the graphic index `0x2b6` at `0x1082ac`). Each name ends at a byte with bit 7 set. The engine clears bit 7 and adds a NUL. `dmcsb` calls this encoding TXT1. The DM file uses NUL-terminated strings (TXT2). `load_strings` (`src/data/graphics.c`) ends each CSB object name at the byte with bit 7 set.
+Object names (item 694). The CSB engine reads 199 names at `0x108280` (it pushes the graphic index `0x2b6` at `0x1082ac`). Each name ends at a byte with bit 7 set. The engine clears bit 7 and adds a NUL. `dmcsb` calls this encoding TXT1. The DM file uses NUL-terminated strings (TXT2).
 
 33 of the 199 CSB names differ from DM. Examples: 23–24 STORM (DM BOLT BLADE), 25–26 RA BLADE (FURY), 38 SIDE SPLITTER (DELTA), 41 DRAGON FANG (THE INQUISITOR), 62–64 STAFF OF IRRA, CROSS OF NETA, SERPENT STAFF, 174 SHANK (DRUMSTICK).
 
-Action names and texts (items 699 and 700). CSB has no text in these items. The CSB engine has the texts in the `APPB.FTL` data area. Examples: the action names start at `0x1048b4` as one NUL-separated list. `WAKE UP` and `GAME FROZEN` are at `0x104680`. `GAME LOADED, READY TO PLAY.` is at `0x104d70`. A pointer table refers to some texts. [CSB engine compared with the DM engine](engine-diff.md#text) maps the CSB texts to the DM indices of item 700. The CSB engine does not push `0x2bb` (699). DM pushes it at `0x1220b8`.
+Action names and texts (items 699 and 700). CSB has no text in these items. The CSB engine has the texts in the `APPB.FTL` data area. [CSB engine compared with the DM engine](engine-diff.md#text) maps the CSB texts to the DM indices of item 700. The CSB engine does not push `0x2bb` (699). DM pushes it at `0x1220b8`.
 
-Layout (item 696). A check compares the zone records with `dmcsb.graphics.decode_lay1`. The range `400–438` becomes `400–436`. All other records are equal. `startend.c` uses zone 437 (`ZONE_RESTART_BUTTON`) and zone 438 (`ZONE_QUIT_BUTTON`) for THE END screen.
+Layout (item 696). A check compares the zone records with `dmcsb.graphics.decode_lay1`. The range `400–438` becomes `400–436`. All other records are equal.
 
 ### Hard-coded indices with different CSB content
 
@@ -121,8 +123,6 @@ Content:
 - One visible text on the floor of (9, 2), two squares south of the start, says "THERE IS ONLY ONE LEVEL HERE. FIRST CHOOSE YOUR CHAMPIONS...THEN SAVE THE GAME...THEN RESTART WITH THE UTILITY DISK." The game prints it when the party enters the square. The other 24 texts of map 0 are the champion sheets of the mirrors (not visible).
 - Map 0 has four stairs down, all to map 1. From the start, the party reaches (19, 7) through the imaginary wall at (15, 6) and the closed door with a button at (18, 6). It reaches (6, 15) through the imaginary wall at (8, 14) and the closed door with a button at (7, 15). (19, 3) and (1, 15) are closed in, each with an open door north of it: (19, 1)–(19, 3) and (1, 13)–(1, 15) have no other exit (read with the port map accessors).
 - Map 1 has no texts or sensors. It has 12 creature groups: 7 of type 10, 5 of type 7.
-
-The CSB `load_dungeon` is at `0x1295a0`. It follows the DM loader and adds a copy-protection check ([CSB engine compared with the DM engine](engine-diff.md#copy-protection)).
 
 Result: the port loader reads the file. The full CSB dungeon is not on disk A. The utility disk makes the adventure from a saved start game. See [Chaos Strikes Back: new adventure](new-adventure.md#minidat-format).
 
@@ -196,8 +196,6 @@ The `SO` chunks play `SD` sample 2 (graphic item 683) three times.
 
 The engine path from the endgame sensor to `ANIM.FTL` is in [CSB engine compared with the DM engine](engine-diff.md#end-of-the-game).
 
-Port: `startend_run_endgame_sensor` in `src/ui/startend.c` sets `g_session.won`, plays `ENDA.DAT` from the disk A folder with `anim_play`, waits for a key or a click, and shows the CSB screen.
-
 ### TITL.DAT and ANIM.DAT on disk B
 
 - `TITL.DAT` (disk B): the title animation of the utility disk. 1 `AN`, 1 `PL`, 1 `EN`, 31 `DL`, 1 `DO`.
@@ -242,7 +240,7 @@ The CSB engine has no new sound in `Graphics.DAT`. New samples exist only in the
 
 ## Engine tables
 
-The port reads all rule and view tables from the `KAOS.FTL` image. CSB has no `KAOS.FTL`; `csb_image.c` builds a KAOS-layout image from the `APPB.FTL` tables. [CSB engine compared with the DM engine](engine-diff.md#equal-tables-at-new-addresses) lists the CSB addresses of the view tables, the input tables, and the escape tables. `g_csb_copies` (`src/data/csb_image.c`) copies them.
+[CSB engine compared with the DM engine](engine-diff.md#equal-tables-at-new-addresses) lists the CSB addresses of the view tables, the input tables, and the escape tables. `g_csb_copies` (`src/data/csb_image.c`) copies them.
 
 ## Loaders
 
@@ -257,8 +255,3 @@ The port reads all rule and view tables from the `KAOS.FTL` image. CSB has no `K
 | `src/ui/anim.c` | Animation player | Plays the chunks of `ENDA.DAT`. | The CSB endgame plays `ENDA.DAT`. |
 
 `layout.c` and `dungeon.c` (`dungeon_load`) have no CSB code. The animation player uses `gfx_expand_over` (`graphics.c`, a decode over an existing bitmap for the delta frames) and `audio_play_data` (`audio.c`, plays sample data that is not in `Graphics.DAT`).
-
-## Open points
-
-- The meaning of the `AN` count (the player skips `AN`).
-- The CSB rule differences for renamed objects (for example STORM, RA BLADE).

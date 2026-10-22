@@ -113,17 +113,17 @@ The checksum is weak. A change that sets a bit in the plain word and clears the 
 
 ### Block 1: active groups
 
-`g_active_groups`: 16 bytes per active group, `g_max_active_group_count` entries. After the load, the original raises `g_max_active_group_count` to at least 110 (`0x6e`).
+`g_active_groups`: 16 bytes per active group, `g_max_active_group_count` entries, in the original order of `ActiveGroup`. `group_index` is a big-endian word. After the load, the original raises `g_max_active_group_count` to at least 110 (`0x6e`).
 
 ### Block 2: champions and party
 
-1408 bytes: 4 champion records of `0x140` bytes (`g_champions`), then 128 bytes of `g_party` (`0x101ed4`).
+1408 bytes: 4 champion records of `0x140` bytes (`g_champions`, `champion_pack`), then 128 bytes of `g_party` (`0x101ed4`). The bytes from `0x58` to `0x7f` of the party part are not traced. The port writes 0 and ignores them on load.
 
 Before the save, `save_game` removes the weight of the leader hand object from the leader load (champion offset `0x110`). `load_game` does not check the checksum of this block. It ignores the return value of `save_read_checked_block`. The C code does the same.
 
 ### Block 3: timeline events
 
-`g_timeline.events`: 10 bytes per event, `g_timeline.capacity` entries.
+`g_timeline.events`: 10 bytes per event (`map_time` long, `type`, `priority`, `b`, `c`), `g_timeline.capacity` entries. A free slot has the next free index in the high word, as in the original. The load rebuilds the free list (`timeline_reset`).
 
 ### Block 4: timeline index
 
@@ -135,7 +135,7 @@ Four champion portrait bitmaps, not encrypted. Each bitmap has `((32 + 15) & ~15
 
 ### Dungeon
 
-The dungeon in `Dungeon.DAT` format without compression: header (44 bytes), maps, column first-thing indices, square first things, text data, 16 thing arrays, and raw map data. Then one word: the 16-bit sum of all bytes of the dungeon parts. `dungeon_load_saved` accepts the dungeon when the word is missing or equal to the sum. The dungeon header gives the part sizes. See [Dungeon.DAT format](dungeon.md).
+The dungeon in `Dungeon.DAT` format without compression ([Dungeon.DAT format](dungeon.md#dungeon-data)). Then one word: the 16-bit sum of all bytes of the dungeon parts. `dungeon_load_saved` accepts the dungeon when the word is missing or equal to the sum.
 
 ## C API
 
@@ -218,7 +218,7 @@ The save directory is the data directory (`--data`, default `game/`) or the fold
 `bool savegame_save(const char *dir)`:
 
 1. `timeline_reset`. Then pack the globals, the active groups, the champions, the party, the timeline events, and the timeline index into the blocks.
-2. The leader load in the file does not count the object in the leader hand, as in `save_game`. The live state does not change.
+2. The saved leader load does not count the hand object ([Block 2](#block-2-champions-and-party)). The live state does not change.
 3. Write the portraits and the dungeon (`dungeon_save`).
 4. `savefile_init_header` with `g_game_id`, `g_dungeon_id`, and the extra bytes of the last load. `savefile_encode`.
 5. Delete `DMGAME.BAK`. Rename `DMGAME.DAT` to `DMGAME.BAK`. Write `DMGAME.DAT`.
@@ -231,7 +231,7 @@ The random header words come after the copy of the globals. Thus the saved rando
 1. Read `DMGAME.DAT`. When it is missing, read `DMGAME.BAK`.
 2. `savefile_decode`. Then `dungeon_load_saved` on the dungeon part. A failure gives `SAVEGAME_DAMAGED`.
 3. Copy block 0 into the globals. `g_session.last_load_time` gets the game time.
-4. Allocate the timeline for `g_timeline.capacity` events and the active groups for at least 110 entries. Copy blocks 1–4. Raise `g_max_active_group_count` to at least 110. `timeline_reset`. CSB allocates exactly the saved `g_max_active_group_count` and keeps it. A new CSB game has 60 entries.
+4. Allocate the timeline for `g_timeline.capacity` events and the active groups for at least 110 entries. Copy blocks 1–4. Raise `g_max_active_group_count` to at least 110. `timeline_reset`. CSB keeps the saved count ([CSB engine compared with the DM engine](../csb/engine-diff.md#creatures)).
 5. Decode the portrait of each champion into `ChampionRuntime.portrait` (see Portraits). Copy the game ID, the dungeon ID, and the extra header bytes.
 6. Clear `g_session.party_dead` and the sleep flag. Set `g_session.saved_game_exists`.
 7. When the file was the backup, rename it to `DMGAME.DAT`.
@@ -251,14 +251,6 @@ The slot list (`savegame_read_slot_info`) reads each file without a load:
 3. Checks the byte sum word after the dungeon parts, as the load does (only when two or more bytes follow the parts).
 4. Reads the level of the party map. A file that fails a check shows DAMAGED.
 
-### Block contents
-
-- Block 0: the globals of the table above. The unused bytes are 0.
-- Block 1: `ActiveGroup` in its original 16-byte order. `group_index` is a big-endian word.
-- Block 2: `champion_pack` for the 4 champions, then the party record ([Game state](../rules/game-state.md)). The bytes from `0x58` to `0x7f` of the party part are not traced. The port writes 0 and ignores them on load.
-- Block 3: 10 bytes per event: `map_time` (long), `type`, `priority`, `b`, `c`. A free slot has the next free index in the high word, as in the original. The load rebuilds the free list (`timeline_reset`).
-- Block 4: the heap of slot indices.
-
 ### Extension blocks
 
 The port adds extension blocks after the original save data outside the vanilla mode. The original part is the same as a vanilla save. Each block is followed by its length as a big-endian long:
@@ -276,7 +268,7 @@ The port adds extension blocks after the original save data outside the vanilla 
 
 ### Portraits
 
-The port keeps the portrait pixels of each champion in `ChampionRuntime.portrait`. The save writes the portrait of each party champion in the interleaved form: per row and per 16-pixel column, one word for each of the 4 bit planes (`portrait_to_interleaved`). The other portraits are 0. The load decodes each portrait of the file into `ChampionRuntime.portrait`.
+The port keeps the portrait pixels of each champion in `ChampionRuntime.portrait`. The save writes the portrait of each party champion in the interleaved form: per row and per 16-pixel column, one word for each of the 4 bit planes (`portrait_to_interleaved`). The other portraits are 0.
 
 ### Dungeon part (`dungeon.c`)
 
@@ -304,9 +296,6 @@ The port keeps the portrait pixels of each champion in `ChampionRuntime.portrait
 ## Limits
 
 - The tests have no save file of the original program. They use synthetic data, the port's own saves, and the original routines as the oracle. The original `load_dungeon` reads a file handle, so the tests do not run it on the dungeon part.
-- A restart does not check that the saved game has the same game ID ("THAT'S NOT THE SAME GAME").
-- The port always writes 1 (`HEADER_BYTE_DEFAULT`) into the header byte at `0x12a` (`SAVE_HEADER_HEADER_BYTE`). The original writes back the value of the last load.
 - `savefile_decode` does not check the dungeon part. A file that is cut inside the dungeon part decodes. The dungeon loader must check the part sizes and the byte sum.
 - The meaning of the header byte at `0x12a` and of `g_save_header_extra` is not traced.
-- After a new game or a load, the port saves free active group entries as 0 bytes. The original saves whatever its memory holds. An entry that a group leaves keeps its bytes, as in the original.
-- A cells byte beyond the active group table reads a free entry (`group_get_active`).
+

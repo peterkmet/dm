@@ -86,7 +86,7 @@ The loader sets `g_party_map_x`, `g_party_map_y`, and `g_party_direction` from o
 
 ### Squares
 
-The raw map data of a map starts at the map offset. The squares are in column order: column `x` starts at `offset + x × height`. Each square is one byte. Bits 5–7 hold the square type. Bit 4 is set when the square has a thing list.
+The raw map data of a map starts at the map offset. The squares are in column order: column `x` starts at `offset + x × height`. Each square is one byte. Bits 5–7 hold the square type: 0 wall, 1 corridor, 2 pit, 3 stairs, 4 door, 5 teleporter, 6 fake wall. Bit 4 is set when the square has a thing list.
 
 The loader builds `g_dungeon_map_data`. `g_dungeon_map_data[map][x]` points to column `x` of the map. `g_dungeon_map_first_column[map]` is the index of the first column of the map in the column table. `g_dungeon_column_count` is the column count of all maps.
 
@@ -123,7 +123,7 @@ For a new game the loader changes the header in memory:
 - It adds extra records to each thing count. The byte table at KAOS `0x101058` (`tables_get_extra_things`) gives the extra record count of each type. The loader reads it from the KAOS image. The loader limits each count to 1024 (768 for explosions). The first word of each new record is `0xffff` (free record).
 - It sets `g_timeline.capacity` to 100 plus the counts of types 4, 14, and 15 with their extra records.
 
-The original writes all extra records, even past the limit. The port stops at the limit. The DM dungeons never reach the limit.
+The DM dungeons never reach the limit.
 
 ## Validation
 
@@ -166,7 +166,7 @@ The function reads all three tables from the KAOS image. The single characters f
 
 ## Differences from dmcsb
 
-`dmcsb` 0.2.1 (the Dungeon Master tools by Cycl0ne, see [DMMac: Dungeon Master for macOS and Windows](../../README.md#acknowledgements)) agrees on the map count, map sizes and offsets, all square bytes, thing counts, and thing lists. It differs on escape code 30: it maps the single-glyph entries to display characters (`?`, `'`) or to an empty string. The original code emits the glyph codes from the KAOS table. `tests/differential/test_dungeon.py` compares `dungeon_decode_text` with the original function in `dmtools.emu` for every text and every mode.
+`dmcsb` 0.2.1 (the Dungeon Master tools by Cycl0ne, see [DMMac: Dungeon Master for macOS and Windows](../../README.md#acknowledgements)) agrees on the map count, map sizes and offsets, all square bytes, thing counts, and thing lists. It differs on escape code 30: it maps the single-glyph entries to display characters (`?`, `'`) or to an empty string. The original code emits the glyph codes from the KAOS table.
 
 ## Tests
 
@@ -202,6 +202,11 @@ This list covers every module of the port ([Coding standard](../coding-standard.
 - `group_get_melee_action_damage`: a champion without strength uses base 0, not a stale register.
 - Group reaction events set byte 8 (ticks) to 0; the original leaves it uninitialized.
 - The square object search of a launcher stops at the end of the list.
+- The new-game extras stop at the record limit (`dungeon_load`); the original writes past it.
+- A restart does not check that the saved game has the same game ID ("THAT'S NOT THE SAME GAME").
+- The save always writes 1 into the header byte at `0x12a` (`HEADER_BYTE_DEFAULT`); the original writes back the value of the last load.
+- After a new game or a load, the save writes free active group entries as 0 bytes; the original saves whatever its memory holds.
+- A cells byte beyond the active group table reads a free entry (`group_get_active`).
 
 ## Structure differences from the original
 

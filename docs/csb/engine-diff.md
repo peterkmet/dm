@@ -60,7 +60,7 @@ The DM-only functions:
 
 ## Data tables
 
-The port reads the table addresses (`KAOS_*` in `src/data/include/kaos_addresses.h`) from the KAOS image. For CSB, `g_csb_copies` (`src/data/csb_image.c`) maps each address to its APPB address. The CSB addresses come from a content search with the exact table size and from the code references of the paired functions.
+The port reads the table addresses (`KAOS_*` in `src/data/include/kaos_addresses.h`) from the KAOS image. The CSB addresses come from a content search with the exact table size and from the code references of the paired functions.
 
 ### Equal tables at new addresses
 
@@ -350,7 +350,7 @@ The file names, the cipher, the checksum, and the blocks are in [Chaos Strikes B
 
 The header differs (`save_read_header` C`0x1289c4`, `load_game` C`0x129b3e`); the offsets are in [Save file format](../formats/save.md#csb-header).
 
-`save_game` (C`0x128cc0`) writes the fields at the CSB offsets: dialog choice `0x132`, extra header `0x17c` (`0x84` bytes), game ID `0x134`, platform `0x12d` = 5, header byte `0x12c`, save format `0x178`, dungeon ID `0x17a`, block keys `0x138`, block checksums `0x158`. Then it calls `save_write_header` (C`0x128a42`). A prison save has dungeon ID 12; a save of the adventure has 13 (see [Chaos Strikes Back: new adventure](new-adventure.md#summary)).
+`save_game` (C`0x128cc0`) writes the header fields at the CSB offsets ([Save file format](../formats/save.md#csb-header)). Then it calls `save_write_header` (C`0x128a42`). A prison save has dungeon ID 12; a save of the adventure has 13 (see [Chaos Strikes Back: new adventure](new-adventure.md#summary)).
 
 Other load and save differences:
 
@@ -420,7 +420,3 @@ Unverified: the complete list of penalties.
 ### Platform and other code
 
 These differences need no port change, because the port does not reproduce the Amiga layer: video driver and display setup, heap, interrupts, `mouse_begin_change`, OS stubs, trackdisk, and the language support of DM.
-
-## Open questions
-
-1. The DM disk has an empty `CSBGAME.DAT`. Does DM 3.60 read it? Not traced.

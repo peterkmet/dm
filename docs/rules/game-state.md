@@ -205,7 +205,7 @@ Projectiles (thing type 14) and explosions (thing type 15) are dungeon things. T
 3. Set `g_game_id` to the product of two `random16()` values.
 4. Call `timeline_init` and `group_init_active_groups`.
 
-`dungeon_load` sets the party position and direction from the dungeon header, and `g_party_map_index` to 0.
+`dungeon_load` sets the party position ([Dungeon.DAT format](../formats/dungeon.md#file-header)).
 
 ## Helpers
 

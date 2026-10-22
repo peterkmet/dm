@@ -60,7 +60,6 @@ The game saves to `DMGAME.DAT` in `game/`; Chaos Strikes Back saves to `CSBGAME.
 - Save: click the save icon in an inventory, or press Ctrl+S. The dialog shows CANCEL, SAVE, and QUIT. QUIT ends the game. When you did not save in the last 100 ticks (steps of the game clock), QUIT asks first.
 - Resume: click RESUME at the entrance. A damaged file shows "THE GAME IS DAMAGED!" and the entrance again.
 - When all champions die, THE END shows. RESTART THIS GAME loads the saved game. QUIT shows the credits and the entrance.
-- The original quits the program after the credits and after a damaged save; the port shows the entrance.
 
 ### Save slots (advanced mode)
 

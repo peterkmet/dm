@@ -91,7 +91,7 @@ Your files in `playthroughs/current/player/` are your memory. Keep each file sho
 - There is one save slot. `save` overwrites it. Save after each milestone (key, door, puzzle, new level) and before each risk: a pit, a fight with a new creature type, a timed switch, a teleporter.
 - Do not save while a champion is poisoned, starving, or below 25 health, or when the party is in a fight. You cannot undo a bad save.
 - The coordinator keeps a checkpoint after each session. When the save is bad or the party cannot survive from it, ask in your report for the checkpoint of an earlier game time.
-- A win ends the game. The turn response has `"game_over": true` and `state.party.dead` is `false`. Save before you enter the level of Lord Chaos.
+- A win ends the game ([LLM mode: turn-based play over MCP](llm-mode.md#game-over)). Save before you enter the level of Lord Chaos.
 
 ## When you are stuck
 
@@ -142,8 +142,6 @@ This port is under test. When something looks wrong, write it in `bugs.md` with 
 | Save, load | `uv run dm-play save`, `uv run dm-play load` |
 | Sleep | `uv run dm-play act sleep`, then `wait`, then `uv run dm-play act wake` |
 | See the screen | `uv run dm-play screenshot '{"path":"playthroughs/current/coordinator/shot.png"}'`, then read the PNG |
-
-`dm-play` makes a relative screenshot path absolute from your working directory (the repository root in a run).
 
 ### dm-play
 
