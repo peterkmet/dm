@@ -67,7 +67,7 @@ Each test module owns its state, so the tests run in any order and in parallel.
 - The tests set `g_frame_hook` to run the frames of a sequence, for example in
   `tests/differential/test_csb_ending.py`.
 - The tests replace the OS hooks of `data/os.h`. `dmtest.lib.set_folder_hooks` sets the folder hooks to Python
-  functions, because `platform/app.c` sets them with SDL.
+  functions, because the SDL code of `platform/app.c` that sets them is not in the library.
 
 To hide the format commit in `git blame`:
 

@@ -146,7 +146,7 @@ Then for each champion (record offsets of [Game state](../rules/game-state.md)):
 | `temporary_experience` of each skill | 0 |
 | All 30 slots | `0xffff`: the champion has no objects |
 
-Before the merge clears a slot, `0x104cca` removes the stat bonus of the object from the champion. This call changes the record in slot 0, not the copy in slot 1. Thus a DM champion keeps an object bonus in the new adventure. The prison has no objects, so this does not change a prison party. The merge test does not cover an object with a bonus (UNVERIFIED).
+Before the merge clears a slot, `0x104cca` removes the stat bonus of the object from the champion. This call changes the record in slot 0, not the copy in slot 1. Thus a DM champion keeps an object bonus in the new adventure. The prison has no objects, so this does not change a prison party. The merge test does not cover an object with a bonus (unverified).
 
 At the end, `0x1062b8` gives a champion a new cell when another champion has the same cell. The new cell is the lowest cell that no champion uses (`0x105bf0`).
 

@@ -191,7 +191,7 @@ This list covers every module of the port ([Coding standard](../coding-standard.
 - In the LLM mode, REINCARNATE keeps the old name, because the protocol has no name entry (`champion_click_rebirth_panel`).
 - After a refused duplicate name, the name entry puts the input at the end of the name and clears the title (`champion_rename_ok`); the original points the input at the name but keeps the title state.
 - A move or a turn of the party on a wall square runs no wall sensor of that square (`sensor_process_thing_change`). Only the WALK THROUGH WALLS cheat of the advanced mode puts the party on a wall square.
-- With the walk through walls cheat of the advanced mode on, a door that closes on the party goes back open as in the original, but the party takes no door damage (`process_door_animation`).
+- With the WALK THROUGH WALLS cheat of the advanced mode on, a door that closes on the party goes back open as in the original, but the party takes no door damage (`process_door_animation`).
 - The spell experience squares the required level of the spell (`magic.c`); the original squares an undefined register.
 - The endgame screens (THE END and the credits after it) do not fade the palette; the original fades it.
 - The original quits the program after the credits of the endgame and after "THE GAME IS DAMAGED!"; the port shows the entrance (`g_return_to_entrance`, `platform/app.c`).

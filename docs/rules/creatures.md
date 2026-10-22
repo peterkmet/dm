@@ -112,7 +112,7 @@ An attacking creature (events 38–41) turns to the party, moves to the front ce
 
 `group_get_melee_action_damage(melee)` resolves a melee hit of a champion on one creature. It returns the damage, or 0 for a miss.
 
-1. A dead champion does nothing. A creature with dexterity 255 (`CREATURE_NEVER_HITS`) is never hit. A non-material creature is hit only when the hit probability has bit 15 (`HIT_PROBABILITY_ALWAYS_HITS`).
+1. A dead champion does nothing. The champion never hits a creature with dexterity 255 (`CREATURE_NEVER_HITS`). The champion hits a non-material creature only when the hit probability has bit 15 (`HIT_PROBABILITY_ALWAYS_HITS`).
 2. The defense is `(random16() & 31) + creature dexterity + 2 × map difficulty + 2 × g_party_light_level - 16`. The champion hits when the defense is below `champion_get_dexterity`, when `random_2bits()` is 0, or when `champion_is_lucky(75 - hit probability)` is true.
 3. The base damage is the strength of the action hand plus `random(strength / 2 + 1)`, times the damage factor / 32, plus `random16() & 31`, minus the armour. The armour is `(random16() & 31) + creature defense + 2 × map difficulty`. The Diamond Edge removes a quarter of the armour, the Hardcleave an eighth. A champion without strength has base damage 0.
 4. A base damage of 1 or less uses the weak hit rule (`weak_hit_damage`), which can give 0. A random spread then sets the final damage (`melee_hit_damage`). The Vorpal Blade halves it against a material creature.

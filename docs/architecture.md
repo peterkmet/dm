@@ -157,7 +157,7 @@ The modules `advanced`, `automap`, `cheats`, `music`, `optmenu`, `rows`, and `sl
 
 1. The input: `plat_poll` reads the SDL events. On the start screens they go to `select_click` and
    `select_key`; in the game they become commands (`command_process_key`, `command_process_click`). In
-   LLM mode the game ignores the keyboard and the mouse from the entrance on; the start screens still read them.
+   the LLM mode the game ignores the keyboard and the mouse from the entrance on; the start screens still read them.
 2. `transport_poll` reads the control socket (see [The control socket and the turn](#the-control-socket-and-the-turn)).
 3. The screen of the run: a start screen (`select_screen`, `select_draw`), the entrance, or
    `gameloop_run_frame` (`ui/gameloop.c`). `gameloop_run_frame` runs the queued commands and tells if the
@@ -169,7 +169,7 @@ The modules `advanced`, `automap`, `cheats`, `music`, `optmenu`, `rows`, and `sl
 A dialog, the endgame and the fuse sequence wait for the player inside a rule. They run their own frames
 through the frame hook `g_frame_hook` (`ui/frame.h`). `platform/app.c` sets the hook; it shows one frame and
 reads the input into the command queue. The hook runs no game logic, so a wait inside a game tick is safe. In
-LLM mode the hook is NULL: a wait ends immediately.
+the LLM mode the hook is NULL: a wait ends immediately.
 
 ## The tick
 

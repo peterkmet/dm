@@ -135,7 +135,7 @@ Four champion portrait bitmaps, not encrypted. Each bitmap has `((32 + 15) & ~15
 
 ### Dungeon
 
-The dungeon in `Dungeon.DAT` format without compression: header (44 bytes), maps, column first-thing indices, square first things, text data, 16 thing arrays, and raw map data. Then one word: the 16-bit sum of all bytes of the dungeon parts. `dungeon_load` accepts the dungeon when the word is missing or equal to the sum. The dungeon header gives the part sizes. See [Dungeon.DAT format](dungeon.md).
+The dungeon in `Dungeon.DAT` format without compression: header (44 bytes), maps, column first-thing indices, square first things, text data, 16 thing arrays, and raw map data. Then one word: the 16-bit sum of all bytes of the dungeon parts. `dungeon_load_saved` accepts the dungeon when the word is missing or equal to the sum. The dungeon header gives the part sizes. See [Dungeon.DAT format](dungeon.md).
 
 ## C API
 

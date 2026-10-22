@@ -121,7 +121,7 @@ Each table ends where the next named table starts. The tests check this.
 | `0x18` | `attack_type` | Attack type argument of `champion_add_pending_damage`. |
 | `0x19` | — | Padding. |
 
-`group_get_champion_damage` (`0x11d10a`) copies the whole 26-byte record to the stack. That code confirms the offsets of `wound_probabilities` and `attack_type`.
+
 
 ## Creature sounds
 
@@ -148,7 +148,7 @@ Each table ends where the next named table starts. The tests check this.
 | `0x01` | `weapon_class` | Below 16: melee and thrown classes; 10 is bow ammunition, 11 sling ammunition. 16–31: bows. 32–47: slings. |
 | `0x02` | `strength` | Weapon strength. |
 | `0x03` | `kinetic_energy` | Kinetic energy of a thrown or shot weapon. |
-| `0x04` | `attributes` | Bits 8–12 projectile aspect ordinal (0 = use the object aspect). Bits 0–7 shoot attack (ReDMCSB name, not traced). |
+| `0x04` | `attributes` | Bits 8–12 projectile aspect ordinal (0 = use the object aspect). Bits 0–7 shoot attack ([Champion rules](champions.md#actions)). |
 
 ## Armour info
 

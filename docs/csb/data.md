@@ -132,7 +132,7 @@ The CSB `save_game` is at `0x128cc0` (jump table slot `A5+0xb6a`). The CSB `load
 
 ### File names
 
-`DF0:CSBGAME.DAT` and `DF0:CSBGAME.BAK` (strings at `0x10013a`, `0x10014a`). The utility modules use `DF0:CSBGAME.DAT` and `DF0:CSBGAME.BAK`.
+`DF0:CSBGAME.DAT` and `DF0:CSBGAME.BAK` (strings at `0x10013a`, `0x10014a`). The utility modules use the same names.
 
 ### Same as DM
 

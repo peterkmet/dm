@@ -139,7 +139,7 @@ File names in the data section:
 | `0x101d70` | `DungeonMaster:Dungeon~.dat` | Dungeon. `~` becomes empty, `F`, or `G`. |
 | `0x101d90` | `DungeonMaster:Dungeon~.FTL` | New-game dungeon. `load_game` opens it when the save disk has no `DMGAME~.DAT` and no `DMGAME~.BAK`. |
 | `0x101db0` | `DungeonMaster:DungeonB~.dat` | Second dungeon. `load_game` opens it when `g_use_dungeon_b` is set (entrance command `0xc9`). |
-| `0x101dd4` | `DF0:DMGAME~.DAT` | Saved game. `~` becomes the save drive number. |
+| `0x101dd4` | `DF0:DMGAME~.DAT` | Saved game. `~` becomes empty, `F`, or `G`. |
 | `0x101de8` | `DF0:DMGAME~.BAK` | Backup of the saved game. |
 | `0x101dfc` | `DungeonMaster:graphics.dat` | Graphics. |
 

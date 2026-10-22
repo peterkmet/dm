@@ -143,19 +143,11 @@ This port is under test. When something looks wrong, write it in `bugs.md` with 
 | Sleep | `uv run dm-play act sleep`, then `wait`, then `uv run dm-play act wake` |
 | See the screen | `uv run dm-play screenshot '{"path":"playthroughs/current/coordinator/shot.png"}'`, then read the PNG |
 
-The screenshot path is relative to the folder where the game runs (the repository root in a run).
+`dm-play` makes a relative screenshot path absolute from your working directory (the repository root in a run).
 
 ### dm-play
 
-`dm-play` sends one command to the game and prints the answer.
-
-```sh
-uv run dm-play <cmd> [json-fields]
-uv run dm-play act <action> [json-args]
-uv run dm-play act_many '<json-list>'
-```
-
-The output of `--brief`, the batches, the stops, the actions, and the fields of `state`, `view`, and `map` are in [LLM mode: turn-based play over MCP](llm-mode.md#socket-protocol). Read that page as well.
+`dm-play` sends one command to the game and prints the answer. The output of `--brief`, the batches, the stops, the actions, and the fields of `state`, `view`, and `map` are in [LLM mode: turn-based play over MCP](llm-mode.md#socket-protocol). Read that page as well.
 
 ### End of a session
 

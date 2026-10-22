@@ -4,11 +4,7 @@ How to run DMMac and how to play it. The repository has no game files. You suppl
 
 ## Run the game
 
-Unpack a release (see [DMMac: Dungeon Master for macOS and Windows](../README.md)) or build the game (see [Development](development.md)). Copy your `.adf` disk images next to the program and start it:
-
-```sh
-build/dm
-```
+Unpack a release (see [DMMac: Dungeon Master for macOS and Windows](../README.md)) or build the game (see [Development](development.md)). Copy your `.adf` disk images next to the program and start it: `dm` in a macOS release, `dm.exe` in a Windows release, `build/dm` in a source build.
 
 On startup, the game extracts each disk image once: the Dungeon Master v3.60 disk to `game/`, Chaos Strikes Back (CSB) disk A to `game-csb/`, CSB disk B to `game-csb/disk-b/`. The game compares the CRC-32 checksum of each required file with the known value of the Amiga file; a wrong file stops the game with a message in the log.
 
@@ -32,7 +28,7 @@ Usage: dm [options]
 
 - `--saves DIR` also holds the quick save and `SETTINGS.TXT`. The folder must exist.
 - `--control` defaults to `~/.dm/control.sock`.
-- `--filter` takes priority over the filter of the options menu. The image is sharpest when the window scale is a multiple of the filter factor.
+- `--filter` sets the filter at each game start, over the saved filter of the options menu. The options menu can still change it. The image is sharpest when the window scale is a multiple of the filter factor.
 - The environment variable `DM_AUTO_ENTER=1` skips the start screens and the entrance. The tests use it.
 
 ## Start screens

@@ -10,7 +10,7 @@ The port reads all game tables from the KAOS image at run time ([Static game tab
 
 | Name | Values |
 |---|---|
-| Slots | `SLOT_HAND_READY` 0, `SLOT_HAND_ACTION` 1, `SLOT_HEAD` 2, `SLOT_TORSO` 3, `SLOT_LEGS` 4, `SLOT_FEET` 5, `SLOT_POUCH_2` 6, quiver 7–9 and 12, `SLOT_NECK` 10, `SLOT_POUCH_1` 11, `SLOT_BACKPACK_FIRST` 13 to 29. `SLOT_COUNT` is 30. Slots 30–37 (`SLOT_CHEST_FIRST`) are the open chest. |
+| Slots | `SLOT_HAND_READY` 0, `SLOT_HAND_ACTION` 1, `SLOT_HEAD` 2, `SLOT_TORSO` 3, `SLOT_LEGS` 4, `SLOT_FEET` 5, `SLOT_POUCH_2` 6, quiver 7–9 and 12, `SLOT_NECK` 10, `SLOT_POUCH_1` 11, `SLOT_BACKPACK_FIRST` 13–29. `SLOT_COUNT` is 30. Slots 30–37 (`SLOT_CHEST_FIRST`) are the open chest. |
 | Skills | Base skills `SKILL_FIGHTER` 0, `SKILL_NINJA` 1, `SKILL_PRIEST` 2, `SKILL_WIZARD` 3. Hidden skills 4–19. Hidden skill `s` belongs to base skill `(s - 4) / 4`. |
 | Skill flags | `champion_get_skill_level` takes `ignore_modifiers` (original flag `0x4000`) and `ignore_temporary` (original flag `0x8000`). |
 | Wounds | Bit `n` is a wound of body slot `n` (0–5). |
@@ -248,7 +248,7 @@ The influence roll is `random16() % (influence level + bonus)`. The bonus and th
 
 `is_object_thrown(champion, slot, side)` throws the object of the slot. With slot < 0 it throws the leader hand object (`action_is_hand_object_thrown`, a click in the throw zones of the dungeon view); the strength then counts the object as if it were in the action hand.
 
-1. Stamina cost: half the weight, bounded 1–10, plus half of each 10 above (`throwing_stamina_cost`). The action hand is disabled for 4 ticks.
+1. Stamina cost (`throwing_stamina_cost`): `w` is half the weight. The cost is `bounded_value(1, w, 10)`, plus `r / 2` for each `r` in `w - 10`, `w - 20`, … while `r` is above 0. The throw disables the action hand for 4 ticks.
 2. Experience to the throw skill: 8 for objects, 12 for weapons, plus kinetic energy / 4 for weapons of class 0–12.
 3. Kinetic energy (a byte): `level + e / 2 + random(16) + e` with `e` = strength + the weapon kinetic energy (class 0–12) or 1.
 4. Attack: `bounded_value(40, random(32) + 8 × level, 200)`. Step energy: `max(5, 11 - level)`.

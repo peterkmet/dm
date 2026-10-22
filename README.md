@@ -19,7 +19,7 @@ not supported. The game identifies a disk by its content, not by its file name.
 - **Advanced mode:** Automap, in-game options menu (volume, music, upscale filter), 8 save slots, quick save/load,
   cheat screen, WASD movement, 8 simultaneous sounds, FM-Towns and Super NES soundtracks, and direct entry to
   Chaos Strikes Back from the prison stairs.
-- **LLM mode (macOS only, `--mode turnbased`):** A program plays the game over a Unix socket, one turn per request.
+- **LLM mode (macOS only, `--mode turnbased`):** A program plays the game turn by turn over a Unix socket.
 - **Display scaling:** Window resizing with the `scale2x` and `scale3x` pixel-art filters.
 
 ## Play

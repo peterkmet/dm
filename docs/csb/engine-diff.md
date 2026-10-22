@@ -148,8 +148,7 @@ Addresses that the tables above do not list. Each is verified by a code referenc
 |---|---|---|---|
 | `KAOS_INTERFACE_PALETTE`, `KAOS_POINTER_PALETTE` (interface, then pointer palette) | `0x100170`, `0x100190` | `0x102f0a`, `0x102f2a` | `g_initial_colormap` and + 32 (`display_load_view`, `input_event_handler`) |
 | `KAOS_ARROW_POINTER_WIDTH`, `KAOS_HAND_POINTER_WIDTH` (the 4 size bytes, then the bitmap) | `0x1002ac`, `0x1003d0` | `0x1005ec`, `0x100710` | `init_mouse_pointer` C`0x10898c`, `0x10899a` |
-| `KAOS_CREDITS_PALETTE`, `KAOS_ENTRANCE_PALETTE` (CSB values) | `0x100a46`, `0x100a66` | `0x100f18`, `0x100f38` | `entrance_show_credits`, `entrance_draw` |
-| `KAOS_SLOTS_TO_STEAL_FROM` | `0x100b8a` | `0x10105e` | `steal_from_champion` C`0x10e7f6` |
+| `KAOS_ENTRANCE_PALETTE` (CSB values) | `0x100a66` | `0x100f38` | `entrance_draw` |
 | `KAOS_LIST_SEPARATOR` ", " | `0x101ebe` | `0x10264a` | `build_object_attributes_string` C`0x110dcc` |
 | `KAOS_BONES_SEPARATOR` " ", `KAOS_ATTRIBUTES_SUFFIX` ")", `KAOS_ATTRIBUTES_PREFIX` "(" | `0x101ec6`, `0x101ec8`, `0x101eca` | `0x10267a`, `0x1026ec`, `0x1026ea` | `draw_panel_object` C`0x111cba`, `0x111f12`, `0x111f16` |
 | `KAOS_VIEWPORT_X` | `0x10293a` | `0x103298` | `command_init_mouse_input_table` |
@@ -162,8 +161,7 @@ Addresses that the tables above do not list. Each is verified by a code referenc
 | Entrance mouse input (4 entries, no 0xd8) | `0x10318c` | `0x103c24` | `process_entrance` C`0x12a550` |
 | Endgame mouse input (RESTART only) | `0x1031d4` | `0x103c60` | `endgame` C`0x1284c2` |
 | Other mouse input tables | `0x1031f8` … `0x10378c` | `0x103c78` … `0x10420c` | CSV names |
-| `KAOS_KEYS_ENTRANCE` (1 entry), `KAOS_KEYS_INTERFACE`, `KAOS_KEYS_MOVEMENT` | `0x10393c`, `0x103948`, `0x103964` | `0x1043bc`, `0x1043c4`, `0x1043e0` | `process_entrance`, `start_game` |
-| `KAOS_ACTION_EXPERIENCE_GAIN`, `KAOS_DIALOG_VERSION_TEXT`, `KAOS_DIALOG_MESSAGE_COLORS` | `0x103fb4`, `0x10402c`, `0x104026` | `0x104ae8`, `0x104c24`, `0x104c20` | `menus_is_action_performed`, `dialog_draw` |
+| `KAOS_DIALOG_MESSAGE_COLORS` | `0x104026` | `0x104c20` | `dialog_draw` |
 
 Not in the CSB image:
 
@@ -235,7 +233,7 @@ Port:
 
 `menus_is_action_performed` (K`0x122892`, C`0x12663e`, switch at C`0x126764`, cases 2–42, default C`0x126caa`):
 
-- INVOKE (27), FLUXCAGE (35), and FUSE (43) go to the default branch in CSB. They only apply the common part: disabled ticks, stamina, experience, and the state redraw. The function returns 1. DM uses `random16` for INVOKE and calls `group_fluxcage_action` and `group_fuse_action`.
+- INVOKE (27), FLUXCAGE (35), and FUSE (43) go to the default branch in CSB. They only apply the common part: disabled ticks, stamina, experience, and the state redraw. The function returns true. DM uses `random16` for INVOKE and calls `group_fluxcage_action` and `group_fuse_action`.
 - Action set 1 = {27, 43, 35} still exists in CSB (C`0x1047ac`).
 - All other actions are the same as DM, including FIREBALL, DISPELL, LIGHTNING, SPIT, door bash, coin flip, shields, HEAL, LIGHT, WINDOW, FREEZE LIFE, THROW, SHOOT, and CLIMB DOWN.
 - `menus_is_group_frightened_by_action`, `menus_decrement_charges`, and `menus_get_action_hand_charge_count` are the same as DM.
@@ -343,7 +341,7 @@ Port: `magic.c` `cast_magic_map` (spell kind 4, failure message 11), `spells.c` 
 
 ### Champions
 
-- `champion_click_rebirth_panel` (C`0x11668e`), REINCARNATE: before the 12 random points, CSB sets each statistic 1–6 (current and maximum) to max(minimum, value - value/8) (C`0x1167e0`–`0x116854`). Then it divides health, stamina, and mana (current and maximum) by 4 (C`0x116856`–`0x11688e`). Port: `src/engine/champion.c` `reincarnate`. The CSB dungeon has no mirrors, so this code does not run in a normal CSB game (UNVERIFIED).
+- `champion_click_rebirth_panel` (C`0x11668e`), REINCARNATE: before the 12 random points, CSB sets each statistic 1–6 (current and maximum) to max(minimum, value - value/8) (C`0x1167e0`–`0x116854`). Then it divides health, stamina, and mana (current and maximum) by 4 (C`0x116856`–`0x11688e`). Port: `src/engine/champion.c` `reincarnate`. The CSB dungeon has no mirrors, so this code does not run in a normal CSB game (unverified).
 - All other champion functions differ only in code generation: object modifiers, skill level, skill experience, luck, time effects, candidate, food and potions, object icons.
 
 ### Save and load
@@ -362,8 +360,8 @@ Other load and save differences:
 - The save dialog has CANCEL, SAVE AND PLAY, SAVE AND QUIT, and FORMAT FLOPPY (`save_game` C`0x128cc0`, `reference/decomp/csb-a/APPB.c` from line 36964). Without the floppy option (`A5-0x4b6` = 0), the dialog has 3 choices: 1 CANCEL, 2 SAVE AND PLAY, 3 SAVE AND QUIT. With the option, it has 4: 1 SAVE AND PLAY, 2 SAVE AND QUIT, 3 FORMAT FLOPPY, 4 CANCEL.
   - CANCEL closes the dialog.
   - SAVE AND PLAY and SAVE AND QUIT write the file. The header field dialog choice (`0x132`) is 1 for SAVE AND PLAY and 0 for SAVE AND QUIT.
-  - After a successful SAVE AND PLAY, `A5-0xe0` becomes 1 and the game continues. The dialog does not stay open (the DM port keeps the DM dialog open after SAVE).
-  - After a successful SAVE AND QUIT, `A5-0xe0` becomes 0 and `endgame(0)` (C`0x128374`) runs: the credits, then `quit_game`.
+  - After a successful SAVE AND PLAY, `A5-0xe0` becomes true and the game continues. The dialog does not stay open (the DM port keeps the DM dialog open after SAVE).
+  - After a successful SAVE AND QUIT, `A5-0xe0` becomes false and `endgame(0)` (C`0x128374`) runs: the credits, then `quit_game`.
   - When the save fails, a message dialog with one button shows (C`0x1294f8`), then the game continues.
   - No code path quits without a save, and the save dialog has no plain QUIT.
   - Port (`src/ui/startend.c` `save_game_csb`): the 3-choice dialog. The port writes dialog choice 1 for both saves. SAVE AND QUIT shows the credits and then the CSB screen (LLM mode: the entrance picture).
@@ -415,7 +413,7 @@ CSB contains copy protection. The port leaves it out and acts as if every check 
 - A disk check at the start of `save_game` (C`0x128cc0`) reads raw MFM data from the drive (custom chip and CIA access) (unverified).
 - Code checksums: C`0x120b4e` (over C`0x128ca0`–`0x129580`, from `load_dungeon`), C`0x1245b4` (from `move_get_move_result` on maps above 2), C`0x128676`.
 - Self-modifying hooks: `protect_install_hook` (C`0x11e248`) patches `champion_apply_time_effects` and runs graphic 21 as code (from `decrease_torches_light_power` C`0x111018`, and C`0x11c896`, `0x125cac`, `0x125da0`).
-- Penalties when a check fails: `timeline_add_event` adds no event (C`0x122d46`), `timeline_is_first_event_expired` returns 0 (C`0x122e54`), movement destinations change (C`0x1216e6`), the timeline dispatcher uses a stale event type (C`0x124148`).
+- Penalties when a check fails: `timeline_add_event` adds no event (C`0x122d46`), `timeline_is_first_event_expired` returns false (C`0x122e54`), movement destinations change (C`0x1216e6`), the timeline dispatcher uses a stale event type (C`0x124148`).
 
 Unverified: the complete list of penalties.
 
