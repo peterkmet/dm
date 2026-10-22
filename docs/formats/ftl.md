@@ -1,6 +1,6 @@
 # FTL module format
 
-Dungeon Master v3.60 for the Amiga keeps its code in `.FTL` modules. The AmigaDOS executable `BJELoad_R` loads them. This page describes the format. The source is the decompiled `BJELoad_R` (function at code offset `0x34c`) and `APPA.FTL` (unpacker at code offset `0x22a`). `tools/dmtools/ftl.py` implements this format. All 10 modules on the v3.60 disk pass every checksum.
+Dungeon Master v3.60 for the Amiga keeps its code in `.FTL` modules. The AmigaDOS executable `BJELoad_R` loads them. The source is the decompiled `BJELoad_R` (function at code offset `0x34c`) and `APPA.FTL` (unpacker at code offset `0x22a`). `tools/dmtools/ftl.py` implements this format. All 10 modules on the v3.60 disk pass every checksum.
 
 All values are big-endian.
 

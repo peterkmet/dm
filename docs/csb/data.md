@@ -36,7 +36,7 @@ Both files use format 1 (`0x8001`), the header of [kaos-map.md](../reference/kao
 
 ### Item comparison
 
-An alignment by content hash matched the items (`difflib.SequenceMatcher` on MD5 of each item). Items 0–726 keep their index. DM items 727–747 are not in CSB. DM item 748 (2 bytes) is CSB item 727.
+Items 0–726 keep their index. DM items 727–747 are not in CSB. DM item 748 (2 bytes) is CSB item 727.
 
 Removed items (DM 727–747): the empty item 727 and the French and German items (entrance, THE END label, rename panel, food, water, and poisoned labels, resurrect panel, object names, action names, texts).
 
@@ -149,8 +149,6 @@ The CSB `save_game` is at `0x128cc0` (jump table slot `0xb6a(A5)`). The CSB `loa
 
 The offsets of the DM and CSB headers are in [save.md](../formats/save.md#csb-header).
 
-Evidence: the writer at `0x128cc0` and the reader at `0x129b3e` use the same offsets. The machine code at `0x12928c` is `moveq #5,d0; move.b d0,$12d(a3); move.b -$421(a5),$12c(a3)`.
-
 The load and save behavior of the CSB engine is in [CSB engine compared with the DM engine](engine-diff.md#save-and-load).
 
 Result: `savefile.c` reads and writes the CSB header when `g_adventure` is `ADVENTURE_CSB`, and then also checks the block 2 checksum. `tests/port/test_csb_save.py` decodes `MINI.DAT` with the port. The original CEDT reader (`tests/differential/test_csb_mini.py`) accepts a file that the port writes.
@@ -170,7 +168,7 @@ Result: `savefile.c` reads and writes the CSB header when `g_adventure` is `ADVE
 
 The next chunk follows the payload directly. `ANIM.FTL` `0x101356` walks the chunks with this step. A walk of all four files with this step reaches the exact file end. All payload lengths are even.
 
-The chunk dispatcher of `ANIM.FTL` is `0x100d1a`: a switch table at `0x100d30` (18 entries: offset word, then tag word; each offset is relative to its own position; default offset at `0x100d7a`). The loop `0x100fca` runs the chunks from the first chunk to the file end. The disassembly (`machine68k`) confirms each handler:
+The chunk dispatcher of `ANIM.FTL` is `0x100d1a`: a switch table at `0x100d30` (18 entries: offset word, then tag word; each offset is relative to its own position; default offset at `0x100d7a`). The loop `0x100fca` runs the chunks from the first chunk to the file end. The chunk handlers:
 
 | Tag | Handler | Meaning | Port (`src/ui/anim.c`) |
 |---|---|---|---|

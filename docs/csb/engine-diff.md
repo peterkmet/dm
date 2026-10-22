@@ -36,7 +36,7 @@ The mapping has 752 DM functions and 756 CSB functions (the module map counts 74
 - Most "constants" pairs differ only in code generation: bit-field masks (DM `lsr #6; and #31`, CSB `and #$7c0; lsr #6`), sign extension (`-1` against `0xffff`), and two word pushes that DM merges into one long push.
 - Many "logic" pairs differ only because DM calls `get_string` and CSB uses inline text, or because DM calls `mouse_begin_change` (an empty stub in DM, K`0x108702`) where CSB hides the pointer (C`0x109128`).
 
-The [differences and the port](#differences-and-the-port) section lists the real differences. Three code readings checked every rule-relevant pair that the mapping did not classify as identical.
+The [differences and the port](#differences-and-the-port) section lists the real differences.
 
 ### Parts of APPB that are not the game engine
 
@@ -197,7 +197,7 @@ Text that differs:
 - " NEEDS A MAGIC MAP IN ACTION HAND FOR THIS SPELL." (C`0x104bea`) and "NO CREATURE" (C`0x102654`) are not new. DM item 700 has them as texts 60 and 107, and the creature names as texts 108–134. The port uses these texts (`TEXT_NO_CREATURE` in `panel.c`, `SPELL_FAILURE_NEEDS_MAGIC_MAP` in `magic.c`).
 - The CSB direction table C`0x102578` is in direction order (NORTH, EAST, SOUTH, WEST). DM texts 22–25 are NORTH, SOUTH, EAST, WEST.
 
-Code references (each address verified: a `pea` or `lea` with A5 = C`0x10511e` in the function, found in the APPB code bytes):
+Code references:
 
 | CSB address | Function |
 |---|---|
@@ -257,7 +257,7 @@ Cast (`menus_get_champion_spell_cast_result`, C`0x126e0e`, case kind 4 at C`0x12
 4. Type 3 (C`0x1270de`): delete the first event 83 of this champion. Byte `0x11b` = party direction + 1. Word `0x11c` = x << 11 | y << 6 | map. Action disabled ticks = D6² >> 1, event duration = 4 × that value.
 5. C`0x1272d4`: the event time is game time + duration, on the party map. `timeline_add_event`. The event priority byte holds the champion index.
 
-Checks of the cast (APPB disassembly):
+Details of the cast:
 
 - The switch on the spell type is `rt_switch_range` 0–3 after C`0x127094`: type 0 C`0x1270a6`, 1 C`0x1270bc`, 2 C`0x1270ca`, 3 C`0x1270de`.
 - D6 is a 16-bit word. Types 0–2: duration = 2·D6² (`muls`, `add`). The action disabled ticks of types 0–2 come from the spell record, as for the other spells.
@@ -333,7 +333,7 @@ Port: `magic.c` `cast_magic_map` (spell kind 4, failure message 11), `spells.c` 
 ### Creatures
 
 - `group_init_active_groups` (C`0x10e990`): a new game has 60 active group slots (C`0x10e998`). DM has 110 (K`0x10cb80`). CSB allocates exactly the stored count. DM allocates at least 110. CSB `load_game` (C`0x129efc`) restores the saved count without a minimum. The count limits the creature generators (`group_get_generated`, C`0x10de76`). Port: `ACTIVE_GROUP_MAX_COUNT_CSB` (60) in `src/engine/include/group.h`; `src/engine/savegame.c` applies `ACTIVE_GROUP_MAX_COUNT` (110) as the minimum for DM only.
-- `steal_from_champion` (C`0x10e7e2`–`0x10e7f2`): a new rule takes the action hand when the panel content is 10 and `random_bit` is set. No code writes 10 to the panel content variable C`0x1024ca`, so the rule never runs. No port change. APPB check: the code writes C`0x1024ca` only at C`0x112120` (7), C`0x112180` (6), C`0x112188` (5), C`0x112190` (1), and C`0x116324` (8). The magic map writes 10 to the drawn panel content C`0x1024cc`, a different variable. The rule stays unreachable.
+- `steal_from_champion` (C`0x10e7e2`–`0x10e7f2`): a new rule takes the action hand when the panel content is 10 and `random_bit` is set. No code writes 10 to the panel content variable C`0x1024ca`, so the rule never runs. The magic map writes 10 to the drawn panel content C`0x1024cc`, a different variable. No port change.
 
 ### Champions
 
