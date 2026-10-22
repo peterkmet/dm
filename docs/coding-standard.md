@@ -107,11 +107,15 @@ this document names.
     only. [byteorder]
 11. The record layout belongs to `engine/record.h` and `engine/record.c`. No other file indexes a record
     (`REC(`) or `g_dungeon_map_data[`. [record]
-12. Read game data at run time; do not copy a game table into the source. Four tables stay in the source: the soundtrack tables of the other versions (not in the game files),
-    the APPB address tables of the CSB image build (`data/csb_image.c`, `data/csb_text.c`), the CRC-32 table of a
-    standard algorithm (`data/crc32.c`), and the spell names of the cheat screen (`ui/cheats.c`: the game files
-    have no spell names; the potion names are rune names, not effects). The first three are named in the allowlist with this
-    reason; the spell names need no allowlist line, because the table has no plain numbers. [decimal, hex, allowlist]
+12. Read game data at run time; do not copy a game table into the source. Four tables stay in the source:
+    - the soundtrack tables of the other versions (not in the game files);
+    - the APPB address tables of the CSB image build (`data/csb_image.c`, `data/csb_text.c`);
+    - the CRC-32 table of a standard algorithm (`data/crc32.c`);
+    - the spell names of the cheat screen (`ui/cheats.c`). The game files have no spell names, and the potion
+      names are rune names, not effects.
+
+    The allowlist names the first three tables with this reason. The spell names need no allowlist line, because
+    the table has no plain numbers. [decimal, hex, allowlist]
 
 ## 4. Naming
 

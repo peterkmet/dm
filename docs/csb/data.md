@@ -119,7 +119,7 @@ Content:
 - Map 0 has 24 mirrors: wall sensors of type 127 with data 0–23. Each mirror has a text with a champion sheet. The champions are AIRWING, AROC, TALON, LETA, DEMA, ALGOR, TOADROT, VEN, MANTIA, GNATU, SLOGAR, STING, SKELAR, DETH, NECRO, PLAGUE, TUNDA, LANA, BUZZZZZ, PETAL, ITZA, TULA, KAZAI, LOR.
 - 6 mirrors have a second sensor: type 1, once only, effect 1, target the door at (1, 14) or (19, 2). The meaning in the CSB rules is unverified.
 - One visible text on the floor of (9, 2), two squares south of the start, says "THERE IS ONLY ONE LEVEL HERE. FIRST CHOOSE YOUR CHAMPIONS...THEN SAVE THE GAME...THEN RESTART WITH THE UTILITY DISK." The game prints it when the party enters the square. The other 24 texts of map 0 are the champion sheets of the mirrors (not visible).
-- Stairs down on map 0 (all to map 1): (19, 7) and (6, 15) can be reached from the start: through the imaginary wall at (15, 6) and the closed door with a button at (18, 6), and through the imaginary wall at (8, 14) and the closed door with a button at (7, 15). (19, 3) and (1, 15) are closed in, each with an open door north of it: (19, 1)–(19, 3) and (1, 13)–(1, 15) have no other exit (read with the port map accessors).
+- Map 0 has four stairs down, all to map 1. From the start, the party reaches (19, 7) through the imaginary wall at (15, 6) and the closed door with a button at (18, 6). It reaches (6, 15) through the imaginary wall at (8, 14) and the closed door with a button at (7, 15). (19, 3) and (1, 15) are closed in, each with an open door north of it: (19, 1)–(19, 3) and (1, 13)–(1, 15) have no other exit (read with the port map accessors).
 - Map 1 has no texts or sensors. It has 12 creature groups: 7 of type 10, 5 of type 7.
 
 The CSB `load_dungeon` is at `0x1295a0`. It follows the DM loader and adds a copy-protection check ([CSB engine compared with the DM engine](engine-diff.md#copy-protection)).
@@ -217,7 +217,7 @@ The port plays `ANIM.DAT` after NEW ADVENTURE (`play_csb_intro` in `src/platform
 
 `ANIM.DAT` has 851 frames, 10808 vertical blanks (216 s). After the last frame or a stop (`BR` 1), the cleanup fades the music: volume 29 down to 1, one step every 3 ticks (`0x102e4c`), then the music stops.
 
-A stop is not immediate in the original. The shown frame stays for the rest of its time, one more frame shows for its full time, and then the music fades for 87 ticks (1.7 s). Frames of the title pictures last up to 536 ticks (10.7 s). The port in vanilla keeps only the shown frame for the rest of its time, then fades the music; in the advanced mode it stops immediately (`anim_set_stop_at_once`), then fades the music.
+In the original, a stop takes effect after a delay. The shown frame stays for the rest of its time. One more frame shows for its full time. Then the music fades for 87 ticks (1.7 s). Frames of the title pictures last up to 536 ticks (10.7 s). The port in vanilla keeps only the shown frame for the rest of its time, then fades the music; in the advanced mode it stops immediately (`anim_set_stop_at_once`), then fades the music.
 
 `NAKED.AMG` is not a tracker or MIDI file. All words are big-endian:
 

@@ -61,7 +61,7 @@ In the advanced mode, the stairs down of the prison also start the new adventure
 
 The game saves to `DMGAME.DAT` in `game/`; Chaos Strikes Back saves to `CSBGAME.DAT` in `game-csb/`. The old file becomes the `.BAK` backup. The format is the original Amiga save file ([Save file format](formats/save.md)).
 
-- Save: click the save icon in an inventory, or press Ctrl+S. The dialog shows CANCEL, SAVE, and QUIT. QUIT ends the game; when the game was not saved in the last 100 ticks, QUIT asks first.
+- Save: click the save icon in an inventory, or press Ctrl+S. The dialog shows CANCEL, SAVE, and QUIT. QUIT ends the game. When you did not save in the last 100 ticks, QUIT asks first.
 - Resume: click RESUME at the entrance. A damaged file shows "THE GAME IS DAMAGED!" and the entrance again.
 - When all champions die, THE END shows. RESTART THIS GAME loads the saved game. QUIT shows the credits and the entrance.
 - The original quits the program after the credits and after a damaged save; the port shows the entrance.

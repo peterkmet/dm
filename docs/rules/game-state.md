@@ -174,9 +174,9 @@ A free slot keeps the index of the next free slot in `map_time`. The value `0xff
 
 - New type 5–10 (square event):
   - An existing type 5–10 event at the same place gets the new effect. For type 6, the cell must also be equal. The function returns its index.
-  - An existing type 1 event at the same place is deleted. A new effect 2 (toggle) becomes `1 - old effect`. The function returns -1, so the new event gets a slot.
+  - The function deletes an existing type 1 event at the same place. A new effect 2 (toggle) becomes `1 - old effect`. The function returns -1, so the new event gets a slot.
 - New type 1 (door animation): an existing type 10 event at the same place returns its index. When its effect is 2, it gets `1 - new effect`. An existing type 1 event at the same place gets the new effect and returns its index.
-- New type 2 (door destruction): every type 1 and type 10 event with the same `b` and the same map is deleted. The function returns -1.
+- New type 2 (door destruction): the function deletes every type 1 and type 10 event with the same `b` and the same map. The function returns -1.
 - Other new types do not merge.
 
 
@@ -218,7 +218,7 @@ Projectiles (thing type 14) and explosions (thing type 15) are dungeon things. T
 | `NORMALIZE(direction)` | — | `direction & 3`. |
 | `champion_adjust_by_stamina` | `0x110f4c` | When current stamina is below half of the maximum: `value / 2 + value * stamina / (maximum / 2)`. |
 | `champion_get_adjusted_attack` | `0x110f88` | `d = 170 - current statistic`. Returns `attack >> 3` when `d < 16`, otherwise `scale_value(attack, 7, d)`. |
-| `champion_adjust_statistic` | `0x10f860` | Adds a delta to a current statistic. A negative delta stops at the minimum. Above 120 the delta is halved, above 150 quartered (plus 1). The result stops at 170. |
+| `champion_adjust_statistic` | `0x10f860` | Adds a delta to a current statistic. A negative delta stops at the minimum. Above 120 the function halves the delta; above 150 it quarters the delta and adds 1. The result stops at 170. |
 | `champion_is_lucky` | `0x110fc8` | See below. |
 
 `champion_is_lucky(champion_index, percentage)`:
@@ -229,7 +229,7 @@ Projectiles (thing type 14) and explosions (thing type 15) are dungeon things. T
 
 The original reads the three luck bytes as signed bytes in this function. A current luck of 128 or more counts as not above 0. The port keeps this behavior.
 
-KAOS tables must be loaded (`tables_load`) before `map_step` runs.
+Call `tables_load` before `map_step`.
 
 ## Tests
 

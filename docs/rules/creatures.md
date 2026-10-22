@@ -18,7 +18,7 @@ Creature types come from the creature info table in KAOS (`tables_get_creature_i
 
 The party map has active groups. Other maps do not.
 
-- `group_add_all_active_groups()` runs when the party enters a map. Each group on the map gets an `ActiveGroup` entry, its behavior events are deleted, and it starts to wander (event 37 after 1 tick).
+- `group_add_all_active_groups()` runs when the party enters a map. Each group on the map gets an `ActiveGroup` entry, loses its behavior events, and starts to wander (event 37 after 1 tick).
 - `group_remove_all_active_groups()` runs when the party leaves a map. Each record gets back its cells byte and one direction. A group that flees or attacks wanders again.
 - On the party map, the cells byte of the group record holds the index of the active group. `group_get_active(group)` returns the entry; a cells byte beyond the table gives a free entry. The entry holds the cells, the directions of the creatures, the aspect (graphic offsets, flip, attack) of each creature, the home square, the prior square, the target square, the time of the last move, and the flee delay.
 - A group that enters the party map from another map becomes active. A group that leaves the party map becomes inactive.
@@ -63,7 +63,7 @@ Bits 0–3 of group word 14 hold the behavior.
 `visible_party_distance` returns the square distance to the party, or 0.
 
 1. A creature without side attack sees only into the 90° cone in front of it (`group_is_destination_visible`).
-2. The sight range comes from the creature info. Darkness reduces it by `palette index / 2`, unless the creature has night vision. An invisible party is hidden from a creature that does not see invisible.
+2. The sight range comes from the creature info. Darkness reduces it by `palette index / 2`, unless the creature has night vision. A creature that does not see invisible cannot see an invisible party.
 3. Outside the sight range the creature can still notice the party by a random roll. Next to the party, the roll also adds the hearing and smell ranges.
 4. A wall, a solid fake wall, or a closed door that is not see-through on the line from the party to the creature blocks the view.
 
@@ -110,7 +110,7 @@ An attacking creature (events 38–41) turns to the party, moves to the front ce
 
 ### Possessions
 
-- Fixed possessions: Skeleton, Stone Golem, Trolin, Animated Armour, Rock Pile, Pain Rat, Screamer, Magenta Worm, and Red Dragon drop fixed objects from a KAOS list. An entry with bit 15 drops half of the time. Objects of an Animated Armour are cursed.
+- Fixed possessions: Skeleton, Stone Golem, Trolin, Animated Armour, Rock Pile, Pain Rat, Screamer, Magenta Worm, and Red Dragon drop fixed objects from a KAOS list. An entry with bit 15 drops half of the time. The objects of an Animated Armour are cursed.
 - Carried possessions: objects that the group picked up (for example a caught dagger) fall on random cells of the square.
 
 ### Other damage
@@ -170,7 +170,7 @@ Event 25 (`explosion_process_step_event`):
 |---|---|
 | 0 fireball | Breaks a door. |
 | 2 lightning bolt | Breaks a door with half damage. |
-| 3 harm non-material | Hurts non-material creatures. A Materializer is hurt only while it attacks. |
+| 3 harm non-material | Hurts non-material creatures. It hurts a Materializer only while the Materializer attacks. |
 | 7 poison cloud | Hurts the party or the group each step. The attack fades by 3 per tick until it is 5 or less. |
 | 40 smoke | Fades by 40 per tick while the attack is 56 or more. |
 | 100, 101 rebirth | Step 1 becomes step 2 with a strong explosion sound. |

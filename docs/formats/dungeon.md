@@ -119,7 +119,7 @@ Record sizes (`g_thing_data_byte_count`):
 For a new game the loader changes the header in memory:
 
 - It adds 300 to the square first thing count. The new entries are `0xffff`.
-- It adds extra records to each thing count. The byte table at KAOS `0x101058` (`tables_get_extra_things`) gives the extra record count of each type. The loader reads it from the KAOS image. The count is limited to 1024 (768 for explosions). The first word of each new record is `0xffff` (free record).
+- It adds extra records to each thing count. The byte table at KAOS `0x101058` (`tables_get_extra_things`) gives the extra record count of each type. The loader reads it from the KAOS image. The loader limits each count to 1024 (768 for explosions). The first word of each new record is `0xffff` (free record).
 - It sets `g_timeline.capacity` to 100 plus the counts of types 4, 14, and 15.
 
 The original writes all extra records, even past the limit. The port stops at the limit. The DM dungeons never reach the limit.
@@ -189,7 +189,7 @@ This list covers every module of the port (coding standard, rule 10.5).
 - The panel with the eye pressed keeps the leader hand object name; the original clears it until the eye is released (`panel_draw_eye`).
 - In the LLM mode, REINCARNATE keeps the old name, because the protocol has no name entry (`champion_click_rebirth_panel`).
 - After a refused duplicate name, the name entry puts the input at the end of the name and clears the title (`champion_rename_ok`); the original points the input at the name but keeps the title state.
-- The party on a wall square runs no wall sensor of that square on a move or a turn (`sensor_process_thing_change`); only the walk through walls cheat of the advanced mode puts the party there, the original never does.
+- A move or a turn of the party on a wall square runs no wall sensor of that square (`sensor_process_thing_change`). Only the WALK THROUGH WALLS cheat of the advanced mode puts the party on a wall square.
 - With the walk through walls cheat of the advanced mode on, a door that closes on the party goes back open as in the original, but the party takes no door damage (`process_door_animation`).
 - The spell experience squares the required level of the spell (`magic.c`); the original squares an undefined register.
 - The endgame screens (THE END and the credits after it) do not fade the palette; the original fades it.

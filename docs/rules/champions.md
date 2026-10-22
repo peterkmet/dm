@@ -183,7 +183,7 @@ A statistic modifier changes the maximum, current, and minimum value.
 | Antivenin | Ends the poison |
 | Mon | Stamina + `max_stamina / d` |
 | Ya | Champion shield + `amount × 1.5` (a quarter of it when the shield is above 50). Event 72 removes it after `amount²` ticks. |
-| Ee | Mana + `2 × amount - 8`, at most 900. Above the maximum, half of the excess is lost. |
+| Ee | Mana + `2 × amount - 8`, at most 900. Above the maximum, the champion loses half of the excess. |
 | Vi | Health + `max_health / d`. Heals wounds at random. |
 | Water | Water +1600 |
 
@@ -193,7 +193,7 @@ Health and stamina stop at their maximum. Sound 8 plays.
 
 The main loop calls `champion_apply_time_effects()` every 64 ticks (16 while the party sleeps).
 
-1. Scents that are not on the party square lose 1 strength. A first scent at strength 0 is deleted.
+1. Scents that are not on the party square lose 1 strength. The function deletes a first scent at strength 0.
 2. A chance value is made from bits 6–8 of the game time (0–112).
 3. For each living champion that is not the candidate:
    - Mana: when the wizard and priest levels plus wisdom are above the chance, mana increases by `max_mana / 40 + 1` (doubled while sleeping) and stamina decreases by `max(7, 16 - levels)` times that gain, where `levels` is the wizard level plus the priest level. Mana above the maximum decreases by 1.
@@ -224,7 +224,7 @@ The code is in `src/engine/action.c`. The rules follow `action_is_action_perform
 | Flip | Prints heads or tails (text `0x45` or `0x46`) by a random bit. |
 | Climb Down | With the rope, the party goes into the pit in front (no group there) without fall damage. Without the rope, the action adds no disabled ticks. |
 | Freeze Life | A blue magical box adds 30 freeze ticks, a green box 125; the box is used up. Other objects add 70 and use a charge. The maximum is 200. |
-| Fireball (150), Dispell (harm non-material, 150), Lightning (180), Spit (fireball, 250), Invoke | Shoots the explosion with the attack as kinetic energy. Invoke: attack `100 + random(128)`, spell by `random % 6`: 0 poison bolt, 1 poison cloud, 2 harm non-material, otherwise fireball. With less mana than the cost, attack becomes `max(2, mana × attack / cost)` and all mana is used. A failed cast halves the experience. Each uses a charge. |
+| Fireball (150), Dispell (harm non-material, 150), Lightning (180), Spit (fireball, 250), Invoke | Shoots the explosion with the attack as kinetic energy. Invoke: attack `100 + random(128)`, spell by `random % 6`: 0 poison bolt, 1 poison cloud, 2 harm non-material, otherwise fireball. With less mana than the cost, attack becomes `max(2, mana × attack / cost)` and the cast uses all mana. A failed cast halves the experience. Each uses a charge. |
 | Shoot | The bow (class 16–31) or sling (class 32–47) in the action hand shoots the arrow (class 10) or stone (class 11) of the ready hand. Kinetic energy is the sum of both weapons. Attack is `(shoot level + launcher attributes low byte) × 2`. Step energy is the launcher class minus 16 or 32. Without ammunition: `g_session.action_damage = -2`, no experience. |
 | Spellshield, Fireshield | `magic_cast_party_spell` for 280 ticks with mana. Success uses a charge. Failure quarters the experience and halves the disabled ticks. |
 | Fluxcage | `projectile_fluxcage_action` on the square in front. |
@@ -242,7 +242,7 @@ Block, Hit, and the other actions only add the action defense, the disabled tick
 
 ### Fear
 
-The influence roll is `random16() % (influence level + bonus)`. The bonus and the experience are: Confuse 12 and 45, War Cry 3 and 12, Blow Horn 6 and 20, Brandish 6 and 30, Calm 7 and 35. When the roll is below the fear resistance, or the creature is fearless (15), the group stays and the experience is halved. Otherwise an attacking group stops its attack, the group flees, and the flee delay is `(16 - fear) × 4 / movement ticks`.
+The influence roll is `random16() % (influence level + bonus)`. The bonus and the experience are: Confuse 12 and 45, War Cry 3 and 12, Blow Horn 6 and 20, Brandish 6 and 30, Calm 7 and 35. When the roll is below the fear resistance, or the creature is fearless (15), the group stays and the champion gets half the experience. Otherwise an attacking group stops its attack, the group flees, and the flee delay is `(16 - fear) × 4 / movement ticks`.
 
 ### Throwing
 

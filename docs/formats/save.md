@@ -272,7 +272,7 @@ The port adds extension blocks after the original save data outside the vanilla 
 | Cheat block | `advanced` | `CHTS`, version 1, one byte of cheat bits: bit 0 full light, 1 immortal, 2 food and water, 3 one-hit kill, 4 walk through walls, 5 reveal map (`CHEAT_*`, `engine/game.h`) |
 | Automap block | `advanced`, `turnbased` | `AMAP`, version 1, map count, width and height of each map, one byte per square (`explored_save`) |
 
-`savegame_load_from` reads the blocks from the end. It strips a block when its length fits the file and its magic is `AMAP` or `CHTS`, in any order; for a magic found twice, the last block in the file counts. The scan stops at the first block that does not fit; the bytes before it go to `savefile_decode`. After a successful load, the automap block sets the explored squares (without the block, the automap is empty), and in the `advanced` mode the cheat block sets the cheats. Without the cheat block, with a damaged one (size, version, or an unknown bit), or in the other modes, all cheats are off. A failed load keeps the cheats of the running game.
+`savegame_load_from` reads the blocks from the end. It strips each block whose length fits the file and whose magic is `AMAP` or `CHTS`, in any order. When a magic occurs twice, the last block in the file counts. The scan stops at the first block that does not fit; the bytes before it go to `savefile_decode`. After a successful load, the automap block sets the explored squares; without the block, the automap is empty. In the `advanced` mode, the cheat block sets the cheats. Without the cheat block, with a damaged one (size, version, or an unknown bit), or in the other modes, all cheats are off. A failed load keeps the cheats of the running game.
 
 ### Portraits
 
@@ -305,8 +305,8 @@ The port keeps the portrait pixels of each champion in `ChampionRuntime.portrait
 
 - The tests have no save file of the original program. They use synthetic data, the port's own saves, and the original routines as the oracle. The original `load_dungeon` reads a file handle, so the tests do not run it on the dungeon part.
 - A restart does not check that the saved game has the same game ID ("THAT'S NOT THE SAME GAME").
-- The header byte at `0x12a` (`SAVE_HEADER_HEADER_BYTE`) is always written as 1 (`HEADER_BYTE_DEFAULT`). The original writes back the value of the last load.
+- The port always writes 1 (`HEADER_BYTE_DEFAULT`) into the header byte at `0x12a` (`SAVE_HEADER_HEADER_BYTE`). The original writes back the value of the last load.
 - `savefile_decode` does not check the dungeon part. A file that is cut inside the dungeon part decodes. The dungeon loader must check the part sizes and the byte sum.
 - The meaning of the header byte at `0x12a` and of `g_save_header_extra` is not traced.
-- Free active group entries are saved with 0 bytes after a new game or a load; the original saves whatever its memory holds. An entry that a group leaves keeps its bytes, as in the original.
+- After a new game or a load, the port saves free active group entries as 0 bytes. The original saves whatever its memory holds. An entry that a group leaves keeps its bytes, as in the original.
 - A cells byte beyond the active group table reads a free entry (`group_get_active`).

@@ -18,7 +18,7 @@ All addresses are image addresses. "K" marks a DM address, "C" marks a CSB addre
 
 `docs/reference/csb-appb-symbols.csv` holds the CSB-to-DM function mapping.
 
-The mapping comes from a comparison of both modules: the disassembly (`machine68k`), the function starts, and for each function its call targets, immediates, stack arguments, referenced globals, and branch count. A global alignment of the two address-ordered function lists gives the pairs (the linkers keep the source file order); call-graph passes and LVO offsets add more; a list of pairs from code readings corrects the rest. Globals pair by equal data bytes and by their position in paired functions.
+The mapping compares the disassembly (`machine68k`) of both modules: the function starts, and for each function its call targets, immediates, stack arguments, referenced globals, and branch count. An alignment of the two address-ordered function lists gives the pairs, because the linkers keep the source file order. Call-graph passes and LVO offsets add more pairs. A list of pairs from code readings corrects the rest. Globals pair by equal data bytes and by their position in paired functions.
 
 ### Classes
 
@@ -50,7 +50,13 @@ In DM, `KAOS.FTL` holds the game and `APPB.FTL` holds the intro. In CSB, `APPB.F
 | Memory heap (simpler than DM) | `heap_init` C`0x117754`, `heap_setup_regions` C`0x117814`, `compute_graphics_memory` C`0x12b532` |
 | Copy protection | 16 functions with subsystem `protect`, see [Copy protection](#copy-protection) |
 
-The DM-only functions are the language support (`set_language_file_names`, `load_string_table`, `get_string`, `graphics_get_language_index`), the DM heap and graphics area manager (`heap_*`, `gfx_area_*`), Fuse and Lord Chaos (`group_fluxcage_action`, `group_fuse_action`, `group_is_fluxcage_on_square`, `group_get_lord_chaos_on_square`, `fuse_sequence`, `fuse_sequence_update`), the DM victory screen (`endgame_print_text`, `endgame_draw_button`), and `format_save_disk_dialog`.
+The DM-only functions:
+
+- the language support: `set_language_file_names`, `load_string_table`, `get_string`, `graphics_get_language_index`;
+- the DM heap and graphics area manager: `heap_*`, `gfx_area_*`;
+- Fuse and Lord Chaos: `group_fluxcage_action`, `group_fuse_action`, `group_is_fluxcage_on_square`, `group_get_lord_chaos_on_square`, `fuse_sequence`, `fuse_sequence_update`;
+- the DM victory screen: `endgame_print_text`, `endgame_draw_button`;
+- `format_save_disk_dialog`.
 
 ## Data tables
 
@@ -221,7 +227,7 @@ The pointer table C`0x104d08` has 26 entries; the DM text index of each entry is
 
 Port:
 
-- `src/data/csb_text.c` `csb_text_build` (called by `csb_image_build`): builds DM texts 0–134 as one block of NUL-terminated strings (item 700 order) and the 44 action names (item 699). The spell failure and level gained texts join prefix, class name, and suffix. Each string index table entry k of the KAOS image gets text index first + k, so the class names (0–3) and directions (22–25) are in the CSB table order: text 2 is PRIEST, 3 is WIZARD, 23 is EAST, 24 is SOUTH. Only the index tables read these texts.
+- `src/data/csb_text.c` `csb_text_build` (called by `csb_image_build`): builds DM texts 0–134 as one block of NUL-terminated strings (item 700 order) and the 44 action names (item 699). The spell failure and level gained texts join prefix, class name, and suffix. Each string index table entry `k` of the KAOS image gets text index `first + k`. So the class names (0–3) and the directions (22–25) have the CSB table order: text 2 is PRIEST, 3 is WIZARD, 23 is EAST, 24 is SOUTH. Only the index tables read these texts.
 - `src/data/graphics.c` `load_strings`: for CSB, takes items 699 and 700 from `csb_text_get_item`, and ends each object name (item 694) at the byte with bit 7 set.
 - `src/engine/champion.c` reads its messages with `gfx_get_string`. The other files that show text do not change.
 
@@ -393,7 +399,7 @@ CSB `endgame` (C`0x128374`) is only the death screen and the quit screen:
 
 - Party dead and not won: sound 7 (scream) at the party, 240 frames.
 - THE END: graphic 6 in zone 5, palette with 16 × `0x004` and color 15 `0xfff` (C`0x12842e`–`0x128464`), 300 frames (only the first time).
-- With a saved game (`A5-0xe0`): RESTART THIS GAME. `fill_screen_box` of the box at C`0x100dcc` (x 103, y 145, width 115, height 15) with color 1 and of the box at C`0x100dd4` (105, 147, 111, 11) with color 0, `text_print_to_screen`(110, 154, color 4, color 0, text 77). Colors 1 = `0x86f` and 4 = `0xfff`. The endgame mouse table (C`0x103c60`) has RESTART only, with the outer box. No QUIT button, no champion list.
+- With a saved game (`A5-0xe0`): RESTART THIS GAME. `fill_screen_box` fills the box at C`0x100dcc` (x 103, y 145, width 115, height 15) with color 1 and the box at C`0x100dd4` (105, 147, 111, 11) with color 0. Then `text_print_to_screen(110, 154, color 4, color 0, text 77)` prints the label. Colors 1 = `0x86f` and 4 = `0xfff`. The endgame mouse table (C`0x103c60`) has RESTART only, with the outer box. No QUIT button, no champion list.
 - 900 frames, or RESTART: `load_game`, then `start_game`. When the load fails, the credits.
 - The credits: graphic 5, palette C`0x100f18`, wait for input. Then, with a saved game and a dead party, THE END again (without the 300 frames); otherwise `quit_game`.
 
