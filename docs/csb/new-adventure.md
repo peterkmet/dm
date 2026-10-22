@@ -2,7 +2,7 @@
 
 How the original Chaos Strikes Back (CSB) for the Amiga starts a new game: the menu flow, the format of `MINI.DAT`, and the merge that makes `CSBGAME.DAT`.
 
-The sources are the decompiled modules in `reference/decomp/csb-a/` (disk A) and `reference/decomp/csb-b/` (disk B) (base `0x100000`). All addresses are code addresses in these images. "CEDT" means `reference/decomp/csb-b/CEDT.bin` (disk B). "APPB A" means `reference/decomp/csb-a/APPB.bin` (disk A). Ghidra drops the arguments of calls through the `A5` jump table, so the claims come from the disassembly, not from the `.c` files.
+The sources are the decompiled modules in `reference/decomp/csb-a/` (disk A) and `reference/decomp/csb-b/` (disk B) (base `0x100000`). All addresses are code addresses in these images. "CEDT" means `reference/decomp/csb-b/CEDT.bin`. "APPB A" means `reference/decomp/csb-a/APPB.bin`. Ghidra drops the arguments of calls through the `A5` jump table, so the claims come from the disassembly, not from the `.c` files.
 
 ## Summary
 
@@ -15,7 +15,7 @@ The sources are the decompiled modules in `reference/decomp/csb-a/` (disk A) and
 
 The floor text of the prison says the same ([Chaos Strikes Back data files](data.md#dungeondat)).
 
-`MINI.DAT` uses the cipher of the DM save file ([Save file format](../formats/save.md)), not a special one, with a header that is moved by 2 bytes. It is not compressed. CEDT does not change or randomize the dungeon.
+`MINI.DAT` uses the cipher of the DM save file ([Save file format](../formats/save.md)); its header fields are 2 bytes later. It is not compressed. CEDT does not change or randomize the dungeon.
 
 ## Modules
 

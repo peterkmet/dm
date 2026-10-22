@@ -119,7 +119,7 @@ The checksum is weak. A change that sets a bit in the plain word and clears the 
 
 1408 bytes: 4 champion records of `0x140` bytes (`g_champions`, `champion_pack`), then 128 bytes of `g_party` (`0x101ed4`). The bytes from `0x58` to `0x7f` of the party part are not traced. The port writes 0 and ignores them on load.
 
-Before the save, `save_game` removes the weight of the leader hand object from the leader load (champion offset `0x110`). `load_game` does not check the checksum of this block. It ignores the return value of `save_read_checked_block`. The C code does the same.
+Before the save, `save_game` removes the weight of the leader hand object from the leader load (champion offset `0x110`). `load_game` ignores the checksum of this block (the return value of `save_read_checked_block`), and so does the port.
 
 ### Block 3: timeline events
 
@@ -139,7 +139,7 @@ The dungeon in `Dungeon.DAT` format without compression ([Dungeon.DAT format](du
 
 ## C API
 
-The header `src/engine/include/savefile.h` declares the API. All buffers keep the big-endian byte layout.
+The header `src/engine/include/savefile.h` declares the API.
 
 ### `SaveFile`
 
@@ -158,7 +158,7 @@ Copies the file, decrypts the header and the blocks, and sets the pointers in `s
 - The file is shorter than the header, the blocks, or the portraits.
 - The header chain does not equal the payload sum.
 - The platform byte is 1 or the save format is not 3.
-- The checksum of block 0, 1, 3, or 4 is not correct. CSB also checks block 2.
+- The checksum of block 0, 1, 3, or 4 is not correct.
 
 Call `savefile_free` after a successful decode.
 

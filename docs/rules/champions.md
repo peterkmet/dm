@@ -2,7 +2,7 @@
 
 The champion rules of the port: recruiting, skills, inventory, eating and drinking, damage, death, and the time effects. The code is in `src/engine/champion.c` and `src/engine/inventory.c`. The rules follow the decompiled `KAOS.FTL` code (CHAMPION.C, the inventory part of range 5, and `process_click_on_mouth`). The original addresses are in [kaos-symbols.csv](../reference/kaos-symbols.csv). The champion record is in [Game state](game-state.md#champions).
 
-The port reads all game tables from the KAOS image at run time ([Static game tables](tables.md)). Object record fields go through the accessors in `src/engine/include/record.h`. Icon and text numbers are in `src/data/include/ids.h`.
+The game tables are in [Static game tables](tables.md). Object record fields go through the accessors in `src/engine/include/record.h`. Icon and text numbers are in `src/data/include/ids.h`.
 
 ## Constants
 
@@ -25,7 +25,7 @@ The port reads all game tables from the KAOS image at run time ([Static game tab
 3. Food and water are `1500 + (random16() & 255)` each (two draws).
 4. All slots are empty.
 5. The text on the party square gives the name, title, sex, health, stamina, mana, statistics, and experience (`recruit_parse`, [recruit.h](../../src/engine/include/recruit.h)).
-6. The champion becomes the candidate (`g_session.candidate_champion_index`: index, -1 for none). The first champion becomes leader and magic caster.
+6. The champion becomes the candidate (`g_session.candidate_champion_index`). The first champion becomes leader and magic caster.
 7. The objects in the cell of the wall square that faces the party become the possessions:
    - Armour goes to the first body slot (head to feet) that accepts it, otherwise to the neck.
    - A weapon goes to the action hand.
@@ -211,7 +211,7 @@ The code is in `src/engine/action.c`. The rules follow `action_is_action_perform
 
 `action_is_action_performed(champion, action)` runs one action against the square in front of the champion:
 
-1. The target group is the group on that square (`target_group` of `action_is_action_performed`).
+1. The target group is the group on that square.
 2. Stamina cost is `random_bit() + stamina`. For skills 16–19 and the wizard skill, the mana cost of a spell action is `7 - min(6, skill level)`.
 3. The action runs (table below).
 4. `magic_disable_action` disables the action hand for the action ticks (event 11). Stamina decreases. The action skill gets the experience. A step with the value 0 does nothing.

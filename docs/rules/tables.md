@@ -214,7 +214,7 @@ The action names come from graphic 699, not from KAOS.
 
 - Light power to light amount: 16 signed words. The view palette and the light event (`process_light`) use it.
 - Palette light thresholds: 6 signed words. The palette index is the first entry that is not greater than the light sum.
-- Slot masks: 38 words. Index 0–29 are champion slots, 30–37 are chest slots. Compare with `allowed_slots` of the object info.
+- Slot masks: 38 words, one for each champion slot (0–29) and chest slot (30–37). Compare with `allowed_slots` of the object info.
 - Wound defense factor: 6 bytes, indexed by body slot. The champion defense code multiplies the shield defense with it.
 
 ## Fixed possessions

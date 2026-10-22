@@ -219,7 +219,7 @@ Code references:
 | `0x104c56` | `endgame` |
 | `0x102654`, `0x102164` | `scroll_text_insert_creature_name` |
 | `0x1048b4` | `menus_get_action_name` |
-| `0x104d08` + 4·n | Read with `move.l` (no `lea`), for example `reference/decomp/csb-a/APPB.c` line 38716 (entry 0) and line 37116 (save dialog: entries 24, 21, 22) |
+| `0x104d08` + 4·n | Read with `move.l` (no `lea`) |
 
 The pointer table C`0x104d08` has 26 entries; the DM text index of each entry is in `src/data/csb_text.c` (`CSB_APPB_DISK_MESSAGES`).
 
@@ -258,14 +258,14 @@ Cast (`menus_get_champion_spell_cast_result`, C`0x126e0e`, case kind 4 at C`0x12
 1. `is_magic_map_in_hand` (C`0x111080`) must be true for the object in the action hand (champion slot word `0xd6`). Otherwise the spell fails with message 11 and the function returns 3.
 2. `D6 = (power + 1) × 4`, power = power symbol - `0x5f`.
 3. Types 0–2 add 1 to their byte: type 0 `0x118`, type 1 `0x119`, type 2 `0x11a`. Type 1 subtracts 2 from D6. Type 2 subtracts `(D6 >> 2) - 1` from D6. The duration is 2·D6² with the new D6.
-4. Type 3 (C`0x1270de`): delete the first event 83 of this champion. Byte `0x11b` = party direction + 1. Word `0x11c` = x << 11 | y << 6 | map. Action disabled ticks = D6² >> 1, event duration = 4 × that value.
+4. Type 3 (C`0x1270de`): delete the first event 83 of this champion. Byte `0x11b` = party direction + 1. Word `0x11c` = x << 11 | y << 6 | map. Action disabled ticks = (D6² as an unsigned word) >> 1, event duration = 4 × that value.
 5. C`0x1272d4`: the event time is game time + duration, on the party map. `timeline_add_event`. The event priority byte holds the champion index.
 
 Details of the cast:
 
 - The switch on the spell type is `rt_switch_range` 0–3 after C`0x127094`: type 0 C`0x1270a6`, 1 C`0x1270bc`, 2 C`0x1270ca`, 3 C`0x1270de`.
-- D6 is a 16-bit word. Types 0–2: duration = 2·D6² (`muls`, `add`). The action disabled ticks of types 0–2 come from the spell record, as for the other spells.
-- Type 3 looks for the first event 83 only when byte `0x11b` is not 0. The search runs over the slots 0 to `g_timeline.high_water` - 1 (C`0x103bd2`) and compares the type byte and the priority byte (champion index). Disabled ticks = (D6² as an unsigned word) >> 1.
+- D6 is a 16-bit word. The action disabled ticks of types 0–2 come from the spell record, as for the other spells.
+- Type 3 looks for the first event 83 only when byte `0x11b` is not 0. The search runs over the slots 0 to `g_timeline.high_water` - 1 (C`0x103bd2`) and compares the type byte and the priority byte (champion index).
 - The failure (C`0x12706a`) prints message 11 and returns 3 before the experience and the action disable. C`0x127a1a` prints the champion name, then the text of the message. The CSB prefix text 59 is empty, so the port order (prefix, name, suffix) gives the same line.
 
 Timeline (`timeline_process`, C`0x12411e`): events 80, 81, 82 decrement champion bytes `0x118`, `0x119`, `0x11a` (C`0x124486`, `0x12449c`, `0x1244b2`). Event 83 clears byte `0x11b` (C`0x1244c8`).
@@ -293,7 +293,7 @@ Scroll panel (`draw_panel_scroll`, C`0x111764`):
 - `magic_map_draw_square` draws the party square last, when the grid map is the party map. `magic_map_draw_square` (C`0x111140`, args x, y, direction, pixel x, pixel y) draws each square from tiles of graphic 12 (`magic_map_draw_cell`, C`0x1110e0`: tile & 15 and tile >> 4 select the 7 × 7 source, transparent color 10).
 - Tile size and gap (C`0x1032e6`–`0x1032ec`): width 7, height 7, gap x 1, gap y 1 in the APPB data. The code only reads them. Graphic 12 is 112 × 42 (16 × 6 tiles).
 
-`magic_map_draw_square` (C`0x111140`), verified in the disassembly (the decompiler stops at the `rt_switch_word` table C`0x111218`):
+`magic_map_draw_square` (C`0x111140`) draws a square in these steps:
 
 1. `set_square_aspect` of the square in the map direction. The aspect words are element, square byte, first thing, then 4 words (wall sides, or door state, door thing index, floor ornament ordinal with the footprints bit `0x8000`).
 2. Border fill (`fill_viewport_box`, 1 pixel around the tile): color 8 when x and y are the party x and y (also on a stored map), otherwise color 4 when DAIN (`0x118`) is set, the element is not a wall, and the footprints bit is set.
@@ -357,7 +357,7 @@ Other load and save differences:
 - The CSB load checks the checksum of block 2. DM ignores it.
 - On a restart (`A5-0xe2` set), the CSB load compares the game ID and shows THAT'S NOT THE SAME GAME on a mismatch.
 - `load_game` opens `CSBGAME.DAT`, then `CSBGAME.BAK`. Then it tries `DungeonMaster:Dungeon.FTL` (C`0x129d74`), which is not on the disk. A new game loads the prison, `Dungeon.DAT` of disk A ([Chaos Strikes Back data files](data.md#dungeondat)).
-- The save dialog has CANCEL, SAVE AND PLAY, SAVE AND QUIT, and FORMAT FLOPPY (`save_game` C`0x128cc0`, `reference/decomp/csb-a/APPB.c` from line 36964). Without the floppy option (`A5-0x4b6` = 0), the dialog has 3 choices: 1 CANCEL, 2 SAVE AND PLAY, 3 SAVE AND QUIT. With the option, it has 4: 1 SAVE AND PLAY, 2 SAVE AND QUIT, 3 FORMAT FLOPPY, 4 CANCEL.
+- The save dialog has CANCEL, SAVE AND PLAY, SAVE AND QUIT, and FORMAT FLOPPY (`save_game` C`0x128cc0`). Without the floppy option (`A5-0x4b6` = 0), the dialog has 3 choices: 1 CANCEL, 2 SAVE AND PLAY, 3 SAVE AND QUIT. With the option, it has 4: 1 SAVE AND PLAY, 2 SAVE AND QUIT, 3 FORMAT FLOPPY, 4 CANCEL.
   - CANCEL closes the dialog.
   - SAVE AND PLAY and SAVE AND QUIT write the file. The header field dialog choice (`0x132`) is 1 for SAVE AND PLAY and 0 for SAVE AND QUIT.
   - After a successful SAVE AND PLAY, `A5-0xe0` becomes true and the game continues. The dialog does not stay open (the DM port keeps the DM dialog open after SAVE).
@@ -386,7 +386,7 @@ Port: `src/ui/startend.c`, `src/ui/gameloop.c`. Unverified: the labels of the tw
 
 DM: wall sensor type 18 waits, clears the saved-game flag, and calls `endgame(1)`: the victory screen with champion portraits and skills, then the credits.
 
-CSB (each address checked in the APPB, APPA, and ANIM disassembly):
+CSB:
 
 1. Wall sensor type 18 (C`0x123970`) sets the game-won flag `A5-0x4f9c` (C`0x100182`) to true and calls `quit_game` (C`0x1285e8`) through slot `0xb42`. There is no delay, and the saved-game flag stays.
 2. `quit_game_to_ending` (C`0x1285ee`) waits until the pointer is hidden, closes `Graphics.DAT`, fills zones 401, 13, 11, 9 with color 0, and writes the module tag `ENDA` (`0x454e4441`) into the module arguments (C`0x12863a`). Then `system_shutdown` and `rt_longjmp` leave the engine.

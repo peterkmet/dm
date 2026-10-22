@@ -23,7 +23,7 @@ Your files in `playthroughs/current/player/` are your memory. Keep each file sho
 
 - The party has up to 4 champions in 2 rows. The front row fights hand to hand and takes most of the hits from the front. The back row casts spells, throws objects, or shoots.
 - Each champion has health, stamina, and mana, and the statistics strength, dexterity, wisdom, vitality, antimagic, antifire, and luck.
-- Champions can swap their places in the party. A champion in the back row is safer from attacks from the front.
+- Champions can swap their places in the party.
 - The party turns as one. A creature attacks the champions on the side that faces it. A creature behind the party hits the back row.
 - The leader carries the object in the hand and uses it on walls and doors.
 - A dead champion leaves bones. A Vi altar brings the champion back to life.
@@ -38,16 +38,16 @@ Your files in `playthroughs/current/player/` are your memory. Keep each file sho
 ## Food, water, sleep
 
 - The champions eat and drink all the time. Without food or water they lose stamina and then health.
-- The maximum of `food` and `water` is 2048. Estimates from an earlier run: about 1 water per 25 ticks awake; a sleep of 1500 ticks costs 200–300 food and 130–170 water. Half of the maximum is enough for about 4 long sleeps.
+- The maximum of `food` and `water` is 2048. Estimates: about 1 water per 25 ticks awake; a sleep of 1500 ticks costs 200–300 food and 130–170 water. Half of the maximum is enough for about 4 long sleeps.
 - Carry a food reserve in the packs. Take every food item that you find. Eat only when a champion is below half, and keep the rest. Kill creatures that drop food when you meet them, and note where they live.
 - Before you go down to a new level, make sure that each champion has food above a quarter (512), or that the packs hold food for each champion below that. Otherwise find food on the known levels first, because a new level may have no food near the stairs.
-- Food in the dungeon is finite, and the champions eat with game time. Save game time: sleep only for low health, stamina, or mana; do not wait long for one creature; go back to an earlier level only for a clear reason (water, food, a known key).
+- Food in the dungeon is finite. Save game time: sleep only for low health, stamina, or mana; do not wait long for one creature; go back to an earlier level only for a clear reason (water, food, a known key).
 - Food and water containers feed the champion who uses them. Fountains fill water containers.
 - Sleep gives back health, stamina, and mana, but time goes on: food and water go down and creatures move. Damage, a creature near the party, or `wake` wakes the party. The party does not wake by itself.
 
 ## Light and load
 
-- Without light the view gets dark and you see less. Torches and light spells give light. Both fade with time.
+- Torches and light spells give light. Both fade with time.
 - Keep the light up all the time: cast a light spell, or hold a burning torch in a hand. Darkness is dangerous: creatures, pits, and wall features in the far rows stay hidden.
 - Each champion can carry a limited weight; strength sets the limit. A heavy load uses more stamina and makes the party slower.
 
@@ -104,7 +104,7 @@ Your files in `playthroughs/current/player/` are your memory. Keep each file sho
 
 ## Bugs
 
-This port is under test. When something looks wrong, write it in `bugs.md` with the steps and the state. If the game stops answering or a bug blocks progress, stop and report.
+When something looks wrong, write it in `bugs.md` with the steps and the state. If the game stops answering or a bug blocks progress, stop and report.
 
 ## How to play
 
@@ -123,10 +123,10 @@ This port is under test. When something looks wrong, write it in `bugs.md` with 
 - Do not start or stop the game program. The coordinator runs it.
 - The user watches the window. Before each `dm-play` call, write one short line of text: what you do next and why.
 - Each call costs tokens. Use `--brief` for each call. Plan several steps per call: a whole route or a whole fight in one `act_many`, a long rest in one `wait`. Keep your text and your thinking per call short: do not repeat the state, decide the next steps.
-- Plan a corridor or a fight in one `act_many` call. It stops early when something happens (see [LLM mode: turn-based play over MCP](llm-mode.md#batches)). Check why it stopped before you continue.
+- An `act_many` call stops early when something happens (see [LLM mode: turn-based play over MCP](llm-mode.md#batches)). Check why it stopped before you continue.
 - One `wait` with many ticks stops by itself on damage, a new creature, or a message.
 - A script must not loop over `get_state`, `get_view`, `wait`, or `choose_action`. Each turn is your decision.
-- Ask for `get_map` only when you plan a route: one `get_map` per route plan, not one per step. A script reads the map once and sends the whole route as one `act_many`. The `act`, `act_many`, and `wait` responses already contain the state and the view.
+- Ask for `get_map` only when you plan a route: one `get_map` per route plan, not one per step. The `act`, `act_many`, and `wait` responses already contain the state and the view.
 - The view gives wall texts (`text`) and the picture of each lock (`lock`). Use screenshots only to check a suspected bug.
 - Chosen runes stay after a stopped or failed cast. Before you add runes, check `state.spell.chosen` and send `delete_rune` until it is empty.
 
@@ -145,7 +145,7 @@ This port is under test. When something looks wrong, write it in `bugs.md` with 
 
 ### dm-play
 
-`dm-play` sends one command to the game and prints the answer. The output of `--brief`, the batches, the stops, the actions, and the fields of `state`, `view`, and `map` are in [LLM mode: turn-based play over MCP](llm-mode.md#socket-protocol). Read that page as well.
+The output of `--brief`, the batches, the stops, the actions, and the fields of `state`, `view`, and `map` are in [LLM mode: turn-based play over MCP](llm-mode.md#socket-protocol). Read that page as well.
 
 ### End of a session
 

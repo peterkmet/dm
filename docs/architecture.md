@@ -21,16 +21,11 @@ data/       file formats, the engine image (KAOS.FTL, APPB.FTL) and its tables, 
 A file includes only headers of its own layer and of the layers below it in the diagram ([Coding standard](coding-standard.md), section 1).
 This page names a header with its layer: `engine/game.h` is `src/engine/include/game.h`.
 
-- `data/` owns the file formats, the engine image and its tables, and the run configuration. It reaches the
-  operating system only through the hooks of `data/os.h`.
-- `engine/` owns the game rules and the game state. It does not call the user interface. It sets redraw flags
-  and calls a hook.
-- `ui/` owns the screens, the dungeon view, the input mapping and the audio output. It changes game state only
-  through engine functions, except the redraw flags and the hooks.
-- `control/` owns the turn-based protocol for a program player. It is a client of `ui/` and `engine/` and
-  holds no socket.
-- `platform/` owns SDL, the control socket, the options, the application and `main`. Only this layer includes
-  SDL and the operating system headers.
+- `data/` reaches the operating system only through the hooks of `data/os.h`.
+- `engine/` does not call the user interface. It sets redraw flags and calls a hook.
+- `ui/` changes game state only through engine functions, except the redraw flags and the hooks.
+- `control/` is a client of `ui/` and `engine/` and holds no socket.
+- Only `platform/` includes SDL and the operating system headers.
 
 ## Modules
 
@@ -205,9 +200,7 @@ In the LLM mode a program player plays the game over a Unix domain socket. The p
 3. `control_handle_line` (`control/control.c`) answers the request immediately, or it starts a turn.
 4. While `control_is_turn_pending()` is true, the frame loop runs game frames and ticks.
 
-Between two turns the game time stands still, because `app_run_frame` does not call `gameloop_run_frame`. The turn
-rules (when a turn ends, what the reply tells) are in `control/turn.c`. The game as JSON is in
-`control/state_json.c`.
+Between two turns the game time stands still, because `app_run_frame` does not call `gameloop_run_frame`.
 
 ### The C API of the control layer
 
@@ -220,7 +213,7 @@ rules (when a turn ends, what the reply tells) are in `control/turn.c`. The game
 | `bool control_is_turn_pending(void)` | True while a turn runs. |
 | `void control_drop_client(void)` | The client is gone: a pending turn ends without a reply. |
 
-`platform/transport.h` (plain POSIX; `transport_none.c` replaces it on Windows):
+`platform/transport.h`:
 
 | Function | Purpose |
 |---|---|

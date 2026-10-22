@@ -47,7 +47,7 @@ Keys of the advanced mode (in the dungeon view):
 |---|---|
 | W, A, S, D, Q, E | Move and turn |
 | M, Tab | Automap |
-| Escape | Options menu (volume, music, upscale filter) |
+| Escape | Options menu |
 | C | Cheat screen |
 | F5, F9 | Quick save, quick load |
 | Ctrl+S | Save dialog with the 8 slots |
@@ -95,9 +95,8 @@ Claude Code built the port in four stages:
 4. **Refactoring:** Later passes added named constants, typed accessors, the five layers, and the automated
    coding-standard checks. The game behavior did not change.
 
-[ReDMCSB](http://dmweb.free.fr/community/redmcsb/) is Christophe Fontanel's reconstruction of the original 68000
-source. It compiles to bit-identical Amiga and Atari ST binaries. DMMac takes only the function and structure
-names from ReDMCSB, which keeps the two code bases easy to compare.
+DMMac takes only the function and structure names from [ReDMCSB](http://dmweb.free.fr/community/redmcsb/),
+Christophe Fontanel's reconstruction of the original 68000 source, so the two code bases are easy to compare.
 
 More: [FTL module format](docs/formats/ftl.md), [Game state](docs/rules/game-state.md),
 [Chaos Strikes Back data files](docs/csb/data.md), [KAOS module map](docs/reference/kaos-map.md).
@@ -111,8 +110,8 @@ More: [FTL module format](docs/formats/ftl.md), [Game state](docs/rules/game-sta
 - [machine68k](https://github.com/cnvogelg/machine68k) — 68000 CPU emulation for differential tests.
 - [ReDMCSB](http://dmweb.free.fr/community/redmcsb/) by Christophe Fontanel — symbol and structure naming
   reference.
-- [dmcsb](https://codeberg.org/CyCl0ne/DungeonMasterTools) by Cycl0ne — reference validator for `Dungeon.DAT`
-  test checks.
+- [dmcsb](https://codeberg.org/CyCl0ne/DungeonMasterTools) by Cycl0ne — reference validator for the `Dungeon.DAT`
+  tests.
 
 ## License
 

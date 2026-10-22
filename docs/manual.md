@@ -143,7 +143,7 @@ The game writes the values to `SETTINGS.TXT` in the saves folder and reads them 
 
 Music (ORIGINAL plays no music):
 
-- FM-Towns Dungeon Master: each level has a track. FM-Towns Chaos Strikes Back: each zone has a track. Super NES (Dungeon Master only): 22 trigger squares start a track. A track plays once and does not loop, as in those versions.
+- FM-Towns Dungeon Master: each level has a track. FM-Towns Chaos Strikes Back: each zone has a track. Super NES (Dungeon Master only): 22 trigger squares start a track. A track plays once, as in those versions.
 - The MP3 files go into `music/` of the game folder (`game/music/`, `game-csb/music/`), named `FM-Towns,Track_01,Music.mp3` or `Super_NES,Track_01,Music.mp3` with the track number in two digits. A missing file gives silence.
 
 ### Cheat screen

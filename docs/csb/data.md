@@ -121,10 +121,10 @@ Content:
 - Map 0 has 24 mirrors: wall sensors of type 127 with data 0–23. Each mirror has a text with a champion sheet. The champions are AIRWING, AROC, TALON, LETA, DEMA, ALGOR, TOADROT, VEN, MANTIA, GNATU, SLOGAR, STING, SKELAR, DETH, NECRO, PLAGUE, TUNDA, LANA, BUZZZZZ, PETAL, ITZA, TULA, KAZAI, LOR.
 - 6 mirrors have a second sensor: type 1, once only, effect 1, target the door at (1, 14) or (19, 2). The meaning in the CSB rules is unverified.
 - One visible text on the floor of (9, 2), two squares south of the start, says "THERE IS ONLY ONE LEVEL HERE. FIRST CHOOSE YOUR CHAMPIONS...THEN SAVE THE GAME...THEN RESTART WITH THE UTILITY DISK." The game prints it when the party enters the square. The other 24 texts of map 0 are the champion sheets of the mirrors (not visible).
-- Map 0 has four stairs down, all to map 1. From the start, the party reaches (19, 7) through the imaginary wall at (15, 6) and the closed door with a button at (18, 6). It reaches (6, 15) through the imaginary wall at (8, 14) and the closed door with a button at (7, 15). (19, 3) and (1, 15) are closed in, each with an open door north of it: (19, 1)–(19, 3) and (1, 13)–(1, 15) have no other exit (read with the port map accessors).
+- Map 0 has four stairs down, all to map 1. From the start, the party reaches (19, 7) through the imaginary wall at (15, 6) and the closed door with a button at (18, 6). It reaches (6, 15) through the imaginary wall at (8, 14) and the closed door with a button at (7, 15). (19, 3) and (1, 15) are closed in, each with an open door north of it: (19, 1)–(19, 3) and (1, 13)–(1, 15) have no other exit.
 - Map 1 has no texts or sensors. It has 12 creature groups: 7 of type 10, 5 of type 7.
 
-Result: the port loader reads the file. The full CSB dungeon is not on disk A. The utility disk makes the adventure from a saved start game. See [Chaos Strikes Back: new adventure](new-adventure.md#minidat-format).
+The utility disk makes the adventure from a saved start game. See [Chaos Strikes Back: new adventure](new-adventure.md#minidat-format).
 
 ## Save file
 
@@ -166,7 +166,7 @@ Result: `savefile.c` reads and writes the CSB header when `g_adventure` is `ADVE
 | `0x04` | 2 | Parameter |
 | `0x06` | length | Payload |
 
-The next chunk follows the payload directly. `ANIM.FTL` `0x101356` walks the chunks with this step. A walk of all four files with this step reaches the exact file end. All payload lengths are even.
+The next chunk follows the payload directly. `ANIM.FTL` `0x101356` walks the chunks with this step. All payload lengths are even.
 
 The chunk dispatcher of `ANIM.FTL` is `0x100d1a`: a switch table at `0x100d30` (18 entries: offset word, then tag word; each offset is relative to its own position; default offset at `0x100d7a`). The loop `0x100fca` runs the chunks from the first chunk to the file end. The chunk handlers:
 
@@ -232,7 +232,7 @@ Item 0 is the sequence: item numbers, ended by `0xff` (`1,1,2,2,1,1,2,2,3,4,3,4,
 
 The CSB engine takes the sounds from `Graphics.DAT`, as DM does.
 
-- The CSB sound table at `0x10122a` has 35 entries of 12 bytes. It is byte-identical to the DM table at `0x100d52` (all 35 entries are equal). The graphic indices are 671–712.
+- The CSB sound table at `0x10122a` has 35 entries of 12 bytes. It is byte-identical to the DM table at `0x100d52`. The graphic indices are 671–712.
 - The CSB init `0x1091ce` reads each sample graphic, sets the length to the graphic size - 2, and keeps the data after the first word. The play routine `0x109258` uses the length and the period `72800 / rate`.
 - In 26 sample items, the header width and the first word are 1 or 2 smaller than in DM. The sample data is identical. The CSB engine does not read this word. `sound_get_sample` (`src/engine/sound.c`) uses the item size, not the header width or this word.
 

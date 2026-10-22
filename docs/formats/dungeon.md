@@ -13,7 +13,7 @@ if (!dungeon_load("game/Dungeon.DAT"))
     return 1;
 ```
 
-`dungeon_load` loads the dungeon for a new game. It returns false on error. Call `tables_load("game/KAOS.FTL")` (`tables.h`) first, because the loader and `dungeon_decode_text` read the new-game extras table (`0x101058`) and the escape tables (`0x1016ea`, `0x1017ea`, `0x10182a`) from the KAOS image. Without KAOS, `dungeon_load` returns false. A new call frees the previous dungeon.
+`dungeon_load` loads the dungeon for a new game. It returns false on error. Call `tables_load("game/KAOS.FTL")` (`tables.h`) first, because the loader and `dungeon_decode_text` read the new-game extras table (`0x101058`) and the escape tables (`0x1016ea`, `0x1017ea`, `0x10182a`) from the KAOS image. A new call frees the previous dungeon.
 
 ## Compressed file
 
@@ -120,7 +120,7 @@ Record sizes (`g_thing_data_byte_count`):
 For a new game the loader changes the header in memory:
 
 - It adds 300 to the square first thing count. The new entries are `0xffff`.
-- It adds extra records to each thing count. The byte table at KAOS `0x101058` (`tables_get_extra_things`) gives the extra record count of each type. The loader reads it from the KAOS image. The loader limits each count to 1024 (768 for explosions). The first word of each new record is `0xffff` (free record).
+- It adds extra records to each thing count. The byte table at KAOS `0x101058` (`tables_get_extra_things`) gives the extra record count of each type. The loader limits each count to 1024 (768 for explosions). The first word of each new record is `0xffff` (free record).
 - It sets `g_timeline.capacity` to 100 plus the counts of types 4, 14, and 15 with their extra records.
 
 The DM dungeons never reach the limit.
@@ -162,7 +162,7 @@ Each text word holds three 5-bit codes: bits 10–14, 5–9, 0–4.
 - Code 30: the next code is an index into an escape string table (32 entries of 8 bytes). Messages and scrolls use the table at KAOS `0x1016ea`. Inscriptions use the table at `0x10182a`, which holds the same strings as wall font codes. Indices 2 and 3 are common words. Most other entries are single glyph codes or empty.
 - Code 31: end of the text.
 
-The function reads all three tables from the KAOS image. The single characters from code 30 are glyph codes of the game font, not ASCII text.
+The single characters from code 30 are glyph codes of the game font, not ASCII text.
 
 ## Differences from dmcsb
 

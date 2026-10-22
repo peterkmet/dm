@@ -74,12 +74,11 @@ Each test module owns its state, so the tests run in any order and in parallel.
 - `src/`: the port in five layers; see [Architecture](architecture.md).
 - `tools/dmtools/`: the Python tools. `tools/ghidra/`: the decompile scripts. `tools/dist/`: the release scripts.
 - `tests/`: see the table above.
-- `docs/`: the documentation.
 - Git-ignored data: `game/`, `game-csb/` (original files), `reference/` (Ghidra output and original material), `playthroughs/` except `playthroughs/template/`.
 
 ## Coding standard
 
-[Coding standard](coding-standard.md) is the coding standard of the port. Follow it for every change in `src/`.
+Follow [Coding standard](coding-standard.md) for every change in `src/`.
 
 - `make format` formats the C files. Run it before a commit. To hide the format commit in `git blame`:
 

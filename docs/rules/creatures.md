@@ -12,7 +12,7 @@ The creature rules of the port: creature groups and their AI, creature attacks, 
 
 The flying thing of a spell projectile is an explosion thing `0xff80 + type` (`EXPLOSION_THING(type)`), not a record.
 
-Creature types come from the creature info table in KAOS (`tables_get_creature_info`). The port reads the table at run time.
+Creature types come from the creature info table (`tables_get_creature_info`).
 
 ## Active groups
 
@@ -67,7 +67,7 @@ Bits 0–3 of group word 14 hold the behavior.
 3. Outside the sight range the creature can still notice the party by a random roll. Next to the party, the roll also adds the hearing and smell ranges.
 4. A wall, a solid fake wall, or a closed door that is not see-through on the line from the party to the creature blocks the view.
 
-Smell uses the smell range of the creature. A creature smells the party directly within half the smell range when no wall and no solid fake wall blocks the line. Otherwise it follows the scent trail of the party (`g_party.scents`).
+A creature smells the party directly within half the smell range when no wall and no solid fake wall blocks the line. Otherwise it follows the scent trail of the party (`g_party.scents`).
 
 ### Movement
 
@@ -162,7 +162,7 @@ Event 48 or 49 (`projectile_process_move_event`) moves a projectile one cell for
 - A Ful bomb or Ven bomb flask explodes into a fireball or a poison cloud.
 - A spell projectile becomes an explosion of its type. The kinetic energy becomes the attack of the explosion: half for a lightning bolt, a quarter for a poison bolt.
 
-`projectile_get_impact_attack` returns an `Impact`: the attack, the attack type, and the poison attack of the hit. It and `projectile_get_launch_object` match the original exactly (differential tests).
+`projectile_get_impact_attack` returns an `Impact`: the attack, the attack type, and the poison attack of the hit.
 
 ### Launchers
 
@@ -215,7 +215,7 @@ Then the explosion disappears.
 
 ## Fixed original bugs
 
-Recorded in [Dungeon.DAT format](../formats/dungeon.md#deviations-from-the-original). Each fix has a short comment in the code.
+Recorded in [Dungeon.DAT format](../formats/dungeon.md#deviations-from-the-original).
 
 ## Tests
 

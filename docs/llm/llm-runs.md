@@ -6,7 +6,7 @@ How to run an LLM playthrough of the game with a coordinator and players.
 
 Each run measures how much the LLM player improves: from session to session in the run, and against the earlier runs. To finish the game is the long-term goal, not the measure of one run.
 
-- Measure each run with `coordinator/level_stats.md`: the game time, the calls, and the tokens at the arrival on each level. Compare the run with the earlier runs.
+- Measure each run with `coordinator/level_stats.md` and compare it with the earlier runs.
 - Between sessions and between runs, you may change the player instructions: `docs/llm/llm-playbook.md` and the headers in `playthroughs/template/`. Change them in small steps. Write each change, its reason, and the session where it starts in `coordinator/instruction_changes.md`, so that you can compare its effect.
 - Allowed changes: general rules about how to play and about the game, for example survival, fights, food and water, training, saves, the use of the commands, and how to keep the memory.
 - Not allowed: hints for this dungeon, for example a position, a map, the solution of a puzzle, where an item lies, which key opens which door, or the way to the next level. The player finds these itself.
@@ -49,7 +49,7 @@ playthroughs/
 
 ## Coordinator as a subagent
 
-The main session starts the coordinator as a background subagent, so that the coordinator has a clean context and the main session stays free. The coordinator plays a batch of sessions and then hands over to the next coordinator.
+The main session starts the coordinator as a background subagent, so that the coordinator has a clean context and the main session stays free.
 
 The two roles are agent definitions in the repository:
 
