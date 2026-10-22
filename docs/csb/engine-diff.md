@@ -18,7 +18,7 @@ All addresses are image addresses. "K" marks a DM address, "C" marks a CSB addre
 
 `docs/reference/csb-appb-symbols.csv` holds the CSB-to-DM function mapping.
 
-The mapping compares the disassembly (`machine68k`) of both modules: the function starts, and for each function its call targets, immediates, stack arguments, referenced globals, and branch count. An alignment of the two address-ordered function lists gives the pairs, because the linkers keep the source file order. Call-graph passes and LVO offsets add more pairs. A list of pairs from code readings corrects the rest. Globals pair by equal data bytes and by their position in paired functions.
+The mapping compares the disassembly (`machine68k`) of both modules: the function starts, and for each function its call targets, immediates, stack arguments, referenced globals, and branch count. An alignment of the two address-ordered function lists gives the pairs, because the linkers keep the source file order. Call-graph passes and the Amiga library vector offsets (LVO) add more pairs. A list of pairs from code readings corrects the rest. Globals pair by equal data bytes and by their position in paired functions.
 
 ### Classes
 
@@ -329,7 +329,7 @@ Port: `magic.c` `cast_magic_map` (spell kind 4, failure message 11), `spells.c` 
 ### Sensors and timeline
 
 - `sensor_add_event` (DM K`0x11e526`, CSB C`0x121ba8`): CSB writes priority 0 for each sensor event (C`0x121bc4`). DM sets the priority from the effect: set 1, clear 3, toggle 2, hold 0 (K`0x11e546`–`0x11e564`). The event comparison (C`0x122960`) still uses the priority. Thus sensor events of the same type on the same tick run in slot order in CSB. Port: `src/engine/sensor.c` `sensor_add_event`.
-- Floor sensor type 9 (version checker): CSB triggers when the data is ≤ 31 (C`0x122766`). DM uses ≤ 36 (K`0x11f052`). Port: `src/engine/sensor.c` `VERSION_CHECKER_LIMIT_CSB` 32.
+- Floor sensor type 9 (version checker): CSB triggers when the data is ≤ 31 (C`0x122766`). DM uses ≤ 36 (K`0x11f052`). Port: `src/engine/sensor.c` `VERSION_CHECKER_LIMIT_CSB` 32 (data below 32).
 - Wall sensor type 18 (end game): see [End of the game](#end-of-the-game).
 - No new sensor types, actuator types, or creature behavior. The other sensor, projectile, explosion, and creature functions differ only in code generation.
 - `timeline_process` handles the same events as DM, plus 22 (copy protection), 80–83 (magic map).
@@ -390,7 +390,7 @@ CSB (each address checked in the APPB, APPA, and ANIM disassembly):
 
 1. Wall sensor type 18 (C`0x123970`) sets the game-won flag `A5-0x4f9c` (C`0x100182`) to true and calls `quit_game` (C`0x1285e8`) through slot `0xb42`. There is no delay, and the saved-game flag stays.
 2. `quit_game_to_ending` (C`0x1285ee`) waits until the pointer is hidden, closes `Graphics.DAT`, fills zones 401, 13, 11, 9 with color 0, and writes the module tag `ENDA` (`0x454e4441`) into the module arguments (C`0x12863a`). Then `system_shutdown` and `rt_longjmp` leave the engine.
-3. The launcher (`APPA.c` line 355) runs `ANIM.FTL` for the tags `ANIM`, `TITL`, and `ENDA`. `ANIM.FTL` (C`0x100e96` of ANIM) builds the file name `<tag>.DAT`, plays `ENDA.DAT`, and then loops forever on the last frame. The chunk format: [Chaos Strikes Back data files](data.md#endadat-and-the-endgame).
+3. The launcher `APPA.FTL` runs `ANIM.FTL` for the tags `ANIM`, `TITL`, and `ENDA`. `ANIM.FTL` (C`0x100e96` of ANIM) builds the file name `<tag>.DAT`, plays `ENDA.DAT`, and then loops forever on the last frame. The chunk format: [Chaos Strikes Back data files](data.md#endadat-and-the-endgame).
 4. When the won flag is false, `quit_game_to_ending` stops in an endless loop (C`0x128600`: `beq` to itself). This is the frozen screen after the credits of SAVE AND QUIT and after the credits of a death without a saved game.
 
 CSB `endgame` (C`0x128374`) is only the death screen and the quit screen:

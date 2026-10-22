@@ -1,6 +1,6 @@
 # Chaos Strikes Back: new adventure
 
-How the original Chaos Strikes Back (CSB) for the Amiga starts a new game: the menu flow, the format of `MINI.DAT`, the merge that makes `CSBGAME.DAT`, and the champion selection in the prison.
+How the original Chaos Strikes Back (CSB) for the Amiga starts a new game: the menu flow, the format of `MINI.DAT`, and the merge that makes `CSBGAME.DAT`.
 
 The sources are the decompiled modules in `reference/decomp/csb-a/` (disk A) and `reference/decomp/csb-b/` (disk B) (base `0x100000`). All addresses are code addresses in these images. "CEDT" means `reference/decomp/csb-b/CEDT.bin` (disk B). "APPB A" means `reference/decomp/csb-a/APPB.bin` (disk A). Ghidra drops the arguments of calls through the `A5` jump table, so the claims come from the disassembly, not from the `.c` files.
 

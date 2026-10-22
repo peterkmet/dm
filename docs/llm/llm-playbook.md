@@ -40,7 +40,7 @@ Your files in `playthroughs/current/player/` are your memory. Keep each file sho
 - The champions eat and drink all the time. Without food or water they lose stamina and then health.
 - The maximum of `food` and `water` is 2048. Estimates from an earlier run: about 1 water per 25 ticks awake; a sleep of 1500 ticks costs 200–300 food and 130–170 water. Half of the maximum is enough for about 4 long sleeps.
 - Carry a food reserve in the packs. Take every food item that you find. Eat only when a champion is below half, and keep the rest. Kill creatures that drop food when you meet them, and note where they live.
-- Before you go down to a new level, each champion has food above a quarter (512), or the packs hold food for each champion below that. Otherwise find food on the known levels first, because a new level may have no food near the stairs.
+- Before you go down to a new level, make sure that each champion has food above a quarter (512), or that the packs hold food for each champion below that. Otherwise find food on the known levels first, because a new level may have no food near the stairs.
 - Food in the dungeon is finite, and the champions eat with game time. Save game time: sleep only for low health, stamina, or mana; do not wait long for one creature; go back to an earlier level only for a clear reason (water, food, a known key).
 - Food and water containers feed the champion who uses them. Fountains fill water containers.
 - Sleep gives back health, stamina, and mana, but time goes on: food and water go down and creatures move. Damage, a creature near the party, or `wake` wakes the party. The party does not wake by itself.

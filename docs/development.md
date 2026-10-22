@@ -41,7 +41,7 @@ uv run pytest -q tests/<folder>/test_x.py
 |---|---|
 | `tests/differential/` | The same input through the port (`ctypes` on `build/libdm.dylib`) and through the original in a 68000 emulator gives the same state. |
 | `tests/port/` | The port code by itself: the data layer, the UI, the control protocol, the options, and the modes. |
-| `tests/golden/` | The state, the view, the rules, the screens, and the protocol hash to the stored snapshots. Never regenerate a snapshot to make a test pass. |
+| `tests/golden/` | The state, the view, the rules, the screens, and the protocol match the stored snapshots. Never regenerate a snapshot to make a test pass. |
 | `tests/tools/` | The Python tools in `tools/dmtools/`. |
 | `tests/standard/` | The coding standard, the docs links, and the docs vocabulary. |
 
@@ -123,7 +123,8 @@ A change that keeps the version number replaces the zips of its release:
 1. In `CHANGELOG.md`, add the entries to the section of the released version.
 2. `make check`, `make dist`, `make dist-win`.
 3. Commit `CHANGELOG.md`.
-4. Push the branch, move the tag to the new commit, and replace the zips and the notes:
+4. Copy the `CHANGELOG.md` section of the version into `build/notes.md`.
+5. Push the branch, move the tag to the new commit, and replace the zips and the notes:
 
    ```sh
    git tag -f vX.Y.Z && git push -f origin vX.Y.Z

@@ -135,7 +135,7 @@ The DM dungeons never reach the limit.
 - A part is longer than the remaining data.
 - The map count is 0.
 - The square first thing count is larger than `0xffff - 300`.
-- A thing count is larger than the limit (1024, 768 for explosions).
+- A thing count of the file header is larger than the limit (1024, 768 for explosions).
 - A map does not fit in the raw map data (offset + width × height > raw map data size).
 - The checksum is present and wrong.
 - A memory allocation fails.
@@ -211,4 +211,4 @@ This list covers every module of the port ([Coding standard](../coding-standard.
 ## Structure differences from the original
 
 - `dungeon_load` loads a new game; `dungeon_load_saved` loads the dungeon of a save file (no new-game extras). The port has no restart path that reuses the buffers.
-- `game_start_new` calls `timeline_init` and `group_init_active_groups`, not the end of `load_dungeon`.
+- `game_start_new` calls `timeline_init` and `group_init_active_groups`; in the original, the end of `load_dungeon` calls them.

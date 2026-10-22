@@ -9,7 +9,7 @@ All addresses are original KAOS addresses (see [KAOS module map](../reference/ka
 1. Call `tables_load(path)`. It loads the image (`kaos_load`) and decodes the tables. It returns false when `kaos_load` fails.
 2. Call an accessor, for example `tables_get_creature_info(type)`.
 
-Each accessor of the table list returns a pointer to a constant record. It returns `NULL` for an index out of range. To change between Dungeon Master (DM) and Chaos Strikes Back (CSB), call `tables_load` again with the other module.
+Each accessor of the [Table list](#table-list) returns a pointer to a constant record. It returns `NULL` for an index out of range. To change between Dungeon Master (DM) and Chaos Strikes Back (CSB), call `tables_load` again with the other module.
 
 The image accessors read the loaded image at call time. They need `tables_load`. They do not check the index. All addresses are in `src/data/include/kaos_addresses.h`.
 

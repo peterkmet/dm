@@ -32,13 +32,19 @@ playthroughs/
   local/                        the local play folder: `make play`, then `playthroughs/local/dm --data game --saves playthroughs/local`
 ```
 
-- Start a new run N: the run number continues after the last run. Create `playthroughs/run<N>/` with the folders `player/`, `coordinator/`, `game/`, and `saves/`. Copy the `*.md` files of `playthroughs/template/` to `player/`. Copy `playthroughs/template/DMGAME.DAT` (the party of 4 on the stairs to level 1) to `game/`. Create `saves/start/` with the start save and a copy of `player/` in `files/`. Point the link to the run: `ln -sfn run<N> playthroughs/current`. Then start the game and load the save as in Resume.
+- Start a new run N (the run number continues after the last run):
+  1. Create `playthroughs/run<N>/` with the folders `player/`, `coordinator/`, `game/`, and `saves/`.
+  2. Copy the `*.md` files of `playthroughs/template/` to `player/`.
+  3. Copy `playthroughs/template/DMGAME.DAT` (the party of 4 on the stairs to level 1) to `game/`.
+  4. Create `saves/start/` with the start save and a copy of `player/` in `files/`.
+  5. Point the link to the run: `ln -sfn run<N> playthroughs/current`.
+  6. Start the game and load the save as in Resume.
 - Start a new run with the memory of an earlier run: do the steps above. Then copy `map_L<n>.md`, `lessons.md`, `spells.md`, and `bestiary.md` from the earlier run folder into `player/`. These files describe the game, not its state. `progress.md`, `party.md`, `items.md`, and `bugs.md` come from the templates. Tell the player in the first session that the run starts again and that these notes come from its earlier game.
 - Make a checkpoint after a session: copy `game/DMGAME.DAT` of the run and the `*.md` files of `player/` (as `files/`) to `saves/s<session>-level<level>/`, for example `saves/s3-level2/`. Add a row to `coordinator/session_costs.md`; count the calls of the session in `coordinator/calls.log`.
 - The coordinator's own `dm-play` calls stay out of the log: `DM_PLAY_LOG_DIR=none uv run dm-play ...`.
 - Resume from a checkpoint: copy its `DMGAME.DAT` to `game/` of the run and its `files/` to `player/`. Run `SDL_AUDIO_DRIVER=dummy build/dm --mode turnbased --saves playthroughs/current/game --control ~/.dm/control.sock` (a run plays without sound), then `DM_PLAY_LOG_DIR=none uv run dm-play load`.
 - Before a player session: make sure that the game runs with `--saves playthroughs/current/game`; otherwise start it as in Resume. Then check that `DM_PLAY_LOG_DIR=none uv run dm-play --brief get_state` shows the position of `player/progress.md`. After the session: make the checkpoint, then stop the game or leave it for the next session. When the player reports a bad save, restore the checkpoint that it asks for (see Resume).
-- Start a player session: the player reads only its instructions, the [LLM player instructions](llm-playbook.md), and its memory in `playthroughs/current/player/`. Give the player the current goal and the limit of `dm-play` calls. The player counts its calls in `coordinator/calls.log` and stops 20 calls before the limit. The player shell must run in the repository root: `dm-play` writes its log to `playthroughs/current/coordinator/` relative to it; otherwise `calls.log` stays empty.
+- Start a player session: the player reads only its instructions, the [LLM player instructions](llm-playbook.md) with the protocol reference it links, and its memory in `playthroughs/current/player/`. Give the player the current goal and the limit of `dm-play` calls. The player counts its calls in `coordinator/calls.log` and stops 20 calls before the limit. The player shell must run in the repository root: `dm-play` writes its log to `playthroughs/current/coordinator/` relative to it; otherwise `calls.log` stays empty.
 - End a run: copy the last save to `saves/end/`, and write `coordinator/level_stats.md`.
 
 ## Coordinator as a subagent

@@ -174,8 +174,8 @@ A free slot keeps the index of the next free slot in `map_time`. The value `0xff
 
 - New type 5–10 (square event):
   - An existing type 5–10 event at the same place gets the new effect. For type 6, the cell must also be equal. The function returns its index.
-  - The function deletes an existing type 1 event at the same place. A new effect 2 (toggle) becomes `1 - old effect`. The function returns -1, so the new event gets a slot.
-- New type 1 (door animation): an existing type 10 event at the same place returns its index. When its effect is 2, it gets `1 - new effect`. An existing type 1 event at the same place gets the new effect and returns its index.
+  - The function deletes an existing type 1 event at the same place. A new effect 2 (toggle) becomes `1 -` the effect of the deleted event. The function returns -1, so the new event gets a slot.
+- New type 1 (door animation): an existing type 10 event at the same place returns its index. When the existing event has effect 2, it gets `1 - new effect`. An existing type 1 event at the same place gets the new effect and returns its index.
 - New type 2 (door destruction): the function deletes every type 1 and type 10 event with the same `b` and the same map. The function returns -1.
 - Other new types do not merge.
 
@@ -228,8 +228,6 @@ Projectiles (thing type 14) and explosions (thing type 15) are dungeon things. T
 3. Add -2 to the current luck when lucky is true, otherwise +2, bounded by the minimum and maximum. Return lucky.
 
 The original reads the three luck bytes as signed bytes in this function. A current luck of 128 or more counts as not above 0. The port keeps this behavior.
-
-`map_step` needs the KAOS tables (`tables_load`).
 
 ## Tests
 

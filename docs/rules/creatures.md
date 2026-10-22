@@ -104,7 +104,7 @@ An attacking creature (events 38–41) turns to the party, moves to the front ce
 - An invulnerable creature takes no damage.
 - A creature that dies leaves smoke (explosion type 40). The smoke attack depends on the creature size.
 - When the last creature dies, the group drops its possessions and the record becomes free.
-- When one creature of several dies, the other creatures move down one index. The creature can drop its fixed possessions. An attacking group can start to flee, by its fear resistance.
+- When one creature of several dies, the other creatures move down one index. The dead creature can drop its fixed possessions. An attacking group can start to flee, by its fear resistance.
 
 `group_damage_all_creatures(group, x, y, attack)` hurts each creature with `attack ± attack / 8`.
 
@@ -133,7 +133,7 @@ An attacking creature (events 38–41) turns to the party, moves to the front ce
 
 Event 5 (corridor) on a group generator sensor calls `group_generate_from_sensor(sensor, x, y)`:
 
-- Sensor word 4 bits 7–10: the creature count. With bit 3 set, the count is random.
+- Sensor word 4 bits 7–10: the creature count. With bit 3 of word 4 set, the count is random.
 - Sensor word 6 bits 4–7: the health multiplier. 0 means the map difficulty.
 - Each creature gets `base health × multiplier + random(base health / 4 + 1)` health.
 - The group enters the square with a random direction and plays a buzz sound.

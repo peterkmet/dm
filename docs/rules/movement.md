@@ -23,7 +23,7 @@ The tick order is in [Architecture](../architecture.md#the-tick). In the movemen
 
 All square and thing functions work on the current map (`g_current_map_index`). `map_set_current_map(map)` selects a map. `map_set_party_map(map)` also sets `g_party_map_index`. The ornament lists of the original `set_current_map_and_party_map` are view data. `view_load_map` handles them.
 
-Call `map_reset()` after `dungeon_load`. The current map pointers then point to the new buffers at the next `map_set_current_map`.
+After `dungeon_load`, call `map_reset()`; `move_party_enter_dungeon` does it. The current map pointers then point to the new buffers at the next `map_set_current_map`.
 
 | Function | Original | Purpose |
 |---|---|---|
@@ -82,7 +82,7 @@ Call `map_reset()` after `dungeon_load`. The current map pointers then point to 
 
 ### `move_get_move_result`
 
-`move_get_move_result(move, destination)` moves the party (`thing` `0xffff`), a group, an object, or a projectile. The `Move` request holds the thing, `from`, and `to`. The original codes these flags in the coordinates. `enters` is `src_x < 0`: the thing only arrives. `leaves` is `dst_x < 0`: the function only removes the thing. `keeps_cell` is `src_x == -2`: a teleporter does not rotate the object. `uses_rope` is the original `g_use_rope_to_climb_down_pit`. The function returns `MOVE_RESULT_DONE`, `MOVE_RESULT_STOPPED` (the mover died, was deleted, waits off the map, or became active or inactive), or `MOVE_RESULT_TURNED` (a teleporter turned an attacking group).
+`move_get_move_result(move, destination)` moves the party (`thing` `0xffff`), a group, an object, or a projectile. The `Move` request holds the thing, `from`, and `to`. The request has the flags `enters`, `leaves`, and `keeps_cell`; the original codes them in the coordinates. `enters` is `src_x < 0`: the thing only arrives. `leaves` is `dst_x < 0`: the function only removes the thing. `keeps_cell` is `src_x == -2`: a teleporter does not rotate the object. `uses_rope` is the original `g_use_rope_to_climb_down_pit`. The function returns `MOVE_RESULT_DONE`, `MOVE_RESULT_STOPPED` (the mover died, was deleted, waits off the map, or became active or inactive), or `MOVE_RESULT_TURNED` (a teleporter turned an attacking group).
 
 One square chain (`follow_square_chain`) serves every mover kind (`MOVER_PARTY`, `MOVER_GROUP`, `MOVER_OBJECT`, `MOVER_PROJECTILE`). It repeats these rules on the destination square, at most 99 times (`SQUARE_CHAIN_MAXIMUM`). An open teleporter has bit 3 set. An open pit has bit 3 set and bit 0 clear. The teleporter record:
 

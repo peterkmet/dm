@@ -50,12 +50,12 @@ The `.gitignore` file excludes `*.adf`, `/game`, `/game-csb`, and `reference/` (
 | Command | Purpose |
 |---|---|
 | `uv run dm-extract <adf> [out_dir]` | Extract all files from an AmigaDOS ADF (`tools/dmtools/extract.py`). The default `out_dir` is `game`. |
-| `uv run dm-ftl <module.FTL> <out.bin> [--base ADDR]` | Load an FTL module into a flat memory image, as `BJELoad_R` does (`tools/dmtools/ftl.py`). Prints the addresses and the arguments for `decompile.sh`. The default base is `0x100000`. |
+| `uv run dm-ftl <module.FTL> <out.bin> [--base ADDR]` | Load an FTL module into a flat memory image, as the original loader `BJELoad_R` does ([FTL module format](formats/ftl.md); `tools/dmtools/ftl.py`). Prints the addresses and the arguments for `decompile.sh`. The default base is `0x100000`. |
 | `[SYMBOLS=<csv>] tools/ghidra/decompile.sh <image.bin> <base> <out.c> [REG=VALUE] [ENTRY ...]` | Decompile a flat 68000 image with Ghidra headless. |
 | `tools/ghidra/decompile-all.sh` | Run `dm-ftl` and `decompile.sh` for every module in `game/`. It uses `docs/reference/<module>-symbols.csv` as `SYMBOLS` (for example `docs/reference/kaos-symbols.csv`). |
 | `dmtools.emu` (Python) | Run a function of a module image in a 68000 emulator (`tools/dmtools/emu.py`). `Emu(image).call(addr, [(size, value), ...])` pushes the arguments right to left and returns `D0`. Access to custom chips, CIA, or ExecBase stops the call with `EmuError`. Use `allow_hw=True` to permit this access. |
 
-## How decompile.sh finds functions
+## What decompile.sh does
 
 `decompile.sh` marks each `ENTRY` address as a function. It also marks each `LINK A5` or `LINK A6` instruction that follows an `RTS`. `REG=VALUE` sets a register for the whole program, for example `A5=0x104160` for the module data base.
 

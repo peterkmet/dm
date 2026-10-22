@@ -104,7 +104,7 @@ An `act` turn does these steps:
 
 A `wait` turn runs `ticks` ticks. When the game cannot tick (for example a dialog is open), the turn ends after 16 frames per requested tick.
 
-During a turn, each frame is a tick. The game does not wait 12 frames for input. The game rules do not change.
+During a turn, each frame is a tick. The game does not wait for input between the ticks, as the other modes do. The game rules do not change.
 
 ### Save and load
 
@@ -171,7 +171,7 @@ uv run dm-play wait '{"ticks":5000}'
 
 ### Seen
 
-An explosion lasts only a few ticks. It can be gone before the turn ends, so the `view` of the response does not show it. A creature can die in the same way. For this reason, an `act`, `act_many`, or `wait` request records what the party sees after each tick, from the start of the request to the end of the last turn. The record uses the visibility rule of the view (see [View fields](#view-fields)).
+An explosion lasts only a few ticks. It can be gone before the turn ends, so the `view` of the response does not show it. A creature that dies during the turn is gone from the `view` too. For this reason, an `act`, `act_many`, or `wait` request records what the party sees after each tick, from the start of the request to the end of the last turn. The record uses the visibility rule of the view (see [View fields](#view-fields)).
 
 The response has `seen: {explosions, creature_changes}` when the record is not empty. Without a record, the response has no `seen` field.
 
@@ -223,7 +223,7 @@ A chest in the action hand (slot 1) of the open inventory opens in the panel. `s
 
 ### Look
 
-The response of `look` has `look: {name, lines}`. These are the texts of the eye panel: the name, then the description lines (burnt out, compass direction, waterskin level, attributes, and the weight, in the form `WEIGHS <kg>.<tenth> KG.`). With the advanced features, a weapon also has `ATTACK <value>` and an armour `DEFENSE <value>`, the values of the stat meters. A scroll and a chest also give the name and the weight; the scroll text is in the state.
+The response of `look` has `look: {name, lines}`. These are the texts of the eye panel: the name, then the description lines (burnt out, compass direction, waterskin level, attributes, and the weight, in the form `WEIGHS <kg>.<tenth> KG.`). A weapon also has `ATTACK <value>` and an armour `DEFENSE <value>`, the values of the stat meters. A scroll and a chest also give the name and the weight; the scroll text is in the state.
 
 ### Damage fields
 
@@ -274,7 +274,7 @@ An object is `{name, kind}`. A scroll that a champion holds also has `text`.
   - `x`, `y`, `element` ([Square looks](#square-looks)). A door has `door` and `button`.
   - On a square that is not a wall: `objects[]` (`cell`, `name`), `flying[]` (projectiles and explosions), and `creatures` (`type`, `count`) when a group is there.
   - `floor_ornament`, from depth 1, when the view draws one ([Floor ornaments](#floor-ornaments)). Another ornament gives its index in the floor ornament graphics as a number. The party row has no floor ornament, and a floor sensor without an ornament shows nothing, as on the screen.
-- A `flying` entry is `{kind, name}`. A projectile has `kind` `projectile` and the object name, or `spell`. An explosion has `kind` `explosion`, `type` (the number of the game), and `name`: `fireball`, `slime`, `lightning`, `harm_non_material`, `open_door`, `poison_bolt`, `poison_cloud`, `smoke`, `fluxcage`, or `rebirth`. Another type gives its number as `name`.
+- A `flying` entry is `{kind, name}`; an explosion also has `type`. A projectile has `kind` `projectile` and the object name, or `spell`. An explosion has `kind` `explosion`, `type` (the number of the game), and `name`: `fireball`, `slime`, `lightning`, `harm_non_material`, `open_door`, `poison_bolt`, `poison_cloud`, `smoke`, `fluxcage`, or `rebirth`. Another type gives its number as `name`.
 - A wall has `front_face` (the side that faces the party) and `side_face` (the side that faces the lane of the party) when the face shows something. A face is `{facing, text?, mirror?, switch?, lock?, torch_holder?, alcove?, fountain?, vi_altar?, ornament?}`:
   - `facing`: the direction that the face points to.
   - `switch`: a button or a lever.

@@ -112,7 +112,7 @@ Unchanged indices that the port uses: 0, 6, 7–9, 12–25, 27–41, 46, 48–32
 | Thing counts in the file | 4 doors, 26 texts, 30 sensors, 12 groups |
 | `g_timeline.capacity` after a new-game load | 297 |
 
-A check loads the file with `kaos_load("game/KAOS.FTL")` and `dungeon_load`. The call returns true. The thing counts include the new-game extras (groups 87 = 12 + 75).
+A check loads the file with `kaos_load("game/KAOS.FTL")` and `dungeon_load`. The call returns true. After the load, the group count is 87: 12 in the file and 75 new-game extras.
 
 `dmcsb` identifies the file by CRC-32 as `atarist_csb` (Atari ST CSB 2.x dungeon). The Amiga file is byte-identical to it.
 
@@ -233,7 +233,7 @@ Item 0 is the sequence: item numbers, ended by `0xff` (`1,1,2,2,1,1,2,2,3,4,3,4,
 The CSB engine takes the sounds from `Graphics.DAT`, as DM does.
 
 - The CSB sound table at `0x10122a` has 35 entries of 12 bytes. It is byte-identical to the DM table at `0x100d52` (all 35 entries are equal). The graphic indices are 671–712.
-- The CSB init `0x1091ce` reads each sample graphic, sets the length to the graphic size - 2, and keeps the data after the first word. The play routine `0x109258` uses the length and the period `72800 / rate` (`0x11c60`).
+- The CSB init `0x1091ce` reads each sample graphic, sets the length to the graphic size - 2, and keeps the data after the first word. The play routine `0x109258` uses the length and the period `72800 / rate`.
 - In 26 sample items, the header width and the first word are 1 or 2 smaller than in DM. The sample data is identical. The CSB engine does not read this word. `sound_get_sample` (`src/engine/sound.c`) uses the item size, not the header width or this word.
 
 The CSB engine has no new sound in `Graphics.DAT`. New samples exist only in the animation files (`SD` chunks, `Sound/*.amg`) and in `MIDI/NAKED.AMG`.

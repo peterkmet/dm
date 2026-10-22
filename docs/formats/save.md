@@ -213,7 +213,7 @@ With `g_adventure == ADVENTURE_CSB`, all functions use the CSB header:
 
 ### Files
 
-The save directory is the data directory (`--data`, default `game/`) or the folder of `--saves`. `startend_set_save_dir` sets it.
+The save directory is the folder of `--saves`, otherwise the data directory (`--data`, default `game/`). `startend_set_save_dir` sets it.
 
 `bool savegame_save(const char *dir)`:
 
@@ -232,7 +232,7 @@ The random header words come after the copy of the globals. Thus the saved rando
 2. `savefile_decode`. Then `dungeon_load_saved` on the dungeon part. A failure gives `SAVEGAME_DAMAGED`.
 3. Copy block 0 into the globals. `g_session.last_load_time` gets the game time.
 4. Allocate the timeline for `g_timeline.capacity` events and the active groups for at least 110 entries. Copy blocks 1–4. Raise `g_max_active_group_count` to at least 110. `timeline_reset`. CSB keeps the saved count ([CSB engine compared with the DM engine](../csb/engine-diff.md#creatures)).
-5. Decode the portrait of each champion into `ChampionRuntime.portrait` (see Portraits). Copy the game ID, the dungeon ID, and the extra header bytes.
+5. Decode the portrait of each champion into `ChampionRuntime.portrait` (see [Portrait pixels](#portrait-pixels)). Copy the game ID, the dungeon ID, and the extra header bytes.
 6. Clear `g_session.party_dead` and the sleep flag. Set `g_session.saved_game_exists`.
 7. When the file was the backup, rename it to `DMGAME.DAT`.
 
@@ -253,7 +253,7 @@ The slot list (`savegame_read_slot_info`) reads each file without a load:
 
 ### Extension blocks
 
-The port adds extension blocks after the original save data outside the vanilla mode. The original part is the same as a vanilla save. Each block is followed by its length as a big-endian long:
+In the advanced and LLM modes, the port adds extension blocks after the original save data. The original part is the same as a vanilla save. Each block is followed by its length as a big-endian long:
 
 ```
 [original save data][cheat block][length][automap block][length]
@@ -266,7 +266,7 @@ The port adds extension blocks after the original save data outside the vanilla 
 
 `savegame_load_from` reads the blocks from the end. It strips each block whose length fits the file and whose magic is `AMAP` or `CHTS`, in any order. When a magic occurs twice, the last block in the file counts. The scan stops at the first block that does not fit; the bytes before it go to `savefile_decode`. After a successful load, the automap block sets the explored squares; without the block, the automap is empty. In the `advanced` mode, the cheat block sets the cheats. Without the cheat block, with a damaged one (size, version, or an unknown bit), or in the other modes, all cheats are off. A failed load keeps the cheats of the running game.
 
-### Portraits
+### Portrait pixels
 
 The port keeps the portrait pixels of each champion in `ChampionRuntime.portrait`. The save writes the portrait of each party champion in the interleaved form: per row and per 16-pixel column, one word for each of the 4 bit planes (`portrait_to_interleaved`). The other portraits are 0.
 

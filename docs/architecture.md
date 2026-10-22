@@ -167,7 +167,7 @@ The modules `advanced`, `automap`, `cheats`, `music`, `optmenu`, `rows`, and `sl
 6. `plat_wait_tick` pumps the audio (`audio_mix`, `music_mix`) and waits for the next 50 Hz tick.
 
 A dialog, the endgame and the fuse sequence wait for the player inside a rule. They run their own frames
-through the frame hook `g_frame_hook` (`ui/frame.h`). `platform/app.c` sets the hook; it shows one frame and
+through the frame hook `g_frame_hook` (`ui/frame.h`). `platform/app.c` sets the hook. The hook shows one frame and
 reads the input into the command queue. The hook runs no game logic, so a wait inside a game tick is safe. In
 the LLM mode the hook is NULL: a wait ends immediately.
 

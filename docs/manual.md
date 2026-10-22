@@ -6,7 +6,7 @@ How to run DMMac and how to play it. The repository has no game files. You suppl
 
 Unpack a release (see [DMMac: Dungeon Master for macOS and Windows](../README.md)) or build the game (see [Development](development.md)). Copy your `.adf` disk images next to the program and start it: `dm` in a macOS release, `dm.exe` in a Windows release, `build/dm` in a source build.
 
-On startup, the game extracts each disk image once: the Dungeon Master v3.60 disk to `game/`, Chaos Strikes Back (CSB) disk A to `game-csb/`, CSB disk B to `game-csb/disk-b/`. The game compares the CRC-32 checksum of each required file with the known value of the Amiga file; a wrong file stops the game with a message in the log.
+On startup, the game extracts each disk image once: the Dungeon Master v3.60 disk to `game/`, Chaos Strikes Back (CSB) disk A to `game-csb/`, CSB disk B to `game-csb/disk-b/`. The game compares the CRC-32 checksum of each required file with the known value of the Amiga file; a wrong file stops the game with an error message.
 
 ## Options
 
@@ -55,7 +55,7 @@ In the advanced mode, the stairs down of the prison also start the new adventure
 
 ## Saved games
 
-The game saves to `DMGAME.DAT` in `game/`; Chaos Strikes Back saves to `CSBGAME.DAT` in `game-csb/`. The old file becomes the `.BAK` backup. The format is the original Amiga save file ([Save file format](formats/save.md)).
+The game saves to `DMGAME.DAT` in `game/`; Chaos Strikes Back saves to `CSBGAME.DAT` in `game-csb/`. `--saves` selects a different folder. The old file becomes the `.BAK` backup. The format is the original Amiga save file ([Save file format](formats/save.md)).
 
 - Save: click the save icon in an inventory, or press Ctrl+S. The dialog shows CANCEL, SAVE, and QUIT. QUIT ends the game. When you did not save in the last 100 ticks (steps of the game clock), QUIT asks first.
 - Resume: click RESUME at the entrance. A damaged file shows "THE GAME IS DAMAGED!" and the entrance again.
@@ -110,7 +110,7 @@ The game rules are the same in all modes. The advanced mode adds the cheats and 
 |---|---|
 | `vanilla` | Default. The original game. The advanced keys do nothing. |
 | `advanced` | The original game with the advanced features below. |
-| `turnbased` | The advanced features without the keys (8 sounds, colored icons, stat meters). A program plays through a Unix socket. See [LLM mode: turn-based play over MCP](llm/llm-mode.md). Not on Windows. |
+| `turnbased` | The advanced features that need no key. A program plays through a Unix socket. See [LLM mode: turn-based play over MCP](llm/llm-mode.md). Not on Windows. |
 
 ### Advanced features
 

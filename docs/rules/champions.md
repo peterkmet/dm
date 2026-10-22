@@ -43,7 +43,7 @@ The possessions stay in the wall square list until the player accepts the candid
 | `PANEL_RESURRECT` | Unlinks the possessions from the wall square. Disables the mirror sensor (`rec_sensor_set_type` to `SENSOR_DISABLED`). Prints "<name> RESURRECTED." |
 | `PANEL_REINCARNATE` | As resurrect, then the name entry (below). After OK, the game clears all experience. It adds 1 to the current and maximum value of a random statistic 12 times. Prints "<name> REINCARNATED." The LLM mode skips the name entry and keeps the old name ([Dungeon.DAT format](../formats/dungeon.md#deviations-from-the-original)). |
 
-With the first champion, the time of the last party move becomes the game time.
+When the party gets its first champion, `g_last_party_movement_time` becomes the game time.
 
 The name entry (`champion_start_rename` … `champion_rename_ok`) clears the name and the title. No game time passes until OK.
 
@@ -250,7 +250,7 @@ The influence roll is `random16() % (influence level + bonus)`. The bonus and th
 
 1. Stamina cost (`throwing_stamina_cost`): `w` is half the weight. The cost is `bounded_value(1, w, 10)`, plus `r / 2` for each `r` in `w - 10`, `w - 20`, … while `r` is above 0. The throw disables the action hand for 4 ticks.
 2. Experience to the throw skill: 8 for objects, 12 for weapons, plus kinetic energy / 4 for weapons of class 0–12.
-3. Kinetic energy (a byte): `level + e / 2 + random(16) + e` with `e` = strength + the weapon kinetic energy (class 0–12) or 1.
+3. Kinetic energy (a byte): `level + e / 2 + random(16) + e` with `e` = strength + the weapon kinetic energy for class 0–12, otherwise strength + 1.
 4. Attack: `bounded_value(40, random(32) + 8 × level, 200)`. Step energy: `max(5, 11 - level)`.
 5. `projectile_shoot_from_champion` shoots the projectile ([Creature, projectile, and magic rules](creatures.md#champion-projectiles)).
 

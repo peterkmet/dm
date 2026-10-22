@@ -164,8 +164,8 @@ this document names.
    one variable with an initializer per declaration. [format; review only]
 7. Use `for`, `while`, `switch`, and early `return`. `goto` only for one cleanup label in a function that
    frees memory. [review only]
-8. A function is at most 60 lines, or its allowlist line gives the reason (one short case for each type of a
-   game table). [long]
+8. A function is at most 60 lines, or its allowlist line gives the reason, for example a `switch`
+   with one short case for each type of a game table. [long]
 
 ## 6. Results and parameters
 
