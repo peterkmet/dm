@@ -92,7 +92,7 @@ Example: move one square forward.
 {"cmd": "act", "action": "move_forward", "args": {}}
 ```
 
-The request parser is a flat search for `"key":`. Keys in `args` are found the same way. A string value cannot contain a `"` character.
+The request parser is a flat search for `"key":`. The parser finds the keys in `args` the same way. A string value cannot contain a `"` character.
 
 ### Turns
 
@@ -178,7 +178,7 @@ An explosion lasts only a few ticks. It can be gone before the turn ends, so the
 The response has `seen: {explosions, creature_changes}` when the record is not empty. Without a record, the response has no `seen` field.
 
 - `explosions[]`: `{name, x, y, depth, side}`, one entry for each explosion type on each square. `name` is the explosion type (see [View fields](#view-fields)). `depth` and `side` give the place in the view when the party first saw the explosion.
-- `creature_changes[]`: `{type, x, y, depth, side, before, after}` for each creature group in view that lost creatures, or that was killed. `before` is the creature count when the party first saw the group in the request, `after` is the count when the party last saw it. `after` is 0 for a killed group. A group that only leaves the view is not in the list.
+- `creature_changes[]`: `{type, x, y, depth, side, before, after}` for each creature group in view that lost creatures or died. `before` is the creature count when the party first saw the group in the request, `after` is the count when the party last saw it. `after` is 0 for a killed group. A group that only leaves the view is not in the list.
 
 Example: a fireball kills a screamer two squares ahead.
 
@@ -217,7 +217,7 @@ When the party dies or the game is won during a turn, the turn ends. The respons
 
 Slot numbers: 0 ready hand, 1 action hand, 2 head, 3 torso, 4 legs, 5 feet, 6 pouch 2, 7–9 quiver 2–4, 10 neck, 11 pouch 1, 12 quiver 1, 13–29 backpack, 30–37 the open chest. `state.champions[].slots[]` lists only the slots that hold an object.
 
-While a candidate is shown, only `recruit` is accepted. While the party sleeps, only `wake` is accepted. `wait` is always accepted.
+While a mirror shows a candidate, `act` accepts only `recruit`. While the party sleeps, `act` accepts only `wake`. The `wait` command works at all times.
 
 ### Chest
 
@@ -449,7 +449,7 @@ The names of the creature types, by type. The original shows no names; these are
 
 ### Wall ornaments
 
-The wall ornaments, by index, named from their picture. An index without a name is shown as a number.
+The wall ornaments, by index, named from their picture. An index without a name shows as a number.
 
 - `square_alcove`
 - `vi_altar`
@@ -509,7 +509,7 @@ The wall ornaments, by index, named from their picture. An index without a name 
 
 ### Floor ornaments
 
-The floor ornaments, by index. An index without a name is shown as a number.
+The floor ornaments, by index. An index without a name shows as a number.
 
 - `grate`
 - `pressure_pad`
@@ -523,7 +523,7 @@ The floor ornaments, by index. An index without a name is shown as a number.
 
 ### Square looks
 
-The look of a square on the map and in `look`.
+The `element` of a square in the view.
 
 - `wall`: a wall
 - `floor`: an open floor

@@ -36,7 +36,7 @@ The mapping has 752 DM functions and 756 CSB functions (the module map counts 74
 - Most "constants" pairs differ only in code generation: bit-field masks (DM `lsr #6; and #31`, CSB `and #$7c0; lsr #6`), sign extension (`-1` against `0xffff`), and two word pushes that DM merges into one long push.
 - Many "logic" pairs differ only because DM calls `get_string` and CSB uses inline text, or because DM calls `mouse_begin_change` (an empty stub in DM, K`0x108702`) where CSB hides the pointer (C`0x109128`).
 
-The [differences and the port](#differences-and-the-port) section lists the real differences.
+[Differences and the port](#differences-and-the-port) lists the real differences.
 
 ### Parts of APPB that are not the game engine
 
@@ -128,7 +128,7 @@ DM pads each byte array to an even length. CSB does not. The content is equal, b
 
 ### Graphics.DAT
 
-CSB `Graphics.DAT` has 728 items. DM has 749. The item numbers up to 727 have the same meaning, so the graphic ids in `src/data/include/ids.h` stay valid. [Chaos Strikes Back data files](data.md#item-comparison) lists the items that differ.
+CSB `Graphics.DAT` has 728 items. DM has 749. The item numbers up to 726 have the same meaning, so the graphic ids in `src/data/include/ids.h` stay valid. [Chaos Strikes Back data files](data.md#item-comparison) lists the items that differ.
 
 ## Differences and the port
 
@@ -142,7 +142,7 @@ Port:
 - The 29 CSB spells are at `0x104160`, after the KAOS data. `spells.c` and `tables.c` read 29 spells from there for CSB.
 - `adventure_get(g_adventure)->engine` gives the module file name: `KAOS.FTL` or `APPB.FTL`.
 
-Addresses that the tables above do not list. Each is verified by a code reference (the CSB function that reads it) or by the CSV:
+Addresses that the tables above do not list. Each is verified by a code reference (the CSB function that reads it) or by [csb-appb-symbols.csv](../reference/csb-appb-symbols.csv):
 
 | Port name | DM | CSB | Reference |
 |---|---|---|---|
@@ -292,7 +292,7 @@ Scroll panel (`draw_panel_scroll`, C`0x111764`):
 - `scroll_text_insert_creature_name` (C`0x1116a0`) replaces each "CREANAME" (C`0x102636`) in the scroll text with the name of the creature group in front of the party, or with "NO CREATURE". The name is the text of `group_get_thing` (C`0x10d7f0`) on the square one step ahead in the party direction: "NO CREATURE" (C`0x102654`) for no group, otherwise the creature name pointer of the group creature type (table C`0x102164`, port texts 108 + type). The first match sets the drawn panel content to 9.
 - When the first line (after the replacement) is "MAGICMAP": drawn panel content 10, graphic `0x18` in zone `0x65` with transparent color 8. Rune characters `0x72`–`0x75` (KU, ROS, DAIN, NETA) print in zones `0x267`–`0x26a` with `text_print_to_viewport_zone_color`: color 8 when the byte (`0x11a`, `0x119`, `0x118`, `0x11b`) is not 0, otherwise color 0, background 15.
 - A 7 × 7 grid. `get_zone_size(0x266)` (C`0x119616`) gives the top left point of the first square. The first row is 3 squares ahead of the party, the first column 3 squares to the left (`update_map_coordinates_after_relative_movement(dir, 3, -3)`). Columns step to the right (direction + 1), rows step back (direction + 2). With byte `0x11b` set, the grid uses the stored map (`set_current_map`), position, and direction (byte - 1), and `set_current_map(party map)` follows.
-- The party square is drawn last, when the grid map is the party map. `magic_map_draw_square` (C`0x111140`, args x, y, direction, pixel x, pixel y) draws each square from tiles of graphic 12 (`magic_map_draw_cell`, C`0x1110e0`: tile & 15 and tile >> 4 select the 7 × 7 source, transparent color 10).
+- `magic_map_draw_square` draws the party square last, when the grid map is the party map. `magic_map_draw_square` (C`0x111140`, args x, y, direction, pixel x, pixel y) draws each square from tiles of graphic 12 (`magic_map_draw_cell`, C`0x1110e0`: tile & 15 and tile >> 4 select the 7 × 7 source, transparent color 10).
 - Tile size and gap (C`0x1032e6`–`0x1032ec`): width 7, height 7, gap x 1, gap y 1 in the APPB data. The code only reads them. Graphic 12 is 112 × 42 (16 × 6 tiles).
 
 `magic_map_draw_square` (C`0x111140`), verified in the disassembly (the decompiler stops at the `rt_switch_word` table C`0x111218`):
@@ -358,7 +358,7 @@ Other load and save differences:
 
 - The CSB load checks the checksum of block 2. DM ignores it.
 - On a restart (`A5-0xe2` set), the CSB load compares the game ID and shows THAT'S NOT THE SAME GAME on a mismatch.
-- `load_game` opens `CSBGAME.DAT`, then `CSBGAME.BAK`. Then it tries `DungeonMaster:Dungeon.FTL` (C`0x129d74`), which is not on the disk. A new game loads `Dungeon.DAT` of disk A: the prison (2622 bytes, compressed, signature `0x8104`).
+- `load_game` opens `CSBGAME.DAT`, then `CSBGAME.BAK`. Then it tries `DungeonMaster:Dungeon.FTL` (C`0x129d74`), which is not on the disk. A new game loads the prison, `Dungeon.DAT` of disk A ([Chaos Strikes Back data files](data.md#dungeondat)).
 - The save dialog has CANCEL, SAVE AND PLAY, SAVE AND QUIT, and FORMAT FLOPPY (`save_game` C`0x128cc0`, `reference/decomp/csb-a/APPB.c` from line 36964). Without the floppy option (`A5-0x4b6` = 0), the dialog has 3 choices: 1 CANCEL, 2 SAVE AND PLAY, 3 SAVE AND QUIT. With the option, it has 4: 1 SAVE AND PLAY, 2 SAVE AND QUIT, 3 FORMAT FLOPPY, 4 CANCEL.
   - CANCEL closes the dialog.
   - SAVE AND PLAY and SAVE AND QUIT write the file. The header field dialog choice (`0x132`) is 1 for SAVE AND PLAY and 0 for SAVE AND QUIT.
@@ -401,13 +401,13 @@ CSB `endgame` (C`0x128374`) is only the death screen and the quit screen:
 - THE END: graphic 6 in zone 5, palette with 16 × `0x004` and color 15 `0xfff` (C`0x12842e`–`0x128464`), 300 frames (only the first time).
 - With a saved game (`A5-0xe0`): RESTART THIS GAME. `fill_screen_box` fills the box at C`0x100dcc` (x 103, y 145, width 115, height 15) with color 1 and the box at C`0x100dd4` (105, 147, 111, 11) with color 0. Then `text_print_to_screen(110, 154, color 4, color 0, text 77)` prints the label. Colors 1 = `0x86f` and 4 = `0xfff`. The endgame mouse table (C`0x103c60`) has RESTART only, with the outer box. No QUIT button, no champion list.
 - 900 frames, or RESTART: `load_game`, then `start_game`. When the load fails, the credits.
-- The credits: graphic 5, palette C`0x100f18`, wait for input. Then, with a saved game and a dead party, THE END again (without the 300 frames); otherwise `quit_game`.
+- The credits: graphic 5, palette C`0x100f18`, wait for input. Then, with a saved game and a dead party, the game shows THE END again (without the 300 frames). Otherwise it calls `quit_game`.
 
 Port (`src/ui/startend.c`): `startend_run_endgame_sensor` plays `ENDA.DAT` with `src/ui/anim.c` for CSB, waits for a key or a click, and shows the CSB screen. `show_the_end` draws the CSB button from the boxes, which the image copies to `0x104248` (`CSB_RESTART_BOXES`). After the credits, the port shows the CSB screen (deliberate deviation, as for DM); it does not go back to THE END.
 
 ### Copy protection
 
-CSB contains copy protection. The port leaves it out and acts as if every check passes. The functions have the subsystem `protect` in the CSV.
+CSB contains copy protection. The port leaves it out and acts as if every check passes. The functions have the subsystem `protect` in [csb-appb-symbols.csv](../reference/csb-appb-symbols.csv).
 
 - Disk access through CIA and `DSKPT` inside `sound_request_play` (`protect_disk_access`, C`0x1097e6`).
 - Track bit pattern checks: `protect_compare_track_bits` (C`0x1244f8`), timeline event 22 (`protect_check_10c2b0`, every 500 ticks from `process_new_party_map` C`0x107f7a`).

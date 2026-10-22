@@ -25,7 +25,7 @@ not supported. The game identifies a disk by its content, not by its file name.
 ## Play
 
 Download the [latest release](https://github.com/peterkmet/dmmac/releases/latest) (`DMMac-macos-arm64.zip` or
-`DMMac-windows-x64.zip`), extract it, and copy your `.adf` disk images into the directory.
+`DMMac-windows-x64.zip`), extract it, and copy your `.adf` disk images into the folder.
 
 - **macOS:** Remove the quarantine attribute and launch `Dungeon Master.command` (or double-click it in
   Finder):
@@ -77,18 +77,18 @@ make check      # Check formatting, coding standard, and tests
 make windows    # Cross-compile build/dm.exe with MinGW-w64
 ```
 
-Run `build/dm` from the directory containing your `.adf` images. See [Development](docs/development.md) for
+Run `build/dm` from the folder with your `.adf` images. See [Development](docs/development.md) for
 build and release workflows, [Architecture](docs/architecture.md) and [Coding standard](docs/coding-standard.md)
 for codebase structure, and [Changelog](CHANGELOG.md) for release history.
 
 ## Engineering
 
-The port was developed with Claude Code in four stages:
+Claude Code built the port in four stages:
 
 1. **Decompilation:** Ghidra decompiled the 68000 FTL modules to C ([Decompiling](docs/decompiling.md)). The
    symbol tables in `docs/reference/` name the functions and globals.
-2. **Reimplementation:** The game logic was rewritten in C11 from the decompilation alone, without code from
-   other ports.
+2. **Reimplementation:** Claude Code rewrote the game logic in C11 from the decompilation alone, without code
+   from other ports.
 3. **Differential verification:** Automated tests execute ported C functions alongside the original 68000 code
    in an emulator using identical inputs and compare the resulting state. Golden snapshots validate save files,
    viewport rendering, and game mechanics.

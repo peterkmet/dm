@@ -32,7 +32,7 @@ Both files use format 1 (`0x8001`), the header described in [KAOS module map](..
 | DM `game/Graphics.DAT` | 749 | 458108 | `0x04598281` |
 | CSB `game-csb/Graphics.DAT` | 728 | 402254 | `0x3bc83984` |
 
-`dmcsb` (the Dungeon Master tools by Cycl0ne, see the README) calls the DM file `amiga_csb_ml` ("CSB Amiga Multilanguage"). The CRC-32 of that variant is the CRC-32 of the DM v3.60 file. `dmcsb` does not know the CSB file (no CRC-32 match, no structural match for 728 items).
+`dmcsb` (the Dungeon Master tools by Cycl0ne, see [DMMac: Dungeon Master for macOS and Windows](../../README.md#acknowledgements)) calls the DM file `amiga_csb_ml` ("CSB Amiga Multilanguage"). The CRC-32 of that variant is the CRC-32 of the DM v3.60 file. `dmcsb` does not know the CSB file (no CRC-32 match, no structural match for 728 items).
 
 ### Item comparison
 
@@ -70,7 +70,7 @@ Result: `gfx_expand` decodes the CSB items without a CSB branch.
 
 ### Strings and layout
 
-Object names (item 694). The CSB engine reads 199 names at `0x108280` (graphic index `0x2b6` pushed at `0x1082ac`). Each name ends at a byte with bit 7 set. The engine clears bit 7 and adds a NUL. `dmcsb` calls this encoding TXT1. The DM file uses NUL-terminated strings (TXT2). `load_strings` (`src/data/graphics.c`) ends each CSB object name at the byte with bit 7 set.
+Object names (item 694). The CSB engine reads 199 names at `0x108280` (it pushes the graphic index `0x2b6` at `0x1082ac`). Each name ends at a byte with bit 7 set. The engine clears bit 7 and adds a NUL. `dmcsb` calls this encoding TXT1. The DM file uses NUL-terminated strings (TXT2). `load_strings` (`src/data/graphics.c`) ends each CSB object name at the byte with bit 7 set.
 
 33 of the 199 CSB names differ from DM. Examples: 23–24 STORM (DM BOLT BLADE), 25–26 RA BLADE (FURY), 38 SIDE SPLITTER (DELTA), 41 DRAGON FANG (THE INQUISITOR), 62–64 STAFF OF IRRA, CROSS OF NETA, SERPENT STAFF, 174 SHANK (DRUMSTICK).
 
@@ -124,7 +124,7 @@ Content:
 
 The CSB `load_dungeon` is at `0x1295a0`. It follows the DM loader and adds a copy-protection check ([CSB engine compared with the DM engine](engine-diff.md#copy-protection)).
 
-Result: the port loader reads the file. The full CSB dungeon is not on disk A. The utility disk makes the adventure from a saved start game. The utility modules `CEDT.FTL` and `HINT.FTL` refer to `DF0:MINI.DAT`, `DF0:DMGAME.DAT`, and `DF0:CSBGAME.DAT`. `MINI.DAT` (42784 bytes) has the layout of a saved game, see [Chaos Strikes Back: new adventure](new-adventure.md#minidat-format).
+Result: the port loader reads the file. The full CSB dungeon is not on disk A. The utility disk makes the adventure from a saved start game. See [Chaos Strikes Back: new adventure](new-adventure.md#minidat-format).
 
 ## Save file
 
@@ -251,7 +251,7 @@ The port reads all rule and view tables from the `KAOS.FTL` image. CSB has no `K
 | `src/data/graphics.c` | `load_strings` | Ends each CSB object name at a byte with bit 7 set. | CSB object names end with bit 7, not NUL. |
 | `src/data/csb_text.c` | `csb_text_build`, `csb_text_get_item` | Builds the text items from `APPB.FTL`, with a map to the DM text indices. | Items 699 and 700 are empty in CSB. |
 | `src/ui/startend.c` | `csb_draw_restart_button` | Draws RESTART THIS GAME in the two boxes of APPB `0x100dcc` (image address `0x104248`) and keeps the click box of the CSB endgame mouse table. | The CSB layout has no zones 437 and 438. |
-| `src/engine/savefile.c` | `savefile_decode`, `savefile_encode`, `savefile_init_header`, header accessors | Reads and writes the CSB header: key at `0x3a`, fields 2 bytes later, 132 extra bytes. | A CSB save fails the DM header check. |
+| `src/engine/savefile.c` | `savefile_decode`, `savefile_encode`, `savefile_init_header`, header accessors | Reads and writes the CSB header ([Save file format](../formats/save.md#csb-header)). | A CSB save fails the DM header check. |
 | `src/engine/savegame.c` | `savegame_save`, `savegame_load`, portrait functions | Uses `CSBGAME.DAT` and `CSBGAME.BAK`. Keeps the saved portrait bitmaps. | CSB parties come from DM saves or the champion editor. Their portraits are not in graphic 26. |
 | `src/data/kaos.c`, `src/data/csb_image.c` | `kaos_load`, `csb_image_build` | Loads `APPB.FTL` and builds a KAOS-layout image: each table is at its DM address. | CSB has no `KAOS.FTL`. Most tables are identical at different addresses. |
 | `src/ui/anim.c` | Animation player | Plays the chunks of `ENDA.DAT`. | The CSB endgame plays `ENDA.DAT`. |

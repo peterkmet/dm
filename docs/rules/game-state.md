@@ -1,6 +1,6 @@
 # Game state
 
-The game state of the port: the structs and globals in `src/engine/include/game.h` and `src/engine/include/random.h`. Each table gives the original KAOS address of each item. The names come from [kaos-symbols.csv](../reference/kaos-symbols.csv). The field meanings come from [range-4-6.md](../reference/symbols/range-4-6.md) and [range-7-9.md](../reference/symbols/range-7-9.md).
+The game state of the port: the structs and globals in the public headers of `src/engine/include/`, for example `party.h`, `champion.h`, `timeline.h`, `game.h`, and `random.h`. Each table gives the original KAOS address of each item. The names come from [kaos-symbols.csv](../reference/kaos-symbols.csv). The field meanings come from [KAOS ranges 4–6: symbols and subsystem notes](../reference/symbols/range-4-6.md) and [KAOS ranges 7–9: symbol notes](../reference/symbols/range-7-9.md).
 
 The port uses native C types for this state. It does not keep the big-endian byte layout. The dungeon data from `dungeon.c` keeps the big-endian layout, see [Dungeon.DAT format](../formats/dungeon.md). A save file reader or writer must convert between the two layouts.
 
@@ -44,7 +44,7 @@ KAOS has no other random function. Callers compute `random16() % n` inline.
 | `0x3e` | `scent_strengths[24]` | `uint8_t` |
 | `0x56` | `invisibility_count` | `uint8_t` |
 
-The party position is in `dungeon.h`: `g_party_map_x` (`0x1001ec`), `g_party_map_y` (`0x1001ee`), `g_party_direction` (`0x1001ea`), `g_party_map_index` (`0x1001f0`).
+The party position is in `party.h`: `g_party_map_x` (`0x1001ec`), `g_party_map_y` (`0x1001ee`), `g_party_direction` (`0x1001ea`), `g_party_map_index` (`0x1001f0`).
 
 ## Champions
 
@@ -201,7 +201,7 @@ Projectiles (thing type 14) and explosions (thing type 15) are dungeon things. T
 `game_start_new()` sets the state of a new game. Call it after `dungeon_load`. It follows `load_game` (new-game path) and the end of `load_dungeon`:
 
 1. Clear `g_party` and `g_champions`. Set the champion count to 0, the leader and the magic caster to -1, and the leader hand object to `0xffff`.
-2. Set `g_game_time`, the sleep and death flags, the movement counters, and `g_active_group_count` to 0.
+2. Set `g_game_time`, the movement counters, and `g_active_group_count` to 0. Set the sleep and death flags to false.
 3. Set `g_game_id` to the product of two `random16()` values.
 4. Call `timeline_init` and `group_init_active_groups`.
 
@@ -225,11 +225,11 @@ Projectiles (thing type 14) and explosions (thing type 15) are dungeon things. T
 
 1. When `random_bit()` is 1 and `percentage < random16() % 100`, return true. Luck does not change.
 2. Lucky is true when the current luck is above 0 and `percentage < random16() % (2 * luck)`.
-3. Add -2 (lucky) or +2 to the current luck, bounded by the minimum and maximum. Return lucky.
+3. Add -2 to the current luck when lucky is true, otherwise +2, bounded by the minimum and maximum. Return lucky.
 
 The original reads the three luck bytes as signed bytes in this function. A current luck of 128 or more counts as not above 0. The port keeps this behavior.
 
-Call `tables_load` before `map_step`.
+`map_step` needs the KAOS tables (`tables_load`).
 
 ## Tests
 

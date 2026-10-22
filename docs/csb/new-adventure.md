@@ -91,7 +91,7 @@ The header has the same structure as the DM header: 32 groups of 4 noise words, 
 ### Decode algorithm
 
 1. Header check (`0x108da2`): compute the header chain ([Save file format](../formats/save.md#header-chain)). Decrypt the 128 payload words with the cipher below and the key word. The chain must equal the 16-bit sum of the plain payload words.
-2. Blocks (`0x108c62`): read each block, decrypt it with `0x108bfc(buf, key[i], words)`, and compare the returned sum with `checksum[i]`. Block sizes come from block 0: offset 46 is the maximum active group count, offset 28 is the event maximum count.
+2. Blocks (`0x108c62`): read each block, decrypt it with `0x108bfc(buf, key[i], words)`, and compare the returned sum with `checksum[i]`. Block sizes come from block 0: offset `0x2e` is the maximum active group count, offset `0x1c` is the event maximum count.
 3. Cipher (`0x108bfc`): the same as DM `savefile_xor_block` ([Save file format](../formats/save.md#block-cipher)).
 4. Portraits: read 4 × 464 bytes without a change.
 5. Dungeon (`0x108efe`): read the parts in the order of `Dungeon.DAT` ([Dungeon.DAT format](../formats/dungeon.md)). The thing record sizes are the table at `0x100568`. Add every byte to a 16-bit sum. Then read 2 more bytes. When the read gives 2 bytes, they must equal the sum.
@@ -126,7 +126,7 @@ The header has the same structure as the DM header: 32 groups of 4 noise words, 
 ### Champions
 
 - `0x109e4c` copies the 4 champion records (`0x500` bytes) and the 4 portraits of the game to mini. The party record (`0x80`), block 0, the timeline, the active groups, and the dungeon stay from `MINI.DAT`.
-- Mini champion count (block 0, offset 10) = game champion count.
+- Mini champion count (block 0, offset `0x0a`) = game champion count.
 - The load step `0x109c20` clears the bytes after the first NUL in the 8-byte name and in the 20-byte title.
 
 Then for each champion (record offsets of [Game state](../rules/game-state.md)):
@@ -146,7 +146,7 @@ Then for each champion (record offsets of [Game state](../rules/game-state.md)):
 | `temporary_experience` of each skill | 0 |
 | All 30 slots | `0xffff`: the champion has no objects |
 
-Before the merge clears a slot, `0x104cca` removes the stat bonus of the object from the champion. This call changes the record in slot 0, not the copy in slot 1. Thus a DM champion keeps an object bonus in the new adventure. The prison has no objects, so a prison party is not affected. The merge test does not cover an object with a bonus (UNVERIFIED).
+Before the merge clears a slot, `0x104cca` removes the stat bonus of the object from the champion. This call changes the record in slot 0, not the copy in slot 1. Thus a DM champion keeps an object bonus in the new adventure. The prison has no objects, so this does not change a prison party. The merge test does not cover an object with a bonus (UNVERIFIED).
 
 At the end, `0x1062b8` gives a champion a new cell when another champion has the same cell. The new cell is the lowest cell that no champion uses (`0x105bf0`).
 
@@ -204,7 +204,7 @@ uv run python -m dmtools.csb_mini game-csb/disk-b/MINI.DAT csb_dungeon.dat <save
 | `0x108da2`, `0x108c62` (5 blocks), and `0x108efe` on `MINI.DAT`: plain header, blocks, and dungeon parts equal `decode_save` | Pass |
 | A changed byte in block 3: the original and `decode_save` reject the file | Pass |
 | A synthetic game from `encode_save`: the original reader accepts it | Pass |
-| `0x10a31c(slot, 3)` and `0x105c7e` on two loaded slots, with the same random seed: header, champion records, and block 0 equal `merge` | Pass. The portrait pointer at `0x114` is a memory address and is masked. |
+| `0x10a31c(slot, 3)` and `0x105c7e` on two loaded slots, with the same random seed: header, champion records, and block 0 equal `merge` | Pass. The test masks the portrait pointer at `0x114`, a memory address. |
 | The new `CSBGAME.DAT` from `encode_save`: the original reader accepts it | Pass |
 | `src/` `dungeon_load_saved` on the decoded dungeon, then `dungeon_save` | Pass: 11 maps, the output equals the input |
 | `dmcsb` `DungeonFile._extract` on the decoded dungeon | Pass: the parts end exactly at the checksum word, which matches |

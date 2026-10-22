@@ -4,7 +4,7 @@ How to run DMMac and how to play it. The repository has no game files. You suppl
 
 ## Run the game
 
-Unpack a release (see the [DMMac: Dungeon Master for macOS and Windows](../README.md)) or build the game (see [Development](development.md)). Copy your `.adf` disk images next to the program and start it:
+Unpack a release (see [DMMac: Dungeon Master for macOS and Windows](../README.md)) or build the game (see [Development](development.md)). Copy your `.adf` disk images next to the program and start it:
 
 ```sh
 build/dm
@@ -61,7 +61,7 @@ In the advanced mode, the stairs down of the prison also start the new adventure
 
 The game saves to `DMGAME.DAT` in `game/`; Chaos Strikes Back saves to `CSBGAME.DAT` in `game-csb/`. The old file becomes the `.BAK` backup. The format is the original Amiga save file ([Save file format](formats/save.md)).
 
-- Save: click the save icon in an inventory, or press Ctrl+S. The dialog shows CANCEL, SAVE, and QUIT. QUIT ends the game. When you did not save in the last 100 ticks, QUIT asks first.
+- Save: click the save icon in an inventory, or press Ctrl+S. The dialog shows CANCEL, SAVE, and QUIT. QUIT ends the game. When you did not save in the last 100 ticks (steps of the game clock), QUIT asks first.
 - Resume: click RESUME at the entrance. A damaged file shows "THE GAME IS DAMAGED!" and the entrance again.
 - When all champions die, THE END shows. RESTART THIS GAME loads the saved game. QUIT shows the credits and the entrance.
 - The original quits the program after the credits and after a damaged save; the port shows the entrance.
@@ -109,7 +109,7 @@ The controls are the controls of the original Amiga game.
 
 ## Modes
 
-The game rules are the same in all modes.
+The game rules are the same in all modes. The advanced mode adds the cheats and the prison stairs of CSB.
 
 | Mode | Behavior |
 |---|---|
@@ -138,7 +138,7 @@ The game rules are the same in all modes.
 - A click on a fountain with an empty hand lets every living champion drink.
 - The damage that a champion deals stays in the action area for two ticks. A click during the second tick shows the action icons immediately.
 - Smooth projectile flight between two game ticks.
-- The save file keeps the explored squares of the automap and the cheats that are on. Vanilla loads the file and ignores them.
+- The save file keeps the explored squares of the automap and the cheats that are on. Vanilla loads such a file but does not use the automap or the cheats.
 
 ### Options menu
 

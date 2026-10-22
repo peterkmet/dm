@@ -196,7 +196,7 @@ The main loop calls `champion_apply_time_effects()` every 64 ticks (16 while the
 1. Scents that are not on the party square lose 1 strength. The function deletes a first scent at strength 0.
 2. A chance value is made from bits 6–8 of the game time (0–112).
 3. For each living champion that is not the candidate:
-   - Mana: when the wizard and priest levels plus wisdom are above the chance, mana increases by `max_mana / 40 + 1` (doubled while sleeping) and stamina decreases by `max(7, 16 - levels)` times that gain, where `levels` is the wizard level plus the priest level. Mana above the maximum decreases by 1.
+   - Mana: `levels` is the wizard level plus the priest level. When `levels` plus wisdom is above the chance, mana increases by `max_mana / 40 + 1` (doubled while sleeping). Stamina decreases by `max(7, 16 - levels)` times that gain. Mana above the maximum decreases by 1.
    - Temporary experience decreases by 1 in each skill.
    - Food and water decrease. Fed champions regain stamina; starving champions (below -512) lose stamina. Food and water stop at -1024.
    - Health: when stamina is at least a quarter of the maximum and vitality + 12 is above the chance, health increases by `max_health / 128 + 1` (doubled while sleeping, +50 % + 1 with the Ekkhard Cross).
@@ -214,7 +214,7 @@ The code is in `src/engine/action.c`. The rules follow `action_is_action_perform
 1. The target group is the group on that square (`target_group` of `action_is_action_performed`).
 2. Stamina cost is `random_bit() + stamina`. For skills 16–19 and the wizard skill, the mana cost of a spell action is `7 - min(6, skill level)`.
 3. The action runs (table below).
-4. The action hand is disabled for the action ticks (event 11, `magic_disable_action`). Stamina decreases. The action skill gets the experience. A value of 0 skips each step.
+4. `magic_disable_action` disables the action hand for the action ticks (event 11). Stamina decreases. The action skill gets the experience. A step with the value 0 does nothing.
 
 | Action | Effect |
 |---|---|

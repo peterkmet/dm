@@ -1,7 +1,7 @@
 # Architecture
 
 The port is a reimplementation of Dungeon Master v3.60 (Amiga) and Chaos Strikes Back (CSB) in C11. The game
-rules follow the decompiled original; the Amiga technical layer is not reproduced. The source in `src/` has
+rules follow the decompiled original; the port does not reproduce the Amiga technical layer. The source in `src/` has
 five layers. The build makes the game `build/dm` and one shared library `build/libdm.dylib` for the tests.
 
 ## Layers
@@ -112,7 +112,7 @@ The modules `advanced`, `automap`, `cheats`, `music`, `optmenu`, `rows`, and `sl
 | `ui/logo.h` | `logo_` | The FTL logo of SWSH.FTL (not KAOS): the original shows it before the DM title. |
 | `ui/menus.h` | `menus_` | The action area, the spell area and the movement arrows at the right of the screen. |
 | `ui/music.h` | `music_` | Music of the advanced mode: the soundtracks of the FM-Towns and Super NES versions from MP3 files, scaled by the music volume. |
-| `ui/optmenu.h` | `optmenu_` | The options menu of the advanced mode: sound volume, music volume, music choice and upscale filter in the viewport; platform/ sets the filter hook; it writes SETTINGS.TXT after a change. |
+| `ui/optmenu.h` | `optmenu_` | The options menu of the advanced mode: sound volume, music volume, music choice, and upscale filter in the viewport. `platform/` sets the filter hook. A change writes `SETTINGS.TXT`. |
 | `ui/palette.h` | `palette_` | The palette fade of the original: it changes both palette halves of g_screen step by step, one frame for each step through g_frame_hook. |
 | `ui/panel.h` | `panel_` | The inventory panel: slots, the eye and the mouth, food and water, skills and statistics, the object description, the scroll, the chest. |
 | `ui/rows.h` | `rows_` | The rows of text of the viewport screens: it draws a title and rows in the game font and maps a click to a row and a text column. |
@@ -134,7 +134,7 @@ The modules `advanced`, `automap`, `cheats`, `music`, `optmenu`, `rows`, and `sl
 | `control/png.h` | `png_` | The screenshot of the program player: the game screen as an RGB PNG with stored deflate blocks. |
 | `control/request.h` | `request_` | The reader of one request line. |
 | `control/state_json.h` | `state_` | The game as JSON for the program player: the party, the champions, what the party sees, and the explored map. |
-| `control/turn.h` | `turn_` | The turns of the program player: an action or a wait runs game ticks until the party can move again, a batch runs its actions as turns until a stop condition, and the reply tells what the party saw. |
+| `control/turn.h` | `turn_` | The turns of the program player. An action or a wait runs game ticks until the party can move again. A batch runs its actions as turns until a stop condition. The reply tells what the party saw. |
 
 ### platform/
 

@@ -1,6 +1,6 @@
 # FTL module format
 
-Dungeon Master v3.60 for the Amiga keeps its code in `.FTL` modules. The AmigaDOS executable `BJELoad_R` loads them. The source is the decompiled `BJELoad_R` (function at code offset `0x34c`) and `APPA.FTL` (unpacker at code offset `0x22a`). `tools/dmtools/ftl.py` implements this format. All 10 modules on the v3.60 disk pass every checksum.
+Dungeon Master v3.60 for the Amiga keeps its code in `.FTL` modules. The AmigaDOS executable `BJELoad_R` loads them. The source is the decompiled `BJELoad_R` (function at code offset `0x34c`) and `APPA.FTL` (unpacker at code offset `0x22a`). `tools/dmtools/ftl.py` implements this format.
 
 All values are big-endian.
 
@@ -29,7 +29,7 @@ All values are big-endian.
 | `0x12` | 2 | Section count, less than `0x65` |
 | `0x14` | 12 × count | Section table |
 
-Header checksum: the 16-bit sum of `byte[i] * i` for `i` from 4 to `0x13`, plus `table[i] * ((i & 0xff) + 1)` for every byte of the section table.
+Header checksum: the 16-bit sum of `byte[i] * i` for `i` from `0x04` to `0x13`, plus `table[i] * ((i & 0xff) + 1)` for every byte of the section table.
 
 Each section table entry:
 

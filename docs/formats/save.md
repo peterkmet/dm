@@ -7,7 +7,7 @@ The C code has two layers:
 - `src/engine/savefile.c` handles the container: the header, the cipher, and the checksums.
 - `src/engine/savegame.c` copies the game state into the blocks and back. `src/engine/dungeon.c` writes and reads the dungeon part.
 
-The English version removes `~` from the file name. The port writes `DMGAME.DAT` and `DMGAME.BAK`. The save slots of the advanced mode use the same format: slot 1 is `DMGAME.DAT`, slots 2 to 8 are `DMGAME2.DAT` to `DMGAME8.DAT` with the backups `DMGAME2.BAK` to `DMGAME8.BAK` (Chaos Strikes Back, CSB: `CSBGAME`).
+The English version removes `~` from the file name. The port writes `DMGAME.DAT` and `DMGAME.BAK`. The save slots of the advanced mode use the same format: slot 1 is `DMGAME.DAT`, slots 2–8 are `DMGAME2.DAT`–`DMGAME8.DAT` with the backups `DMGAME2.BAK`–`DMGAME8.BAK` (Chaos Strikes Back, CSB: `CSBGAME`).
 
 ## Byte order
 
@@ -37,7 +37,7 @@ The header has 512 bytes. Offsets are bytes from the start of the file.
 | `0x000` | 256 | 32 groups of 4 random words `w0`, `w1`, `w2`, `w3`. Not encrypted. |
 | `0x014` | 2 | Payload key. This is word `w2` of group 2. |
 | `0x100` | 256 | Payload: 128 words, encrypted with the payload key. |
-| `0x12a` | 1 | Header byte (`SAVE_HEADER_HEADER_BYTE`). The original writes 1. |
+| `0x12a` | 1 | Header byte (`SAVE_HEADER_HEADER_BYTE`). The original writes back the byte of the last load, default 1. The port writes 1. |
 | `0x12b` | 1 | Platform. The original writes 5. A load fails when the value is 1. |
 | `0x130` | 2 | Dialog choice. The original writes 1. A load does not read it. |
 | `0x132` | 4 | Game ID (`g_game_id`). |
@@ -280,7 +280,7 @@ The port keeps the portrait pixels of each champion in `ChampionRuntime.portrait
 
 ### Dungeon part (`dungeon.c`)
 
-- `uint8_t *dungeon_save(uint32_t *size)` writes the parts in the order of `save_game`: header, maps, column first-thing indices, square first things, text data, 16 thing arrays, raw map data. Then the 16-bit sum of all bytes. The header has the counts with the free records of the new game, so the load needs no extras.
+- `uint8_t *dungeon_save(uint32_t *size)` writes the parts and the sum of [Dungeon](#dungeon) in the order of `save_game`. The header has the counts with the free records of the new game, so the load needs no extras.
 - `bool dungeon_load_saved(const uint8_t *data, uint32_t size)` reads these parts like `dungeon_load` for a saved game: no compression, no party start from the header, no free records, and no new `g_timeline.capacity`. It checks the byte sum when the word is there.
 
 ## Tests

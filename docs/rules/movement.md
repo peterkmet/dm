@@ -1,6 +1,6 @@
 # Movement, sensors, and timeline rules
 
-The movement rules of the port: the current map, square thing lists, party movement, sensors, doors, pits, teleporters, stairs, and the event dispatch of `event_process_expired`. The code is in `src/engine/map.c`, `src/engine/move.c`, `src/engine/sensor.c`, and `src/engine/event.c`. The rules follow KAOS range 8 (MOVESENS.C, TIMELINE.C, COMMAND.C) and the dungeon access functions of range 4. See [range-4-6.md](../reference/symbols/range-4-6.md) and [range-7-9.md](../reference/symbols/range-7-9.md) for the record layouts.
+The movement rules of the port: the current map, square thing lists, party movement, sensors, doors, pits, teleporters, stairs, and the event dispatch of `event_process_expired`. The code is in `src/engine/map.c`, `src/engine/move.c`, `src/engine/sensor.c`, and `src/engine/event.c`. The rules follow KAOS range 8 (MOVESENS.C, TIMELINE.C, COMMAND.C) and the dungeon access functions of range 4. See [KAOS ranges 4–6: symbols and subsystem notes](../reference/symbols/range-4-6.md) and [KAOS ranges 7–9: symbol notes](../reference/symbols/range-7-9.md) for the record layouts.
 
 ## Start a game
 
@@ -17,7 +17,7 @@ move_party_enter_dungeon();
 
 ## Game loop order
 
-The tick order is in [Architecture](../architecture.md#the-tick). The movement part: `move_process_new_party_map()` changes the party map when `g_session.new_party_map` is not -1 (the party enters its square on the new map), then `event_process_expired()` runs; step 1 repeats while `g_session.new_party_map` is not -1. The command step calls `move_party(command)` or `move_turn_party(command)`.
+The tick order is in [Architecture](../architecture.md#the-tick). In the movement part, `move_process_new_party_map()` changes the party map when `g_session.new_party_map` is not -1, and the party enters its square on the new map. Then `event_process_expired()` runs. The two steps repeat while `g_session.new_party_map` is not -1. The command step calls `move_party(command)` or `move_turn_party(command)`.
 
 ## Current map
 
@@ -82,7 +82,7 @@ Call `map_reset()` after `dungeon_load`. The current map pointers then point to 
 
 ### `move_get_move_result`
 
-`move_get_move_result(move, destination)` moves the party (`thing` `0xffff`), a group, an object, or a projectile. The `Move` request holds the thing, `from`, and `to`. The original codes these as coordinates: `enters` is `src_x < 0` (the thing only arrives), `leaves` is `dst_x < 0` (the thing is only removed), and `keeps_cell` is `src_x == -2` (no teleporter rotation of an object). `uses_rope` is the original `g_use_rope_to_climb_down_pit`. The function returns `MOVE_RESULT_DONE`, `MOVE_RESULT_STOPPED` (the mover died, was deleted, waits off the map, or became active or inactive), or `MOVE_RESULT_TURNED` (a teleporter turned an attacking group).
+`move_get_move_result(move, destination)` moves the party (`thing` `0xffff`), a group, an object, or a projectile. The `Move` request holds the thing, `from`, and `to`. The original codes these flags in the coordinates. `enters` is `src_x < 0`: the thing only arrives. `leaves` is `dst_x < 0`: the function only removes the thing. `keeps_cell` is `src_x == -2`: a teleporter does not rotate the object. `uses_rope` is the original `g_use_rope_to_climb_down_pit`. The function returns `MOVE_RESULT_DONE`, `MOVE_RESULT_STOPPED` (the mover died, was deleted, waits off the map, or became active or inactive), or `MOVE_RESULT_TURNED` (a teleporter turned an attacking group).
 
 One square chain (`follow_square_chain`) serves every mover kind (`MOVER_PARTY`, `MOVER_GROUP`, `MOVER_OBJECT`, `MOVER_PROJECTILE`). It repeats these rules on the destination square, at most 99 times (`SQUARE_CHAIN_MAXIMUM`). An open teleporter has bit 3 set. An open pit has bit 3 set and bit 0 clear. The teleporter record:
 
@@ -117,7 +117,7 @@ After the loop:
 - A party move to a new square adds a scent. The scent list keeps 24 entries. `party_add_scent_strength` updates the strengths. The original compares scent `i` with strength `count - 1 - i`. The port keeps this.
 - A group that died in a fall, or that reached a map that does not allow its creature type, drops its possessions, and `group_remove_after_move` deletes it.
 - A move to the same square does nothing when the party direction or the cell of an object or a group did not change.
-- The thing leaves the source square with `sensor_process_thing_change(..., 0)`. A levitating object (projectile, explosion) only unlinks.
+- The thing leaves the source square with `sensor_process_thing_change(..., false)`. A levitating object (projectile, explosion) only unlinks.
 - The party on a new map sets `g_session.new_party_map`. The party on the same map enters the floor sensors. An object enters the square with its sensors. A projectile only links.
 - A group enters the square with `group_enter_square` (see [Creature, projectile, and magic rules](creatures.md)).
 

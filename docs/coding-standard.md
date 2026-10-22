@@ -53,8 +53,8 @@ this document names.
    #include "dungeon.h"
    ```
 
-2. A header includes only what its declarations need; a struct that appears only behind a pointer is
-   forward-declared. [include]
+2. A header includes only what its declarations need; forward-declare a struct that appears only behind a
+   pointer. [include]
 3. A `.c` file includes exactly the headers it uses, in this order: its own header; project headers by layer
    order and alphabetical inside a layer; third-party headers; system headers. `.clang-format` sorts them.
    The include categories of `.clang-format` name the headers of each layer. There is no umbrella header
@@ -65,7 +65,7 @@ this document names.
 
 ## 3. Constants
 
-1. Name every game value. Plain numbers are allowed only for 0, 1, -1, and for 2 when the 2 halves or doubles a
+1. Name every game value. Use plain numbers only for 0, 1, -1, and for 2 when the 2 halves or doubles a
    value. Every other number is a named constant, also in an array size and in a loop bound. The base
    argument of `strtol` and its siblings is a plain number.
    [hex, decimal]
@@ -198,7 +198,7 @@ this document names.
    first, then queries, then commands; a one-line section comment names each topic in the header and in the
    `.c` file. [order]
 3. A static helper is directly above the first function that calls it; a helper that several sections
-   share is at the top of the functions. A forward declaration of a static function is allowed only for
+   share is at the top of the functions. Forward-declare a static function only for
    mutual recursion, with a comment that names the pair. [order]
 
    ```c
@@ -232,7 +232,7 @@ this document names.
    names the constant (`EVENT_ENABLE_CHAMPION_ACTION`). The original name belongs in
    `docs/reference/kaos-symbols.csv`. [event-comment; the rest review only]
 3. A kept quirk of the original and a fixed bug of the original get a short comment at the place, and an
-   entry in the formats doc. [review only]
+   entry in [Dungeon.DAT format](formats/dungeon.md#deviations-from-the-original). [review only]
 4. No TODO marker in code (`ponytail:`, `TODO`, `FIXME`); open work goes to `docs/todo.md`. [todo]
 5. Keep existing comments. New comments only where needed, one line, about what the code does, never about
    its history. [review only]
@@ -248,7 +248,7 @@ this document names.
 4. A struct field that points to owned memory says so in its comment; a module that opens or allocates has a
    close or free; `malloc` and `free` of one buffer stay in one module. [review only]
 5. Do not reproduce undefined register values, overflows or out-of-bounds reads of the original. Use a
-   defined value, mark it with a short comment, record it as a deviation in the formats doc, mask it in the
+   defined value, mark it with a short comment, record it in [Dungeon.DAT format](formats/dungeon.md#deviations-from-the-original), mask it in the
    tests. Keep a quirk of the original only when it changes what the player sees. [review only]
 6. Code that differs between Dungeon Master and Chaos Strikes Back tests `g_adventure == ADVENTURE_CSB`, or
    reads a table from the game data. No other way detects the adventure. [review only]

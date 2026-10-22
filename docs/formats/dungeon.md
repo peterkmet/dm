@@ -82,7 +82,7 @@ The loader sets `g_party_map_x`, `g_party_map_y`, and `g_party_direction` from o
 | `0x06` | byte | X offset of the map in the dungeon. |
 | `0x07` | byte | Y offset of the map. |
 | `0x08` | word | Bits 0–5: level. Bits 6–10: width - 1. Bits 11–15: height - 1. |
-| `0x0a`–`0x0f` | bytes | Ornament, creature, and door counts and sets. See [range-4-6.md](../reference/symbols/range-4-6.md#map-descriptor). |
+| `0x0a`–`0x0f` | bytes | Ornament, creature, and door counts and sets. See [KAOS ranges 4–6: symbols and subsystem notes](../reference/symbols/range-4-6.md#map-descriptor). |
 
 ### Squares
 
@@ -121,7 +121,7 @@ For a new game the loader changes the header in memory:
 
 - It adds 300 to the square first thing count. The new entries are `0xffff`.
 - It adds extra records to each thing count. The byte table at KAOS `0x101058` (`tables_get_extra_things`) gives the extra record count of each type. The loader reads it from the KAOS image. The loader limits each count to 1024 (768 for explosions). The first word of each new record is `0xffff` (free record).
-- It sets `g_timeline.capacity` to 100 plus the counts of types 4, 14, and 15.
+- It sets `g_timeline.capacity` to 100 plus the counts of types 4, 14, and 15 with their extra records.
 
 The original writes all extra records, even past the limit. The port stops at the limit. The DM dungeons never reach the limit.
 
@@ -131,7 +131,7 @@ The original writes all extra records, even past the limit. The port stops at th
 
 - KAOS is not loaded, or the file cannot be read.
 - The file is shorter than 8 bytes, or the decompressed size is 0 or larger than 1 MB.
-- A compressed file ends before the decompressed size is reached.
+- A compressed file ends before the decompressed size.
 - A part is longer than the remaining data.
 - The map count is 0.
 - The square first thing count is larger than `0xffff - 300`.
@@ -166,7 +166,7 @@ The function reads all three tables from the KAOS image. The single characters f
 
 ## Differences from dmcsb
 
-`dmcsb` (the Dungeon Master tools by Cycl0ne, see the README) 0.2.1 agrees on the map count, map sizes and offsets, all square bytes, thing counts, and thing lists. It differs on escape code 30: it maps the single-glyph entries to display characters (`?`, `'`) or to an empty string. The original code emits the glyph codes from the KAOS table. `tests/differential/test_dungeon.py` compares `dungeon_decode_text` with the original function in `dmtools.emu` for every text and every mode.
+`dmcsb` 0.2.1 (the Dungeon Master tools by Cycl0ne, see [DMMac: Dungeon Master for macOS and Windows](../../README.md#acknowledgements)) agrees on the map count, map sizes and offsets, all square bytes, thing counts, and thing lists. It differs on escape code 30: it maps the single-glyph entries to display characters (`?`, `'`) or to an empty string. The original code emits the glyph codes from the KAOS table. `tests/differential/test_dungeon.py` compares `dungeon_decode_text` with the original function in `dmtools.emu` for every text and every mode.
 
 ## Tests
 
@@ -181,7 +181,7 @@ The function reads all three tables from the KAOS image. The single characters f
 
 ## Deviations from the original
 
-This list covers every module of the port (coding standard, rule 10.5).
+This list covers every module of the port ([Coding standard](../coding-standard.md), rule 10.5).
 
 - A creature type beyond the creature table has no attributes (`map_get_creature_attributes`).
 - A new game and a game load start the search for a thing to discard on map 0 for each thing type (`discard_reset`); the original keeps `g_last_discarded_thing_map_index` for the whole run.

@@ -1,6 +1,6 @@
 # Creature, projectile, and magic rules
 
-The creature rules of the port: creature groups and their AI, creature attacks, damage and death, group generators, projectiles, explosions, fluxcages, the fuse action, and spell effects. The code is in `src/engine/group.c`, `src/engine/projectile.c`, and `src/engine/magic.c`. The rules follow KAOS range 4 (GROUP.C), range 7 (PROJEXPL.C), and range 8 (MENU.C). See [range-4-6.md](../reference/symbols/range-4-6.md) and [range-7-9.md](../reference/symbols/range-7-9.md) for the record layouts and the original addresses. See [Movement, sensors, and timeline rules](movement.md) for the game loop and the timeline dispatch.
+The creature rules of the port: creature groups and their AI, creature attacks, damage and death, group generators, projectiles, explosions, fluxcages, the fuse action, and spell effects. The code is in `src/engine/group.c`, `src/engine/projectile.c`, and `src/engine/magic.c`. The rules follow KAOS range 4 (GROUP.C), range 7 (PROJEXPL.C), and range 8 (MENU.C). See [KAOS ranges 4–6: symbols and subsystem notes](../reference/symbols/range-4-6.md) and [KAOS ranges 7–9: symbol notes](../reference/symbols/range-7-9.md) for the record layouts and the original addresses. See [Movement, sensors, and timeline rules](movement.md) for the game loop and the timeline dispatch.
 
 ## Records
 
@@ -39,7 +39,7 @@ The timeline sends events 29–41 to `group_process_event(event)`. Other rules s
 | 38–41 | — | Behavior update of creature 0–3 (attacking group). |
 | 60, 61 | — | A group waits off the map until its square is free (61 plays the teleporter sound). |
 
-An aspect event is a behavior event - 5. When the next aspect update comes before the next behavior update, the group adds the aspect event. Byte 8 of the event keeps the delay to the behavior update.
+The type of an aspect event is the type of its behavior event minus 5. When the next aspect update comes before the next behavior update, the group adds the aspect event. Byte 8 of the event keeps the delay to the behavior update.
 
 Off the party map a group only handles events 32, 33, 37, and 38. It moves one square in a random direction when it can. It adds the next event 37 after `max(16 × |map - party map|, 2 × movement ticks)` ticks.
 
@@ -138,7 +138,7 @@ Event 5 (corridor) on a group generator sensor calls `group_generate_from_sensor
 - Each creature gets `base health × multiplier + random(base health / 4 + 1)` health.
 - The group enters the square with a random direction and plays a buzz sound.
 
-`group_get_generated` returns `THING_NONE` when the group becomes active on the party map, like the original. The group is on the square in that case. Use `map_find_thing((Location){x, y}, THING_GROUP)` to find it.
+`group_get_generated` returns `THING_NONE` when the group becomes active on the party map, like the original. The group is on the square in that case; `map_find_thing((Location){x, y}, THING_GROUP)` finds it.
 
 Event 65 enables a generator again after its delay (see [Movement, sensors, and timeline rules](movement.md)).
 
@@ -154,7 +154,7 @@ Event 48 or 49 (`projectile_process_move_event`) moves a projectile one cell for
 4. In a door square, a closed door stops it with an impact.
 5. The next event comes after 1 tick on the party map, 3 ticks on other maps.
 
-`has_impact_occurred(site, projectile, outcome)` runs one impact; the site holds the impact type, `at`, `target` and the cell, and `outcome` receives the damage outcome. The projectile stops at the square `at`. The creature or door hit is on the square `target`. `target` is `at`, except when the party or a group steps onto the projectile square. Then `target` is the square they leave. The impact types:
+`has_impact_occurred(site, projectile, outcome)` runs one impact. `site` holds the impact type, `at`, `target`, and the cell. `outcome` receives the damage outcome. The projectile stops at the square `at`. The creature or door hit is on the square `target`. `target` is `at`, except when the party or a group steps onto the projectile square. Then `target` is the square they leave. The impact types:
 
 - Party: the champion in the cell takes `projectile_get_impact_attack` damage on the head or torso. Poison can follow.
 - Creature: damage `impact attack × 64 / creature defense` plus poison. A non-material creature takes damage only from Harm Non-Material. A Black Flame gains health from a fireball. Some creatures catch a thrown dagger, arrow, slayer, poison dart, or throwing star.
@@ -203,7 +203,7 @@ Then the explosion disappears.
 3. The spell kind selects the effect:
    - Potion: fills an empty flask in a hand. Potion power is `40 × power + random(16)`.
    - Projectile: the champion turns to the party direction and shoots the explosion. Kinetic energy is `(power + 2) × (4 + 2 × skill level)`, bounded to 21–255. Open Door counts the skill level twice. Step energy depends on the maximum mana.
-   - Other: Light, Darkness, Thieves Eye, Invisibility, Party Shield, Magic Torch, Footprints, Zokathra, Fire Shield. Each effect adds its end event (70–79).
+   - Other: Light, Darkness, Thieves Eye, Invisibility, Party Shield, Magic Torch, Footprints, Zokathra, Fire Shield. Each effect adds its end event (70–74, 77–79; [Movement, sensors, and timeline rules](movement.md#timeline-dispatch)).
 4. The champion gets the experience and an action delay (event 11).
 
 `magic_click_cast_spell` casts for the magic caster and clears the symbols, except when a flask is missing.

@@ -49,8 +49,8 @@ The two roles are agent definitions in the repository:
 
 | Agent | File | Role |
 |---|---|---|
-| `dm-coordinator` | `.claude/agents/dm-coordinator.md` | Plays a batch of at most 5 sessions, makes the checkpoints, logs costs and level statistics, may change the general player instructions, and writes `coordinator/handover.md`. |
-| `dm-player` | `.claude/agents/dm-player.md` | Plays one session through `dm-play` and keeps its memory. Tools: Bash, Read, Edit, Write. |
+| `dm-coordinator` | [dm-coordinator.md](../../.claude/agents/dm-coordinator.md) | Plays a batch of at most 5 sessions, makes the checkpoints, logs costs and level statistics, may change the general player instructions, and writes `coordinator/handover.md`. |
+| `dm-player` | [dm-player.md](../../.claude/agents/dm-player.md) | Plays one session through `dm-play` and keeps its memory. Tools: Bash, Read, Edit, Write. |
 
 - The main session starts `dm-coordinator` with the first session number of the batch. When the batch ends, it starts the next `dm-coordinator`.
 - The coordinator starts one `dm-player` per session with the session number, the goal, and the call limit.

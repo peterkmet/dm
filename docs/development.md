@@ -67,7 +67,7 @@ Each test module owns its state, so the tests run in any order and in parallel.
 - The tests set `g_frame_hook` to run the frames of a sequence, for example in
   `tests/differential/test_csb_ending.py`.
 - The tests replace the OS hooks of `data/os.h`. `dmtest.lib.set_folder_hooks` sets the folder hooks to Python
-  functions, because `main.c` sets them with SDL.
+  functions, because `platform/app.c` sets them with SDL.
 
 To hide the format commit in `git blame`:
 
@@ -92,7 +92,7 @@ git config blame.ignoreRevsFile .git-blame-ignore-revs
 
 ## Add a game rule
 
-1. Find the original function in [the KAOS symbol table](reference/kaos-symbols.csv).
+1. Find the original function in [kaos-symbols.csv](reference/kaos-symbols.csv).
 2. Write the rule in the engine module that owns the data.
 3. Name every value (rule 3.1 of [Coding standard](coding-standard.md)).
 4. Change the user interface only through the redraw flags or a hook.
