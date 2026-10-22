@@ -59,7 +59,7 @@ The name entry (`champion_start_rename` … `champion_rename_ok`) clears the nam
 `champion_get_skill_level(index, skill, ignore_modifiers, ignore_temporary)`:
 
 1. A sleeping party gives level 1.
-2. Experience is the skill experience plus the temporary experience (unless `ignore_temporary`). A hidden skill adds the same of its base skill and halves the sum.
+2. Experience is the skill experience plus the temporary experience (unless `ignore_temporary`). A hidden skill adds the experience of its base skill and halves the sum.
 3. Level is 1. It increases by 1 for each halving while the experience is 500 or more.
 4. Unless `ignore_modifiers`: The Firestaff in the action hand adds 1 (complete: 2) to all skills. Neck objects add 1: Gem of Ages (heal), Pendant Feral (wizard), Ekkhard Cross (defend), Moonstone (influence). The Sceptre of Lyf in the action hand adds 1 to heal.
 
@@ -193,8 +193,8 @@ Health and stamina stop at their maximum. Sound 8 plays.
 
 The main loop calls `champion_apply_time_effects()` every 64 ticks (16 while the party sleeps).
 
-1. Scents that are not on the party square lose 1 strength. The function deletes a first scent at strength 0.
-2. A chance value is made from bits 6–8 of the game time (0–112).
+1. Scents that are not on the party square lose 1 strength. The function deletes the first scent when its strength is 0.
+2. The chance value comes from bits 6–8 of the game time (0–112).
 3. For each living champion that is not the candidate:
    - Mana: `levels` is the wizard level plus the priest level. When `levels` plus wisdom is above the chance, mana increases by `max_mana / 40 + 1` (doubled while sleeping). Stamina decreases by `max(7, 16 - levels)` times that gain. Mana above the maximum decreases by 1.
    - Temporary experience decreases by 1 in each skill.

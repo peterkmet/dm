@@ -78,7 +78,7 @@ Info checksum: the 16-bit word sum of the whole info section, minus the checksum
 | `0x06` | 4 | Relocation list length in bytes |
 | `0x0a` | | RLE data, then the relocation list |
 
-RLE data is a list of 16-bit words. The loader copies each word. A word `0x0000` is followed by a count word. The loader then writes that number of extra zero bytes.
+RLE data is a list of 16-bit words. The loader copies each word. A count word follows a word `0x0000`. The loader then writes that number of extra zero bytes.
 
 The relocation list is a list of signed 16-bit offsets from the data base. The loader adds the data base address to the 32-bit value at each offset.
 

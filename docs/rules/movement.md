@@ -104,7 +104,7 @@ One square chain (`follow_square_chain`) serves every mover kind (`MOVER_PARTY`,
 | Teleporter | object | Any scope except 1 (creatures only). The object rotates its cell, unless `keeps_cell`. |
 | Teleporter | projectile | Any scope except 1 (creatures only). The projectile rotates its flight direction and its cell. |
 | Teleporter | all | A closed teleporter, another scope, or a teleporter that points to its own square ends the loop. |
-| Pit | all | An open pit takes a thing that does not levitate one level down (`map_get_level_change_location(place, 1)`). |
+| Pit | all | An open pit takes a thing one level down, unless the thing levitates (`map_get_level_change_location(place, 1)`). |
 | Pit | party | `champion_fall_damage(uses_rope)` ([Champion rules](champions.md#damage)). Only the first pit of the chain uses the rope. |
 | Pit | group | `group_is_killed_by_fall`: each creature takes `FALL_DAMAGE` (20) on the source map. Creatures that died drop their fixed possessions on the destination. When all creatures die, the loop ends. |
 | Stairs | object, group | Down stairs (bit 2 clear) go one level down; up stairs do not change the level. The thing steps out in the exit direction and takes the cell on the side it came from, next to the stairs. |

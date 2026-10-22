@@ -13,7 +13,7 @@ if (!dungeon_load("game/Dungeon.DAT"))
     return 1;
 ```
 
-`dungeon_load` loads the dungeon for a new game. It returns false on error. Call `tables_load("game/KAOS.FTL")` (`tables.h`) first, because the loader and `dungeon_decode_text` read the new-game extras table (`0x101058`) and the escape tables (`0x1016ea`, `0x1017ea`, `0x10182a`) from the KAOS image. A new call frees the previous dungeon.
+`dungeon_load` loads the dungeon for a new game. It returns false on error. Call `tables_load("game/KAOS.FTL")` (`tables.h`) first. The loader and `dungeon_decode_text` read the new-game extras table (`0x101058`) and the escape tables (`0x1016ea`, `0x1017ea`, `0x10182a`) from the KAOS image. A new call frees the previous dungeon.
 
 ## Compressed file
 
@@ -166,7 +166,7 @@ The single characters from code 30 are glyph codes of the game font, not ASCII t
 
 ## Differences from dmcsb
 
-`dmcsb` 0.2.1 (the Dungeon Master tools by Cycl0ne, see [DMMac: Dungeon Master for macOS and Windows](../../README.md#acknowledgements)) agrees on the map count, map sizes and offsets, all square bytes, thing counts, and thing lists. It differs on escape code 30: it maps the single-glyph entries to display characters (`?`, `'`) or to an empty string. The original code emits the glyph codes from the KAOS table.
+`dmcsb` 0.2.1 ([DMMac: Dungeon Master for macOS and Windows](../../README.md#acknowledgements)) agrees on the map count, map sizes and offsets, all square bytes, thing counts, and thing lists. It differs on escape code 30: it maps the single-glyph entries to display characters (`?`, `'`) or to an empty string. The original code emits the glyph codes from the KAOS table.
 
 ## Tests
 

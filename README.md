@@ -89,8 +89,8 @@ Claude Code built the port in four stages:
    symbol tables in `docs/reference/` name the functions and globals.
 2. **Reimplementation:** Claude Code rewrote the game logic in C11 from the decompilation alone, without code
    from other ports.
-3. **Differential verification:** Automated tests execute ported C functions alongside the original 68000 code
-   in an emulator using identical inputs and compare the resulting state. Golden snapshots validate save files,
+3. **Differential verification:** Automated tests run each ported C function and the original 68000 code in an
+   emulator with the same input and compare the state. Golden snapshots validate save files,
    viewport rendering, and game mechanics.
 4. **Refactoring:** Later passes added named constants, typed accessors, the five layers, and the automated
    coding-standard checks. The game behavior did not change.

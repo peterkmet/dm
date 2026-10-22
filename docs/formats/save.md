@@ -253,7 +253,7 @@ The slot list (`savegame_read_slot_info`) reads each file without a load:
 
 ### Extension blocks
 
-In the advanced and LLM modes, the port adds extension blocks after the original save data. The original part is the same as a vanilla save. Each block is followed by its length as a big-endian long:
+In the advanced and LLM modes, the port adds extension blocks after the original save data. The original part is the same as a vanilla save. The length of each block follows it as a big-endian long:
 
 ```
 [original save data][cheat block][length][automap block][length]

@@ -22,8 +22,8 @@ this document names.
    `<dirent.h>`). The other layers reach the operating system through the hooks of `data/os.h`, which
    `platform/` and the tests set. [platform]
 4. Game rules in `engine/` do not call the user interface. They set redraw flags (`g_redraw`,
-   `CHAMPION_ATTR_*`), and they call a hook that `ui/` sets for an event that must run the user interface
-   inside the rule (`g_endgame_sensor_hook`, `g_sound_play_hook`). A NULL hook skips the call. [layer]
+   `CHAMPION_ATTR_*`). For an event that must run the user interface inside the rule, they call a hook that
+   `ui/` sets (`g_endgame_sensor_hook`, `g_sound_play_hook`). A NULL hook skips the call. [layer]
 5. `ui/` changes game state only through engine functions. Exceptions: redraw flags and hooks. [engine-write]
 6. `control/` is a client of `ui/` and `engine/`; it holds no socket. The socket is `platform/transport.c`.
    [platform]

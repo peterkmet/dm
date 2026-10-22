@@ -225,7 +225,7 @@ Projectiles (thing type 14) and explosions (thing type 15) are dungeon things. T
 
 1. When `random_bit()` is 1 and `percentage < random16() % 100`, return true. Luck does not change.
 2. Lucky is true when the current luck is above 0 and `percentage < random16() % (2 * luck)`.
-3. Add -2 to the current luck when lucky is true, otherwise +2, bounded by the minimum and maximum. Return lucky.
+3. Subtract 2 from the current luck when lucky is true, otherwise add 2, bounded by the minimum and maximum. Return lucky.
 
 The original reads the three luck bytes as signed bytes in this function. A current luck of 128 or more counts as not above 0. The port keeps this behavior.
 

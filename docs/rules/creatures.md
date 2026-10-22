@@ -210,7 +210,7 @@ Then the explosion disappears.
 
 ## Kept quirks
 
-- `wander_step` reads the party-blocked result of the last step test, also when it skips the test. The value survives between turns; `group_reset` does not clear it.
+- `wander_step` reads the party-blocked result of the last step test, even when it skips the test. The value survives between turns; `group_reset` does not clear it.
 - A group turn remembers its square and group thing (`last_turn` in `group.c`) until the next group turn. A group that becomes active plays its flip sound at this square, and a group off the party map tests teleporters with this thing.
 
 ## Deviations from the original
