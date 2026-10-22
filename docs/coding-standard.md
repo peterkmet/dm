@@ -10,11 +10,9 @@ this document names.
 
 ## 1. Layers and modules
 
-1. The source is `src/` with five layers in dependency order: `data/` (file formats, the engine image and its
-   tables, run configuration), `engine/` (game rules), `ui/` (screens, the dungeon view, input mapping,
-   audio output), `control/` (the turn-based protocol for a program player), `platform/` (SDL, the control
-   socket, options, the application, `main`). A file includes only headers of its own layer and of the layers
-   before it. [layer]
+1. The source is `src/` with five layers in dependency order: `data/`, `engine/`, `ui/`, `control/`,
+   `platform/` ([Architecture](architecture.md#layers) gives the content of each). A file includes only headers
+   of its own layer and of the layers before it. [layer]
 2. The public headers of a layer are in `src/<layer>/include/` (`src/engine/include/game.h`); a private
    `<module>_internal.h` is next to its `.c` files. The include path of a layer holds only the `include/`
    folders of its own layer and of the layers before it, and `-isystem src/third_party`, so the compiler rejects

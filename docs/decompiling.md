@@ -1,6 +1,6 @@
 # Decompiling
 
-How to decompile Dungeon Master v3.60 (Amiga) from your own disk image with Ghidra. The output is the reference for the port. The repository contains no game files.
+How to decompile Dungeon Master v3.60 (Amiga) from your own disk image with Ghidra. The output is the reference for the port.
 
 ## Prerequisites
 

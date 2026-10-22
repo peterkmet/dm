@@ -60,16 +60,12 @@ Each test module owns its state, so the tests run in any order and in parallel.
 ### Test seams
 
 - `build/libdm.dylib` holds every layer except the SDL files: `platform/main.c`, `platform/app.c`,
-  `platform/platform.c` and `platform/debug_view.c` (`SDL_SOURCES` in the `Makefile`). Each test module loads
-  its own copy with `dmtest.lib.load_lib()` (`tests/dmtest/lib.py`) and calls the C functions with ctypes.
+  `platform/platform.c` and `platform/debug_view.c` (`SDL_SOURCES` in the `Makefile`). The tests call its C
+  functions with ctypes.
 - `state_get_string` (`control/state_json.h`) gives the state, the view or the map as JSON.
 - The tests set `g_frame_hook` to run the frames of a sequence, for example in
   `tests/differential/test_csb_ending.py`.
 - The tests set the os hooks. `dmtest.lib.set_folder_hooks` sets the folder hooks.
-- The golden snapshots in `tests/golden/` hash the save file, the view, the rules, the screens and the
-  protocol replies.
-- The differential tests in `tests/differential/` run the same input through the port and the original in the
-  emulator and compare the state.
 
 To hide the format commit in `git blame`:
 

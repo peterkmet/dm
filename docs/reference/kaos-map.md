@@ -187,9 +187,7 @@ The string functions (`str_length`, `str_copy`, `str_concat`, `str_compare`, `st
 
 ## Random number generator
 
-`g_random_seed` (`0x100ef8`) starts with the long at offset `0x4c` of `IntuitionBase` (a time field).
-
-The formula is in [game-state.md](../rules/game-state.md#random-number-generator).
+The seed `g_random_seed` (`0x100ef8`), its start value, and the formula are in [Game state](../rules/game-state.md#random-number-generator).
 
 ## Main data structures
 

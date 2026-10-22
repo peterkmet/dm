@@ -122,7 +122,7 @@ DM pads each byte array to an even length. CSB does not. The content is equal, b
 
 ### Graphics.DAT
 
-CSB `Graphics.DAT` has 728 items. DM has 749. The item numbers up to 727 have the same meaning, so the graphic ids in `src/data/include/ids.h` stay valid. [Chaos Strikes Back data](data.md#item-comparison) lists the items that differ.
+CSB `Graphics.DAT` has 728 items. DM has 749. The item numbers up to 727 have the same meaning, so the graphic ids in `src/data/include/ids.h` stay valid. [Chaos Strikes Back data files](data.md#item-comparison) lists the items that differ.
 
 ## Differences and the port
 
@@ -342,9 +342,7 @@ Port: `magic.c` `cast_magic_map` (spell kind 4, failure message 11), `spells.c` 
 
 ### Save and load
 
-File name strings in the binary: `DF0:CSBGame.dat` and `DF0:CSBGame.bak` (C`0x10013a`, `0x10014a`), on the volume `DungeonSave:` (C`0x10012c`). DM uses `DF0:DMGAME~.DAT` and `.BAK`.
-
-The cipher (`savefile_xor_block`, C`0x128720`), the checksum (C`0x128752`), the checked blocks (C`0x1287c2`, `0x128786`), and the summed blocks (C`0x128810`, `0x128856`) are the same as DM. The blocks are the same: globals (128 bytes, same layout), active groups, champions and party (`0x580` bytes), timeline events, timeline index, 4 portraits, dungeon.
+The file names, the cipher, the checksum, and the blocks are in [Chaos Strikes Back data files](data.md#save-file).
 
 The header differs (`save_read_header` C`0x1289c4`, `load_game` C`0x129b3e`); the offsets are in [save.md](../formats/save.md#csb-header).
 
@@ -352,6 +350,8 @@ The header differs (`save_read_header` C`0x1289c4`, `load_game` C`0x129b3e`); th
 
 Other load and save differences:
 
+- The CSB load checks the checksum of block 2. DM ignores it.
+- On a restart (`-0xe2(A5)` set), the CSB load compares the game ID and shows THAT'S NOT THE SAME GAME on a mismatch.
 - `load_game` opens `CSBGAME.DAT`, then `CSBGAME.BAK`. Then it tries `DungeonMaster:Dungeon.FTL` (C`0x129d74`), which is not on the disk. A new game loads `Dungeon.DAT` of disk A: the prison (2622 bytes, compressed, signature `0x8104`).
 - The save dialog has CANCEL, SAVE AND PLAY, SAVE AND QUIT, and FORMAT FLOPPY (`save_game` C`0x128cc0`, `reference/decomp/csb-a/APPB.c` from line 36964). Without the floppy option (`A5-0x4b6` = 0), the dialog has 3 choices: 1 CANCEL, 2 SAVE AND PLAY, 3 SAVE AND QUIT. With the option, it has 4: 1 SAVE AND PLAY, 2 SAVE AND QUIT, 3 FORMAT FLOPPY, 4 CANCEL.
   - CANCEL closes the dialog.
@@ -405,6 +405,8 @@ CSB contains copy protection. The port leaves it out and acts as if every check 
 
 - Disk access through CIA and `DSKPT` inside `sound_request_play` (`protect_disk_access`, C`0x1097e6`).
 - Track bit pattern checks: `protect_compare_track_bits` (C`0x1244f8`), timeline event 22 (`protect_check_10c2b0`, every 500 ticks from `process_new_party_map` C`0x107f7a`).
+- A dungeon check: before it builds the column pointers, `load_dungeon` (C`0x1295a0`) compares a value from `0xa02(A5)` with `DAT_00129a42`. When the values differ, it does not build them (unverified).
+- A disk check at the start of `save_game` (C`0x128cc0`) reads raw MFM data from the drive (custom chip and CIA access) (unverified).
 - Code checksums: C`0x120b4e` (over C`0x128ca0`–`0x129580`, from `load_dungeon`), C`0x1245b4` (from `move_get_move_result` on maps above 2), C`0x128676`.
 - Self-modifying hooks: `protect_install_hook` (C`0x11e248`) patches `champion_apply_time_effects` and runs graphic 21 as code (from `decrease_torches_light_power` C`0x111018`, and C`0x11c896`, `0x125cac`, `0x125da0`).
 - Penalties when a check fails: `timeline_add_event` adds no event (C`0x122d46`), `timeline_is_first_event_expired` returns 0 (C`0x122e54`), movement destinations change (C`0x1216e6`), the timeline dispatcher uses a stale event type (C`0x124148`).

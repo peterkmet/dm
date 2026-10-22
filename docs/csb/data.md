@@ -122,7 +122,7 @@ Content:
 - Stairs down on map 0 (all to map 1): (19, 7) and (6, 15) can be reached from the start: through the imaginary wall at (15, 6) and the closed door with a button at (18, 6), and through the imaginary wall at (8, 14) and the closed door with a button at (7, 15). (19, 3) and (1, 15) are closed in, each with an open door north of it: (19, 1)–(19, 3) and (1, 13)–(1, 15) have no other exit (read with the port map accessors).
 - Map 1 has no texts or sensors. It has 12 creature groups: 7 of type 10, 5 of type 7.
 
-The CSB `load_dungeon` is at `0x1295a0`. It follows the DM loader. One addition: before it builds the column pointers, it compares a value from `0xa02(A5)` with `DAT_00129a42`. When the values differ, it does not build the column pointers. This is probably a copy-protection check (unverified).
+The CSB `load_dungeon` is at `0x1295a0`. It follows the DM loader and adds a copy-protection check ([CSB engine compared with the DM engine](engine-diff.md#copy-protection)).
 
 Result: the port loader reads the file. The full CSB dungeon is not on disk A. The utility disk makes the adventure from a saved start game. The utility modules `CEDT.FTL` and `HINT.FTL` refer to `DF0:MINI.DAT`, `DF0:DMGAME.DAT`, and `DF0:CSBGAME.DAT`. `MINI.DAT` (42784 bytes) has the layout of a saved game, see [MINI.DAT format](new-adventure.md#minidat-format).
 
@@ -151,12 +151,7 @@ The offsets of the DM and CSB headers are in [save.md](../formats/save.md#csb-he
 
 Evidence: the writer at `0x128cc0` and the reader at `0x129b3e` use the same offsets. The machine code at `0x12928c` is `moveq #5,d0; move.b d0,$12d(a3); move.b -$421(a5),$12c(a3)`.
 
-### Load differences
-
-- The CSB load checks the checksum of block 2. DM ignores it.
-- On a restart (`-0xe2(A5)` set), the CSB load compares the game ID and shows THAT'S NOT THE SAME GAME on a mismatch.
-- `save_game` starts with a disk check that reads raw MFM data from the drive (`0x128cc0`, custom chip and CIA access). This is probably copy protection (unverified).
-- After a save, the dialog closes. When the player chose save and quit, the save calls the endgame `0x128374(0)`.
+The load and save behavior of the CSB engine is in [CSB engine compared with the DM engine](engine-diff.md#save-and-load).
 
 Result: `savefile.c` reads and writes the CSB header when `g_adventure` is `ADVENTURE_CSB`, and then also checks the block 2 checksum. `tests/port/test_csb_save.py` decodes `MINI.DAT` with the port. The original CEDT reader (`tests/differential/test_csb_mini.py`) accepts a file that the port writes.
 

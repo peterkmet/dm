@@ -269,7 +269,7 @@ The influence roll is `random16() % (influence level + bonus)`. The bonus and th
 
 ## Save files
 
-`champion_pack` and `champion_unpack` convert between the `Champion` struct and the original 0x140-byte big-endian record. The portrait pointer (offset 0x114) is not in the struct.
+`champion_pack` and `champion_unpack` convert between the `Champion` struct and the original big-endian record ([Game state](game-state.md#champions)).
 
 ## Not in this module
 
