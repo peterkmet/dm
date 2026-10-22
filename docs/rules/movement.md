@@ -17,7 +17,7 @@ move_party_enter_dungeon();
 
 ## Game loop order
 
-The tick order is in [architecture.md](../architecture.md#the-tick). The movement part: `move_process_new_party_map()` changes the party map when `g_session.new_party_map` is not -1 (the party enters its square on the new map), then `event_process_expired()` runs; step 1 repeats while `g_session.new_party_map` is not -1. The command step calls `move_party(command)` or `move_turn_party(command)`.
+The tick order is in [Architecture](../architecture.md#the-tick). The movement part: `move_process_new_party_map()` changes the party map when `g_session.new_party_map` is not -1 (the party enters its square on the new map), then `event_process_expired()` runs; step 1 repeats while `g_session.new_party_map` is not -1. The command step calls `move_party(command)` or `move_turn_party(command)`.
 
 ## Current map
 
@@ -99,13 +99,13 @@ One square chain (`follow_square_chain`) serves every mover kind (`MOVER_PARTY`,
 
 | Square | Mover | Rule |
 |---|---|---|
-| Teleporter | party | Needs scope bit 2. Plays sound 14 (`SOUND_BUZZ`) now when audible. The party turns. The port counts the teleports in `g_party_teleport_count` for the turn-based mode. |
+| Teleporter | party | Needs scope bit 2. Plays sound 14 (`SOUND_BUZZ`) now when audible. The party turns. The port counts the teleports in `g_party_teleport_count` for the LLM mode. |
 | Teleporter | group | Needs scope bit 1 (creatures). Plays sound 14 (`SOUND_BUZZ`) after the tick when audible. `group_turn_by_teleporter` turns the creature directions and cells. |
 | Teleporter | object | Any scope except 1 (creatures only). The object rotates its cell, unless `keeps_cell`. |
 | Teleporter | projectile | Any scope except 1 (creatures only). The projectile rotates its flight direction and its cell. |
 | Teleporter | all | A closed teleporter, another scope, or a teleporter that points to its own square ends the loop. |
 | Pit | all | An open pit takes a thing that does not levitate one level down (`map_get_level_change_location(place, 1)`). |
-| Pit | party | `champion_fall_damage(uses_rope)` ([champions.md](champions.md#damage)). Only the first pit of the chain uses the rope. |
+| Pit | party | `champion_fall_damage(uses_rope)` ([Champion rules](champions.md#damage)). Only the first pit of the chain uses the rope. |
 | Pit | group | `group_is_killed_by_fall`: each creature takes `FALL_DAMAGE` (20) on the source map. Creatures that died drop their fixed possessions on the destination. When all creatures die, the loop ends. |
 | Stairs | object, group | Down stairs (bit 2 clear) go one level down; up stairs do not change the level. The thing steps out in the exit direction and takes the cell on the side it came from, next to the stairs. |
 | Stairs | party, projectile | The loop ends. |
@@ -119,11 +119,11 @@ After the loop:
 - A move to the same square does nothing when the party direction or the cell of an object or a group did not change.
 - The thing leaves the source square with `sensor_process_thing_change(..., 0)`. A levitating object (projectile, explosion) only unlinks.
 - The party on a new map sets `g_session.new_party_map`. The party on the same map enters the floor sensors. An object enters the square with its sensors. A projectile only links.
-- A group enters the square with `group_enter_square` (see [creatures.md](creatures.md)).
+- A group enters the square with `group_enter_square` (see [Creature, projectile, and magic rules](creatures.md)).
 
 ### Champion functions
 
-Movement calls these functions of `src/engine/champion.c` and `src/engine/inventory.c` (see [champions.md](champions.md)): `champion_decrement_stamina`, `champion_get_maximum_load`, `champion_get_movement_ticks`, `champion_damage_all`, `champion_fall_damage`, `party_delete_scent`, `champion_add_skill_experience`, `champion_add_candidate_to_party`, `inventory_put_hand_object`, `inventory_take_hand_object`, and `object_get_type`. `object_get_type` needs `tables_load()`.
+Movement calls these functions of `src/engine/champion.c` and `src/engine/inventory.c` (see [Champion rules](champions.md)): `champion_decrement_stamina`, `champion_get_maximum_load`, `champion_get_movement_ticks`, `champion_damage_all`, `champion_fall_damage`, `party_delete_scent`, `champion_add_skill_experience`, `champion_add_candidate_to_party`, `inventory_put_hand_object`, `inventory_take_hand_object`, and `object_get_type`. `object_get_type` needs `tables_load()`.
 
 ## Sensors
 
@@ -238,14 +238,14 @@ Event types that other pages describe:
 
 | Type | Handler | Page |
 |---|---|---|
-| 11 | `enable_champion_action` | [champions.md](champions.md) |
-| 12 | `hide_damage_received` | [champions.md](champions.md) |
-| 13 | `process_vi_altar_rebirth` | [champions.md](champions.md) |
-| 25 | `explosion_process_step_event` | [creatures.md](creatures.md) |
-| 29–41 | `group_process_event` | [creatures.md](creatures.md) |
-| 48, 49 | `projectile_process_move_event` | [creatures.md](creatures.md) |
-| 60, 61 | `group_process_move_event` | [creatures.md](creatures.md) |
-| 75 | `champion_poison` | [champions.md](champions.md) |
+| 11 | `enable_champion_action` | [Champion rules](champions.md) |
+| 12 | `hide_damage_received` | [Champion rules](champions.md) |
+| 13 | `process_vi_altar_rebirth` | [Champion rules](champions.md) |
+| 25 | `explosion_process_step_event` | [Creature, projectile, and magic rules](creatures.md) |
+| 29–41 | `group_process_event` | [Creature, projectile, and magic rules](creatures.md) |
+| 48, 49 | `projectile_process_move_event` | [Creature, projectile, and magic rules](creatures.md) |
+| 60, 61 | `group_process_move_event` | [Creature, projectile, and magic rules](creatures.md) |
+| 75 | `champion_poison` | [Champion rules](champions.md) |
 | 0, 3, 4, 14–19, 21–23, 26–28, 42–47, 50–52, 54–59, 62–64, 66–69, 76, 80 and higher | None in the original | — |
 
 The redraw calls of events 70–79 (the view palette, `status_draw_champion`) belong to the drawing layer.
@@ -260,7 +260,7 @@ Movement rules that the event table does not cover:
 
 ## Deviations from the original
 
-Recorded in [dungeon.md](../formats/dungeon.md#deviations-from-the-original).
+Recorded in [Dungeon.DAT format](../formats/dungeon.md#deviations-from-the-original).
 
 ## Tests
 

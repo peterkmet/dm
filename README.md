@@ -63,7 +63,7 @@ DM_CONTROL=/tmp/dm.sock uv run dm-play act move_forward
 ```
 
 The `dm-mcp` server exposes the control socket over the Model Context Protocol (MCP) for clients such as Claude
-Code. [LLM mode](docs/llm/llm-mode.md) has the protocol, the actions, and the setup. [LLM runs](docs/llm/llm-runs.md)
+Code. [LLM mode: turn-based play over MCP](docs/llm/llm-mode.md) has the protocol, the actions, and the setup. [LLM runs](docs/llm/llm-runs.md)
 describes playthroughs with a coordinator and player agents.
 
 ## Build
@@ -79,7 +79,7 @@ make windows    # Cross-compile build/dm.exe with MinGW-w64
 
 Run `build/dm` from the directory containing your `.adf` images. See [Development](docs/development.md) for
 build and release workflows, [Architecture](docs/architecture.md) and [Coding standard](docs/coding-standard.md)
-for codebase structure, and [CHANGELOG.md](CHANGELOG.md) for release history.
+for codebase structure, and [Changelog](CHANGELOG.md) for release history.
 
 ## Engineering
 
@@ -99,8 +99,8 @@ The port was developed with Claude Code in four stages:
 source. It compiles to bit-identical Amiga and Atari ST binaries. DMMac takes only the function and structure
 names from ReDMCSB, which keeps the two code bases easy to compare.
 
-More: [FTL file format](docs/formats/ftl.md), [game state](docs/rules/game-state.md),
-[Chaos Strikes Back data](docs/csb/data.md), [KAOS module map](docs/reference/kaos-map.md).
+More: [FTL module format](docs/formats/ftl.md), [Game state](docs/rules/game-state.md),
+[Chaos Strikes Back data files](docs/csb/data.md), [KAOS module map](docs/reference/kaos-map.md).
 
 ## Acknowledgements
 

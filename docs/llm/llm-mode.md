@@ -1,12 +1,12 @@
 # LLM mode: turn-based play over MCP
 
-In turn-based mode, a program or an LLM plays the game through a Unix socket. The game time stands still between turns. The window shows the game, so a person can watch. The MCP server `dm-mcp` connects Claude Code to the socket.
+In the LLM mode, a program or an LLM plays the game through a Unix socket. The game time stands still between turns. The window shows the game, so a person can watch. The MCP server `dm-mcp` connects Claude Code to the socket.
 
 ## Play with Claude Code
 
 ### Prerequisites
 
-- The game files are in `game/` (see the [manual](../manual.md)).
+- The game files are in `game/` (see the [Player manual](../manual.md)).
 - `uv sync` is complete.
 - Claude Code is installed.
 
@@ -18,7 +18,7 @@ In turn-based mode, a program or an LLM plays the game through a Unix socket. Th
    make
    ```
 
-2. Start the game in turn-based mode with the default socket `~/.dm/control.sock`.
+2. Start the game in the LLM mode with the default socket `~/.dm/control.sock`.
 
    ```sh
    build/dm --mode turnbased --control ~/.dm/control.sock
@@ -40,11 +40,11 @@ In turn-based mode, a program or an LLM plays the game through a Unix socket. Th
 
 4. Start Claude Code and ask it to play. Example prompt: `Use the dm tools. Recruit four champions and explore the first level.`
 
-   The server instructions and the tool descriptions tell the LLM how to play. A long playthrough uses `dm-play` and the player instructions instead: see [the LLM runs page](llm-runs.md).
+   The server instructions and the tool descriptions tell the LLM how to play. A long playthrough uses `dm-play` and the player instructions instead: see [LLM runs](llm-runs.md).
 
 ## Play Chaos Strikes Back
 
-The Chaos Strikes Back (CSB) files must be in `game-csb/` (see the [manual](../manual.md)). Start the game with `--adventure csb`:
+The Chaos Strikes Back (CSB) files must be in `game-csb/` (see the [Player manual](../manual.md)). Start the game with `--adventure csb`:
 
 ```sh
 build/dm --adventure csb --mode turnbased --control ~/.dm/control.sock
@@ -53,7 +53,7 @@ build/dm --adventure csb --mode turnbased --control ~/.dm/control.sock
 The game selects NEW ADVENTURE at the start. `new_game` starts it again. `state.adventure` is `"csb"`.
 
 1. The game starts in the prison (map 0, square 9,0). Recruit up to four champions at the mirrors.
-2. Send `save`. In the prison, the save creates the adventure ([manual](../manual.md#chaos-strikes-back)) and continues at the start of the CSB dungeon (map 4).
+2. Send `save`. In the prison, the save creates the adventure ([Player manual](../manual.md#chaos-strikes-back)) and continues at the start of the CSB dungeon (map 4).
 3. The response of `save` is `{"ok":true}` only. Send `get_state` to see the new position.
 
 After that, `save` writes `CSBGAME.DAT` (the old file becomes `CSBGAME.BAK`), and `load` loads it. The save directory is the folder of `--saves`, otherwise the CSB data folder.
@@ -599,6 +599,6 @@ uv run dm-play new_game
 
 ## Known limits
 
-- In the turn-based mode the automap and the quick save keys do not work, because the keyboard does not control the game. `get_map` gives the automap.
+- In the LLM mode the automap and the quick save keys do not work, because the keyboard does not control the game. `get_map` gives the automap.
 - Throwing objects has no action.
-- `recruit` with `reincarnate` keeps the old name and title, because the turn-based mode has no name entry.
+- `recruit` with `reincarnate` keeps the old name and title, because the LLM mode has no name entry.

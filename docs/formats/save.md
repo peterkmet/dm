@@ -90,26 +90,26 @@ The checksum is weak. A change that sets a bit in the plain word and clears the 
 
 | Offset | Size | Global |
 |---|---|---|
-| 0 | 4 | `g_game_time` |
-| 4 | 4 | `g_random_seed` |
-| 8 | 2 | `g_leader_hand_object` |
-| 10 | 2 | `g_party_champion_count` |
-| 12 | 2 | `g_party_map_x` |
-| 14 | 2 | `g_party_map_y` |
-| 16 | 2 | `g_party_direction` |
-| 18 | 2 | `g_party_map_index` |
-| 20 | 2 | `g_leader_index` |
-| 22 | 2 | `g_magic_caster_champion_index` |
-| 24 | 2 | `g_timeline.count` |
-| 26 | 2 | `g_timeline.first_unused` |
-| 28 | 2 | `g_timeline.capacity` |
-| 30 | 2 | `g_active_group_count` |
-| 32 | 4 | `g_last_creature_attack_time` |
-| 36 | 4 | `g_last_party_movement_time` |
-| 40 | 2 | `g_disabled_movement_ticks` |
-| 42 | 2 | `g_projectile_disabled_movement_ticks` |
-| 44 | 2 | `g_last_projectile_disabled_movement_direction` |
-| 46 | 2 | `g_max_active_group_count` |
+| `0x00` | 4 | `g_game_time` |
+| `0x04` | 4 | `g_random_seed` |
+| `0x08` | 2 | `g_leader_hand_object` |
+| `0x0a` | 2 | `g_party_champion_count` |
+| `0x0c` | 2 | `g_party_map_x` |
+| `0x0e` | 2 | `g_party_map_y` |
+| `0x10` | 2 | `g_party_direction` |
+| `0x12` | 2 | `g_party_map_index` |
+| `0x14` | 2 | `g_leader_index` |
+| `0x16` | 2 | `g_magic_caster_champion_index` |
+| `0x18` | 2 | `g_timeline.count` |
+| `0x1a` | 2 | `g_timeline.first_unused` |
+| `0x1c` | 2 | `g_timeline.capacity` |
+| `0x1e` | 2 | `g_active_group_count` |
+| `0x20` | 4 | `g_last_creature_attack_time` |
+| `0x24` | 4 | `g_last_party_movement_time` |
+| `0x28` | 2 | `g_disabled_movement_ticks` |
+| `0x2a` | 2 | `g_projectile_disabled_movement_ticks` |
+| `0x2c` | 2 | `g_last_projectile_disabled_movement_direction` |
+| `0x2e` | 2 | `g_max_active_group_count` |
 
 ### Block 1: active groups
 
@@ -135,7 +135,7 @@ Four champion portrait bitmaps, not encrypted. Each bitmap has `((32 + 15) & ~15
 
 ### Dungeon
 
-The dungeon in `Dungeon.DAT` format without compression: header (44 bytes), maps, column first-thing indices, square first things, text data, 16 thing arrays, and raw map data. Then one word: the 16-bit sum of all bytes of the dungeon parts. `dungeon_load` accepts the dungeon when the word is missing or equal to the sum. The dungeon header gives the part sizes. See [dungeon.md](dungeon.md).
+The dungeon in `Dungeon.DAT` format without compression: header (44 bytes), maps, column first-thing indices, square first things, text data, 16 thing arrays, and raw map data. Then one word: the 16-bit sum of all bytes of the dungeon parts. `dungeon_load` accepts the dungeon when the word is missing or equal to the sum. The dungeon header gives the part sizes. See [Dungeon.DAT format](dungeon.md).
 
 ## C API
 
@@ -207,7 +207,7 @@ With `g_adventure == ADVENTURE_CSB`, all functions use the CSB header:
 | Dungeon ID | `0x178` | `0x17a` | From the dungeon header, default 10 |
 | Extra bytes | `0x17a`, 134 bytes | `0x17c`, 132 bytes | Copied unchanged |
 
-`savefile_decode` also checks the block 2 checksum. The CSB save file is `CSBGAME.DAT`; the other differences are in [data.md](../csb/data.md#save-file).
+`savefile_decode` also checks the block 2 checksum. The CSB save file is `CSBGAME.DAT`; the other differences are in [Chaos Strikes Back data files](../csb/data.md#save-file).
 
 ## Game state (`savegame.c`)
 
@@ -255,7 +255,7 @@ The slot list (`savegame_read_slot_info`) reads each file without a load:
 
 - Block 0: the globals of the table above. The unused bytes are 0.
 - Block 1: `ActiveGroup` in its original 16-byte order. `group_index` is a big-endian word.
-- Block 2: `champion_pack` for the 4 champions, then the party record ([game-state.md](../rules/game-state.md)). The bytes from `0x58` to `0x7f` of the party part are not traced. The port writes 0 and ignores them on load.
+- Block 2: `champion_pack` for the 4 champions, then the party record ([Game state](../rules/game-state.md)). The bytes from `0x58` to `0x7f` of the party part are not traced. The port writes 0 and ignores them on load.
 - Block 3: 10 bytes per event: `map_time` (long), `type`, `priority`, `b`, `c`. A free slot has the next free index in the high word, as in the original. The load rebuilds the free list (`timeline_reset`).
 - Block 4: the heap of slot indices.
 

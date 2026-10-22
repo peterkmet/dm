@@ -19,9 +19,9 @@
 
 - `build/dm --help`; unknown options stop with an error.
 - The game extracts the Amiga disk images (`.adf`) in the current folder into `game/`, `game-csb/`, and `game-csb/disk-b/` on startup.
-- Before an adventure loads, the game checks the CRC32 of its required files against the Amiga disks and names the first wrong file.
+- Before an adventure loads, the game checks the CRC-32 of its required files against the Amiga disks and names the first wrong file.
 - Windows build: `make windows` (MinGW-w64) and `tools/dist/make-dist-win.sh` for a Windows zip. No LLM mode on Windows.
-- REINCARNATE asks for a new name and title, as in the original (DM and CSB). The turn-based mode keeps the old name.
+- REINCARNATE asks for a new name and title, as in the original (DM and CSB). The LLM mode keeps the old name.
 - The entrance shows the credits; the entrance and its credits fade the palette as in the original.
 - The view draws the Thieves Eye holes: the wall ahead, the door ahead, and the door frame of the party square.
 - A thing on a far square disappears when the records of its type run out, as in the original.
@@ -44,7 +44,7 @@
 - `tools/dist/make-dist.sh` no longer puts game files into the zip; the player adds the disk images.
 - Clean-code pass of the C port, with no change of game behavior: `.clang-format` and a format check, named constants, `bool` truth values, typed accessors for the KAOS tables, verb-object names, game rules moved from `ui/` to `engine/`, and the dungeon view squares drawn from one table. `docs/coding-standard.md` lists every check of `tests/standard/test_standard.py`.
 - Golden snapshot tests of the save file, the dungeon view, and the game rules.
-- Windows: the ADF extraction stops with an error on a file name that is not safe on Windows; the turn-based mode is hidden.
+- Windows: the ADF extraction stops with an error on a file name that is not safe on Windows; the LLM mode is hidden.
 - `--view` uses the game keys and walks through walls.
 - Source layout: the public headers of a layer are in `src/<layer>/include/`; each layer compiles with the include paths of its own and the lower layers.
 - Advanced mode: Escape in the dungeon view opens the options menu, not the freeze. The automap keys L, I, F (cheats) and 1, 2, 3 (music) are gone; the music choice is in the options menu.
@@ -140,7 +140,7 @@
 
 ### Added
 
-- Advanced mode: a third cheat on the automap. F switches food and water: they do not go down; eating and drinking still raise them. The automap shows its state. It is not saved: a new or loaded game turns it off. Not in the turn-based mode.
+- Advanced mode: a third cheat on the automap. F switches food and water: they do not go down; eating and drinking still raise them. The automap shows its state. It is not saved: a new or loaded game turns it off. Not in the LLM mode.
 
 ## 0.8.2 - 2026-10-05
 
@@ -158,8 +158,8 @@
 
 ### Changed
 
-- Turn-based `get_map` shows what the automap shows: walls, floors, doors and their state, stairs, open pits, open teleporters, and pressure pads. It shows no wall features (`M L K H V A F ?`): a wall is `#`. The view keeps the wall features, with their side.
-- The turn-based view lists a side square only when the screen draws it: not when the center square of its row and the side square one row nearer block the sight. Before, the view showed squares, creatures, and objects behind walls.
+- LLM mode: `get_map` shows what the automap shows: walls, floors, doors and their state, stairs, open pits, open teleporters, and pressure pads. It shows no wall features (`M L K H V A F ?`): a wall is `#`. The view keeps the wall features, with their side.
+- The LLM mode view lists a side square only when the screen draws it: not when the center square of its row and the side square one row nearer block the sight. Before, the view showed squares, creatures, and objects behind walls.
 - `make -C port lego` copies the latest game into `.playthrough-lego/`, the personal play folder; the saves there stay.
 
 ### Added
@@ -170,7 +170,7 @@
 
 ### Added
 
-- Turn-based view: `ornament` on a wall face names its picture (for example `creeper`, `manacles`), as `lock` does. All wall ornaments of the DM dungeon have a name.
+- LLM mode view: `ornament` on a wall face names its picture (for example `creeper`, `manacles`), as `lock` does. All wall ornaments of the DM dungeon have a name.
 - Player file templates in `playthrough_template/`, each with a header that says what to write and in which format. The start save with the party of 4 is kept there locally (git-ignored).
 
 ### Changed
@@ -192,14 +192,14 @@
 
 ### Changed
 
-- Turn-based view: `lock` on a wall face names the picture of the keyhole or slot (for example `iron_lock`, `gold_lock`, `sun_lock`, `eye_socket`, `gem_hole`, `coin_slot`). A picture without a name gives its index in the wall ornament graphics. Before, `lock` was only `true`. `--brief` prints `lock <name>`.
+- LLM mode view: `lock` on a wall face names the picture of the keyhole or slot (for example `iron_lock`, `gold_lock`, `sun_lock`, `eye_socket`, `gem_hole`, `coin_slot`). A picture without a name gives its index in the wall ornament graphics. Before, `lock` was only `true`. `--brief` prints `lock <name>`.
 - LLM playbook: the player reads wall texts and lock names from the view JSON. Screenshots are only for a suspected bug.
 
 ## 0.5.1 - 2026-10-05
 
 ### Fixed
 
-- Turn-based mode: a `load` that arrived on the control socket before the first frame stopped the game clock. The program stayed at the entrance, and each `wait` and move returned `ticks 0`. Now the game starts before the program reads the first request.
+- LLM mode: a `load` that arrived on the control socket before the first frame stopped the game clock. The program stayed at the entrance, and each `wait` and move returned `ticks 0`. Now the game starts before the program reads the first request.
 
 ### Removed
 
@@ -209,13 +209,13 @@
 
 ### Added
 
-- Advanced mode: cheats on the automap. L switches full light (the view is always bright; the creature rules keep the real light). I switches immortality (the health of a champion stops at 1; damage, wounds, poison, hunger, and thirst stay). The automap shows their state. They are not saved: a new or loaded game turns them off. Not in the turn-based mode.
+- Advanced mode: cheats on the automap. L switches full light (the view is always bright; the creature rules keep the real light). I switches immortality (the health of a champion stops at 1; damage, wounds, poison, hunger, and thirst stay). The automap shows their state. They are not saved: a new or loaded game turns them off. Not in the LLM mode.
 
 ## 0.4.1 - 2026-10-05
 
 ### Changed
 
-- QUIT on the DM entrance and on the CSB screen goes back to the first start screen. Ctrl+Q or closing the window ends the program. In turn-based mode, and when `--adventure` and `--mode` skip every start screen, QUIT ends the program.
+- QUIT on the DM entrance and on the CSB screen goes back to the first start screen. Ctrl+Q or closing the window ends the program. In the LLM mode, and when `--adventure` and `--mode` skip every start screen, QUIT ends the program.
 
 ### Fixed
 
@@ -228,7 +228,7 @@ Intros of the original disks. The save format does not change.
 ### Added
 
 - DM: the FTL logo of `SWSH.FTL` with its sound before the title animation.
-- CSB: NEW ADVENTURE shows the FTL logo and the intro of disk B (`disk-b/ANIM.DAT`, about 3.6 minutes) with the music `disk-b/MIDI/NAKED.AMG` and the sounds of `disk-b/Sound/`. A key or a click stops the intro; the music fades out. `DM_AUTO_ENTER` and the turn-based mode skip it.
+- CSB: NEW ADVENTURE shows the FTL logo and the intro of disk B (`disk-b/ANIM.DAT`, about 3.6 minutes) with the music `disk-b/MIDI/NAKED.AMG` and the sounds of `disk-b/Sound/`. A key or a click stops the intro; the music fades out. `DM_AUTO_ENTER` and the LLM mode skip it.
 
 ### Deviations from the original
 
@@ -240,7 +240,7 @@ Items of the todo list. The save format does not change: saves of 0.2.0 load, an
 
 ### Added
 
-- DM title animation (`TITL.DAT`) before the entrance. A key or a click stops it. `DM_AUTO_ENTER` and the turn-based mode skip it.
+- DM title animation (`TITL.DAT`) before the entrance. A key or a click stops it. `DM_AUTO_ENTER` and the LLM mode skip it.
 - Entrance: ENTER and RESUME show the pressed button with the switch sound. After ENTER, the doors open with the door sound.
 - Window and Dock icon: the mummy from `Graphics.DAT`.
 - Advanced mode: a left click on the automap moves the clicked square to the center. Tab closes an open inventory. A click on a fountain with an empty hand lets every living champion drink.
@@ -272,7 +272,7 @@ Chaos Strikes Back (Amiga) support, and changes to the advanced mode.
   - Magic map: the map spells, events 80 to 83, the MAGICMAP and CREANAME scrolls.
   - End of the game: the CSB death screen with RESTART THIS GAME, and the `ENDA.DAT` animation after the end sensor.
 - Start screens in the DM font: adventure (DUNGEON MASTER / CHAOS STRIKES BACK), then mode (VANILLA / ADVANCED / LLM). `--adventure dm|csb` and `--mode` skip them.
-- Turn-based mode and the LLM tools work for CSB. The state JSON has the field `adventure`.
+- LLM mode and the LLM tools work for CSB. The state JSON has the field `adventure`.
 - Advanced mode: quick save (F5) and quick load (F9) to `QUICK.DAT`; W, A, S, D, Q, E move and turn the party.
 
 ### Changed
@@ -297,7 +297,7 @@ First complete version of the C port of Dungeon Master v3.60 (Amiga).
 - C port on SDL3: data loading (`KAOS.FTL`, `Graphics.DAT`, `Dungeon.DAT`), dungeon view, interface, text, sound, movement and sensors, champions and inventory, creatures, projectiles, magic, champion actions, save and resume in the original format, party death and endgame.
 - Vanilla mode (default): the original game.
 - Advanced mode (`--mode advanced`): automap (M or Tab), debug read-out (F5), feature toggle (F6), rune symbols on spell scrolls, colored action icons, item stat meters, smooth projectile flight, Escape closes an open inventory. The automap is saved as an extension after the original save data.
-- Turn-based mode (`--mode turnbased`): the game waits for turns that arrive over a Unix socket. JSON state, view and explored map for an LLM player. MCP server (`dm-mcp`) and CLI client (`dm-play`).
+- LLM mode (`--mode turnbased`): the game waits for turns that arrive over a Unix socket. JSON state, view and explored map for an LLM player. MCP server (`dm-mcp`) and CLI client (`dm-play`).
 - Pixel-art upscaling: `--filter scale2x|scale3x` or `DM_FILTER`.
 
 ### Deviations from the original

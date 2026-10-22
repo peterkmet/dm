@@ -15,7 +15,7 @@ The sources are the decompiled modules in `reference/decomp/csb-a/` (disk A) and
 
 The dungeon text in the prison says the same: "FIRST CHOOSE YOUR CHAMPIONS...THEN SAVE THE GAME...THEN RESTART WITH THE UTILITY DISK." (text strings 24 and 25 of disk A `Dungeon.DAT`, read with `dmcsb`, the Dungeon Master tools by Cycl0ne).
 
-`MINI.DAT` uses the cipher of the DM save file ([save.md](../formats/save.md)), not a special one, with a header that is moved by 2 bytes. It is not compressed. CEDT does not change or randomize the dungeon.
+`MINI.DAT` uses the cipher of the DM save file ([Save file format](../formats/save.md)), not a special one, with a header that is moved by 2 bytes. It is not compressed. CEDT does not change or randomize the dungeon.
 
 ## Modules
 
@@ -90,11 +90,11 @@ The header has the same structure as the DM header: 32 groups of 4 noise words, 
 
 ### Decode algorithm
 
-1. Header check (`0x108da2`): compute the header chain ([save.md](../formats/save.md#header-chain)). Decrypt the 128 payload words with the cipher below and the key word. The chain must equal the 16-bit sum of the plain payload words.
+1. Header check (`0x108da2`): compute the header chain ([Save file format](../formats/save.md#header-chain)). Decrypt the 128 payload words with the cipher below and the key word. The chain must equal the 16-bit sum of the plain payload words.
 2. Blocks (`0x108c62`): read each block, decrypt it with `0x108bfc(buf, key[i], words)`, and compare the returned sum with `checksum[i]`. Block sizes come from block 0: offset 46 is the maximum active group count, offset 28 is the event maximum count.
-3. Cipher (`0x108bfc`): the same as DM `savefile_xor_block` ([save.md](../formats/save.md#block-cipher)).
+3. Cipher (`0x108bfc`): the same as DM `savefile_xor_block` ([Save file format](../formats/save.md#block-cipher)).
 4. Portraits: read 4 × 464 bytes without a change.
-5. Dungeon (`0x108efe`): read the parts in the order of `Dungeon.DAT` ([dungeon.md](../formats/dungeon.md)). The thing record sizes are the table at `0x100568`. Add every byte to a 16-bit sum. Then read 2 more bytes. When the read gives 2 bytes, they must equal the sum.
+5. Dungeon (`0x108efe`): read the parts in the order of `Dungeon.DAT` ([Dungeon.DAT format](../formats/dungeon.md)). The thing record sizes are the table at `0x100568`. Add every byte to a 16-bit sum. Then read 2 more bytes. When the read gives 2 bytes, they must equal the sum.
 
 `MINI.DAT` passes all checks. All five block checksums and the dungeon sum (`0x7cc6`) match.
 
@@ -129,7 +129,7 @@ The header has the same structure as the DM header: 32 groups of 4 noise words, 
 - Mini champion count (block 0, offset 10) = game champion count.
 - The load step `0x109c20` clears the bytes after the first NUL in the 8-byte name and in the 20-byte title.
 
-Then for each champion (record offsets of [game-state.md](../rules/game-state.md)):
+Then for each champion (record offsets of [Game state](../rules/game-state.md)):
 
 | Field | New value |
 |---|---|

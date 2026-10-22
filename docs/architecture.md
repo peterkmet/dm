@@ -18,7 +18,7 @@ engine/     game rules: dungeon, party, champions, creatures, timeline, saves
 data/       file formats, the engine image (KAOS.FTL, APPB.FTL) and its tables, run configuration
 ```
 
-A file includes only headers of its own layer and of the layers below it in the diagram ([coding standard](coding-standard.md), section 1).
+A file includes only headers of its own layer and of the layers below it in the diagram ([Coding standard](coding-standard.md), section 1).
 This page names a header with its layer: `engine/game.h` is `src/engine/include/game.h`.
 
 - `data/` owns the file formats, the engine image and its tables, and the run configuration. It reaches the
@@ -140,7 +140,7 @@ The modules `advanced`, `automap`, `cheats`, `music`, `optmenu`, `rows`, and `sl
 
 | Header | Prefixes | Purpose |
 |---|---|---|
-| `platform/app.h` | `app_` | The application: the start screens, the choice of the adventure and the mode, the frame loop, and the turn-based socket. |
+| `platform/app.h` | `app_` | The application: the start screens, the choice of the adventure and the mode, the frame loop, and the control socket. |
 | `platform/debug_view.h` | `debug_view_` | The developer modes: --show draws one graphic, --view draws the dungeon view with free movement. |
 | `platform/options.h` | `options_` | The command line of the game: one table of options, --help, and an error for an unknown option or a bad value. |
 | `platform/platform.h` | `plat_` | The SDL layer of the game: the window, the picture, the input events, the 50 Hz tick, the audio output, and the mouse pointer. |
@@ -157,11 +157,11 @@ The modules `advanced`, `automap`, `cheats`, `music`, `optmenu`, `rows`, and `sl
 
 1. The input: `plat_poll` reads the SDL events. On the start screens they go to `select_click` and
    `select_key`; in the game they become commands (`command_process_key`, `command_process_click`). In
-   turn-based mode the game ignores the keyboard and the mouse from the entrance on; the start screens still read them.
+   LLM mode the game ignores the keyboard and the mouse from the entrance on; the start screens still read them.
 2. `transport_poll` reads the control socket (see [The control socket and the turn](#the-control-socket-and-the-turn)).
 3. The screen of the run: a start screen (`select_screen`, `select_draw`), the entrance, or
    `gameloop_run_frame` (`ui/gameloop.c`). `gameloop_run_frame` runs the queued commands and tells if the
-   game time must advance. In turn-based mode it runs only while `control_is_turn_pending()` is true.
+   game time must advance. In the LLM mode it runs only while `control_is_turn_pending()` is true.
 4. `plat_present` shows `g_screen` in the window.
 5. `gameloop_tick` advances the game by one tick, when step 3 asked for it.
 6. `plat_wait_tick` pumps the audio (`audio_mix`, `music_mix`) and waits for the next 50 Hz tick.
@@ -169,7 +169,7 @@ The modules `advanced`, `automap`, `cheats`, `music`, `optmenu`, `rows`, and `sl
 A dialog, the endgame and the fuse sequence wait for the player inside a rule. They run their own frames
 through the frame hook `g_frame_hook` (`ui/frame.h`). `platform/app.c` sets the hook; it shows one frame and
 reads the input into the command queue. The hook runs no game logic, so a wait inside a game tick is safe. In
-turn-based mode the hook is NULL: a wait ends immediately.
+LLM mode the hook is NULL: a wait ends immediately.
 
 ## The tick
 
@@ -195,8 +195,8 @@ The rules do not draw. They set redraw flags that `ui/` reads and draws:
 
 ## The control socket and the turn
 
-In turn-based mode a program player plays the game over a Unix domain socket. The protocol is in
-[llm-mode.md](llm/llm-mode.md).
+In the LLM mode a program player plays the game over a Unix domain socket. The protocol is in
+[LLM mode: turn-based play over MCP](llm/llm-mode.md).
 
 1. In each frame `transport_poll` (`platform/transport.c`) first calls `control_end_turn` when a turn is
    pending. It advances the turn by one frame. When the turn ends, it returns true and the reply goes out on
@@ -245,7 +245,7 @@ The globals of the game:
 - `g_screen` (`ui/video.h`): the frame buffer and the two palettes.
 - The redraw flags: `g_redraw` and the `CHAMPION_ATTR_*` bits of `Champion.attributes`.
 
-The state of one module is `static` in its `.c` file ([coding standard](coding-standard.md), rules 6.6 and 7.1).
+The state of one module is `static` in its `.c` file ([Coding standard](coding-standard.md), rules 6.6 and 7.1).
 
 ## Hooks between layers
 
@@ -255,7 +255,7 @@ A hook is a function pointer that a higher layer sets, so that a lower layer can
 |---|---|---|---|---|
 | `g_endgame_sensor_hook` | `engine/event.h` | `ui/gameloop.c` (`startend_run_endgame_sensor`) | `engine/event.c`, an endgame sensor | no endgame runs |
 | `g_sound_play_hook` | `engine/sound.h` | `ui/audio.c` (`audio_play_data`) | `engine/sound.c` | no sound plays |
-| `g_frame_hook` | `ui/frame.h` | `platform/app.c`, the tests | `frame_wait` (`ui/frame.c`) | a wait ends immediately (tests, turn-based mode) |
+| `g_frame_hook` | `ui/frame.h` | `platform/app.c`, the tests | `frame_wait` (`ui/frame.c`) | a wait ends immediately (tests, LLM mode) |
 | `g_os_log_hook` | `data/os.h` | `platform/app.c` | `os_log` (`data/os.c`) | the message goes to stderr |
 | `g_os_fatal_hook` | `data/os.h` | `platform/app.c` | `os_fatal` (`data/os.c`) | the message goes to stderr |
 | `g_os_make_folder_hook` | `data/os.h` | `platform/app.c`, the tests | `os_make_folder` (`data/os.c`) | the folder is not made; the call returns false |

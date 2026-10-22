@@ -97,7 +97,7 @@ The portrait pointer (`0x114`) is not in the struct. The port keeps the portrait
 | `g_projectile_disabled_movement_ticks` | `0x1001f4` | `int16_t` |
 | `g_last_projectile_disabled_movement_direction` | `0x1001f6` | `int16_t` |
 
-These globals are the values that block 0 of the save file stores ([save.md](../formats/save.md#block-0-globals)).
+These globals are the values that block 0 of the save file stores ([Save file format](../formats/save.md#block-0-globals)).
 
 ## Session
 
@@ -138,11 +138,11 @@ field keeps its value until one of the listed functions changes it.
 
 | Offset | C field | Meaning |
 |---|---|---|
-| 0 | `map_time` (`uint32_t`) | Map index in bits 24–31, game time in bits 0–23. |
-| 4 | `type` (`uint8_t`) | Event type. 0 is a free slot. |
-| 5 | `priority` (`uint8_t`) | Priority. Champion events keep the champion index here. |
-| 6 | `b` (`uint16_t`) | Square events: `x << 8 | y` (byte 6 is X, byte 7 is Y). |
-| 8 | `c` (`uint16_t`) | Square events: `cell << 8 | effect` (byte 8 is the cell, byte 9 is the effect). |
+| `0x00` | `map_time` (`uint32_t`) | Map index in bits 24–31, game time in bits 0–23. |
+| `0x04` | `type` (`uint8_t`) | Event type. 0 is a free slot. |
+| `0x05` | `priority` (`uint8_t`) | Priority. Champion events keep the champion index here. |
+| `0x06` | `b` (`uint16_t`) | Square events: `x << 8 | y` (byte 6 is X, byte 7 is Y). |
+| `0x08` | `c` (`uint16_t`) | Square events: `cell << 8 | effect` (byte 8 is the cell, byte 9 is the effect). |
 
 A free slot keeps the index of the next free slot in `map_time`. The value `0xffff` ends the list. The original keeps this index in the high word of the long. No code reads the other bits of a free slot.
 
@@ -159,11 +159,11 @@ A free slot keeps the index of the next free slot in `map_time`. The value `0xff
 | C function | Original | Purpose |
 |---|---|---|
 | `timeline_init` | `0x11f16a` | New game only. Allocates the arrays, builds the free list, and adds the watchdog event. |
-| `timeline_get_index` | `0x11f26c` | Finds a slot in the heap. A missing slot is fatal error `0x46`. |
+| `timeline_get_index` | `0x11f26c` | Finds a slot in the heap. A missing slot is system error 70 (`0x46`). |
 | `timeline_fix_chronology` | `0x11f296` | Moves a heap entry up, or down when it cannot move up. |
 | `timeline_delete_event` | `0x11f3d0` | Frees a slot and removes it from the heap. |
 | `find_mergeable` | `0x11f43c` | See [Merge rules](#merge-rules). |
-| `timeline_add_event` | `0x11f59c` | Type 0 returns -1. A full timeline is fatal error `0x2d`. Merges or takes a free slot. Returns the slot index. |
+| `timeline_add_event` | `0x11f59c` | Type 0 returns -1. A full timeline is system error 45 (`0x2d`). Merges or takes a free slot. Returns the slot index. |
 | `timeline_extract_first_event` | `0x11f634` | Copies the heap root and deletes it. |
 | `timeline_is_first_event_expired` | `0x11f662` | True when the root time is not greater than `g_game_time`. |
 | `timeline_add_watchdog_event` | `0x120662` | Adds event 53 at `g_game_time + 300`. The original leaves priority, `b`, and `c` as stack data. The port sets them to 0. |

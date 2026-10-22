@@ -4,7 +4,7 @@ How to run DMMac and how to play it. The repository has no game files. You suppl
 
 ## Run the game
 
-Unpack a release (see the [README](../README.md)) or build the game (see [development.md](development.md)). Copy your `.adf` disk images next to the program and start it:
+Unpack a release (see the [DMMac: Dungeon Master for macOS and Windows](../README.md)) or build the game (see [Development](development.md)). Copy your `.adf` disk images next to the program and start it:
 
 ```sh
 build/dm
@@ -22,7 +22,7 @@ Usage: dm [options]
   --saves      DIR   the folder of the saved games
   --adventure  dm|csb  skip the adventure screen
   --mode       vanilla|advanced|turnbased  skip the mode screen
-  --control    PATH  the control socket of the turn-based mode
+  --control    PATH  the control socket of the LLM mode
   --filter     none|scale2x|scale3x  the pixel-art upscale filter
   --frames     N     stop after N frames
   --show       N     show graphic N of Graphics.DAT (developer)
@@ -59,7 +59,7 @@ In the advanced mode, the stairs down of the prison also start the new adventure
 
 ## Saved games
 
-The game saves to `DMGAME.DAT` in `game/`; Chaos Strikes Back saves to `CSBGAME.DAT` in `game-csb/`. The old file becomes the `.BAK` backup. The format is the original Amiga save file ([formats/save.md](formats/save.md)).
+The game saves to `DMGAME.DAT` in `game/`; Chaos Strikes Back saves to `CSBGAME.DAT` in `game-csb/`. The old file becomes the `.BAK` backup. The format is the original Amiga save file ([Save file format](formats/save.md)).
 
 - Save: click the save icon in an inventory, or press Ctrl+S. The dialog shows CANCEL, SAVE, and QUIT. QUIT ends the game; when the game was not saved in the last 100 ticks, QUIT asks first.
 - Resume: click RESUME at the entrance. A damaged file shows "THE GAME IS DAMAGED!" and the entrance again.
@@ -68,7 +68,7 @@ The game saves to `DMGAME.DAT` in `game/`; Chaos Strikes Back saves to `CSBGAME.
 
 ### Save slots (advanced mode)
 
-The advanced mode has 8 save slots. Slot 1 is `DMGAME.DAT`, the file of the vanilla and turn-based modes; slots 2 to 8 are `DMGAME2.DAT` to `DMGAME8.DAT`, each with its own backup. CSB uses `CSBGAME*.DAT` in the same way.
+The advanced mode has 8 save slots. Slot 1 is `DMGAME.DAT`, the file of the vanilla and LLM modes; slots 2–8 are `DMGAME2.DAT`–`DMGAME8.DAT`, each with its own backup. CSB uses `CSBGAME*.DAT` in the same way.
 
 - The save dialog (the save icon, Ctrl+S) shows LOAD, SAVE, CONTINUE, and QUIT. LOAD and SAVE open the slot list: one row per slot with the level and the date of the file, `EMPTY`, or `DAMAGED`. Click a row to load or save; CANCEL or Escape goes back.
 - A save over a used slot asks nothing. The backup of the slot keeps the previous game.
@@ -87,7 +87,7 @@ The controls are the controls of the original Amiga game.
 | Right, keypad 6 | Move right (sideways) |
 | Delete, keypad 7 | Turn left |
 | Help, Insert, keypad 9 | Turn right |
-| F1 to F4 | Open or close the inventory of champion 1 to 4 |
+| F1–F4 | Open or close the inventory of champion 1–4 |
 | Escape | Freeze the game. Escape again continues. The advanced mode opens the options menu instead. |
 | Return | Wake up a sleeping party |
 | Click on the movement arrows | Move and turn |
@@ -115,7 +115,7 @@ The game rules are the same in all modes.
 |---|---|
 | `vanilla` | Default. The original game. The advanced keys do nothing. |
 | `advanced` | The original game with the advanced features below. |
-| `turnbased` | The advanced features without the keys (8 sounds, colored icons, stat meters). A program plays through a Unix socket. See [llm-mode.md](llm/llm-mode.md). Not on Windows. |
+| `turnbased` | The advanced features without the keys (8 sounds, colored icons, stat meters). A program plays through a Unix socket. See [LLM mode: turn-based play over MCP](llm/llm-mode.md). Not on Windows. |
 
 ### Advanced features
 
@@ -142,9 +142,9 @@ The game rules are the same in all modes.
 
 ### Options menu
 
-Escape in the dungeon view opens the menu; the game time stops. Rows: SOUND (volume 0 to 7), MUSIC VOLUME (0 to 7), MUSIC (ORIGINAL, SUPER NES, or FM-TOWNS), FILTER (NONE, SCALE2X, or SCALE3X), CONTINUE. Click `-` or `+` to change a volume. Click a row for its next value. Keys: Up and Down (W, S) select a row, Left and Right (A, D) change it. Escape closes the menu.
+Escape in the dungeon view opens the menu; the game time stops. Rows: SOUND (volume 0–7), MUSIC VOLUME (0–7), MUSIC (ORIGINAL, SUPER NES, or FM-TOWNS), FILTER (NONE, SCALE2X, or SCALE3X), CONTINUE. Click `-` or `+` to change a volume. Click a row for its next value. Keys: Up and Down (W, S) select a row, Left and Right (A, D) change it. Escape closes the menu.
 
-The game writes the values to `SETTINGS.TXT` in the saves folder and reads them at each start of the advanced mode. The vanilla and turn-based modes play at full volume without music.
+The game writes the values to `SETTINGS.TXT` in the saves folder and reads them at each start of the advanced mode. The vanilla and LLM modes play at full volume without music.
 
 Music (ORIGINAL plays no music):
 

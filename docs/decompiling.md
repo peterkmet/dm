@@ -74,4 +74,4 @@ After the auto-analysis, `decompile.sh` runs these Ghidra scripts in this order:
 ## Related pages
 
 - [FTL module format](formats/ftl.md)
-- [KAOS map](reference/kaos-map.md) and the symbol notes in [reference/symbols/](reference/symbols)
+- [KAOS module map](reference/kaos-map.md) and the symbol notes in [reference/symbols/](reference/symbols)

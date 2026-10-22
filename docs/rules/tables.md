@@ -101,25 +101,25 @@ Each table ends where the next named table starts. The tests check this.
 
 | Offset | Field | Meaning |
 |---|---|---|
-| 0 | `aspect_index` | Index for `tables_get_creature_aspect`. |
-| 1 | `attack_sound_byte` | 0 = no sound; otherwise the creature sound index + 1. The accessor returns the index, -1 for none. |
-| 2 | `attributes` | Bits 0–1 size, bit 2 side attack, bit 3 prefer back row, bit 4 attack any champion, bit 5 levitates, bit 6 non-material, bits 7–8 height, bit 9 drops fixed possessions, bit 11 sees invisible, bit 12 night vision, bit 13 archenemy. |
-| 4 | `graphic_info` | Bit 2 flip when not attacking, bit 9 flip when attacking, bit 10 flip during attack, bits 12–13 horizontal offset range, bits 14–15 vertical offset range. |
-| 6 | `movement_ticks` | Ticks between moves. |
-| 7 | `attack_ticks` | Ticks between attacks. |
-| 8 | `defense` | 255 = invulnerable. |
-| 9 | `base_health` | Base health. |
-| 10 | `attack` | Attack strength. |
-| 11 | `poison_attack` | Poison attack strength. |
-| 12 | `dexterity` | Dexterity. |
-| 13 | — | Padding. |
-| 14 | `ranges` | Bits 0–3 sight, bits 8–11 smell, bits 12–15 attack. |
-| 16 | `properties` | Bits 4–7 fear resistance, bits 8–11 experience, bits 12–15 wariness. |
-| 18 | `resistances` | Bits 8–11 poison. |
-| 20 | `animation_ticks` | Bits 4–7 non-attack, bits 8–11 attack. |
-| 22 | `wound_probabilities` | Four 4-bit thresholds. The creature attack code compares them with a random nibble to select an entry of `tables_get_wound_mask`. |
-| 24 | `attack_type` | Attack type argument of `champion_add_pending_damage`. |
-| 25 | — | Padding. |
+| `0x00` | `aspect_index` | Index for `tables_get_creature_aspect`. |
+| `0x01` | `attack_sound_byte` | 0 = no sound; otherwise the creature sound index + 1. The accessor returns the index, -1 for none. |
+| `0x02` | `attributes` | Bits 0–1 size, bit 2 side attack, bit 3 prefer back row, bit 4 attack any champion, bit 5 levitates, bit 6 non-material, bits 7–8 height, bit 9 drops fixed possessions, bit 11 sees invisible, bit 12 night vision, bit 13 archenemy. |
+| `0x04` | `graphic_info` | Bit 2 flip when not attacking, bit 9 flip when attacking, bit 10 flip during attack, bits 12–13 horizontal offset range, bits 14–15 vertical offset range. |
+| `0x06` | `movement_ticks` | Ticks between moves. |
+| `0x07` | `attack_ticks` | Ticks between attacks. |
+| `0x08` | `defense` | 255 = invulnerable. |
+| `0x09` | `base_health` | Base health. |
+| `0x0a` | `attack` | Attack strength. |
+| `0x0b` | `poison_attack` | Poison attack strength. |
+| `0x0c` | `dexterity` | Dexterity. |
+| `0x0d` | — | Padding. |
+| `0x0e` | `ranges` | Bits 0–3 sight, bits 8–11 smell, bits 12–15 attack. |
+| `0x10` | `properties` | Bits 4–7 fear resistance, bits 8–11 experience, bits 12–15 wariness. |
+| `0x12` | `resistances` | Bits 8–11 poison. |
+| `0x14` | `animation_ticks` | Bits 4–7 non-attack, bits 8–11 attack. |
+| `0x16` | `wound_probabilities` | Four 4-bit thresholds. The creature attack code compares them with a random nibble to select an entry of `tables_get_wound_mask`. |
+| `0x18` | `attack_type` | Attack type argument of `champion_add_pending_damage`. |
+| `0x19` | — | Padding. |
 
 `group_get_champion_damage` (`0x11d10a`) copies the whole 26-byte record to the stack. That code confirms the offsets of `wound_probabilities` and `attack_type`.
 
@@ -133,10 +133,10 @@ Each table ends where the next named table starts. The tests check this.
 
 | Offset | Field | Meaning |
 |---|---|---|
-| 0 | `type` | Object name index and base icon index. |
-| 2 | `aspect_index` | Index for `tables_get_object_aspect`. |
-| 3 | `action_set_index` | Index into the action set table. |
-| 4 | `allowed_slots` | Bit mask. A slot accepts the object when `allowed_slots & slot_mask` is not 0. |
+| `0x00` | `type` | Object name index and base icon index. |
+| `0x02` | `aspect_index` | Index for `tables_get_object_aspect`. |
+| `0x03` | `action_set_index` | Index into the action set table. |
+| `0x04` | `allowed_slots` | Bit mask. A slot accepts the object when `allowed_slots & slot_mask` is not 0. |
 
 ## Weapon info
 
@@ -144,11 +144,11 @@ Each table ends where the next named table starts. The tests check this.
 
 | Offset | Field | Meaning |
 |---|---|---|
-| 0 | `weight` | Weight in tenths of a kilogram. |
-| 1 | `weapon_class` | Below 16: melee and thrown classes; 10 is bow ammunition, 11 sling ammunition. 16–31: bows. 32–47: slings. |
-| 2 | `strength` | Weapon strength. |
-| 3 | `kinetic_energy` | Kinetic energy of a thrown or shot weapon. |
-| 4 | `attributes` | Bits 8–12 projectile aspect ordinal (0 = use the object aspect). Bits 0–7 shoot attack (ReDMCSB name, not traced). |
+| `0x00` | `weight` | Weight in tenths of a kilogram. |
+| `0x01` | `weapon_class` | Below 16: melee and thrown classes; 10 is bow ammunition, 11 sling ammunition. 16–31: bows. 32–47: slings. |
+| `0x02` | `strength` | Weapon strength. |
+| `0x03` | `kinetic_energy` | Kinetic energy of a thrown or shot weapon. |
+| `0x04` | `attributes` | Bits 8–12 projectile aspect ordinal (0 = use the object aspect). Bits 0–7 shoot attack (ReDMCSB name, not traced). |
 
 ## Armour info
 
@@ -156,9 +156,9 @@ Each table ends where the next named table starts. The tests check this.
 
 | Offset | Field | Meaning |
 |---|---|---|
-| 0 | `weight` | Weight in tenths of a kilogram. |
-| 1 | `defense` | Defense. |
-| 2 | `attributes` | Bits 0–2 sharp resistance (`inventory_get_armour_defense`). Bit 7 shield. |
+| `0x00` | `weight` | Weight in tenths of a kilogram. |
+| `0x01` | `defense` | Defense. |
+| `0x02` | `attributes` | Bits 0–2 sharp resistance (`inventory_get_armour_defense`). Bit 7 shield. |
 
 ## Junk weights and food values
 
@@ -175,12 +175,12 @@ Door info, 2 bytes per door type, read by `tables_get_door_attributes`. Byte 0 `
 
 | Offset | Field | Meaning |
 |---|---|---|
-| 0 | `symbols` | Long. Bits 24–31 power symbol (0 = the spell has no power symbol, compare only bits 0–23). Symbols are characters `0x60 + step × 6 + n`. |
-| 4 | `base_required_skill_level` | Required level before the power is added. |
-| 5 | `skill_index` | Skill that casts and trains the spell. |
-| 6 | `kind` | Bits 0–3 of the word at offset 6: 1 potion, 2 projectile, 3 other. |
-| 6 | `type` | Bits 4–9: potion type, explosion type + 128, or other spell number. |
-| 6 | `disabled_ticks` | Bits 10–15: action disabled ticks after the cast. |
+| `0x00` | `symbols` | Long. Bits 24–31 power symbol (0 = the spell has no power symbol, compare only bits 0–23). Symbols are characters `0x60 + step × 6 + n`. |
+| `0x04` | `base_required_skill_level` | Required level before the power is added. |
+| `0x05` | `skill_index` | Skill that casts and trains the spell. |
+| `0x06` | `kind` | Bits 0–3 of the word at offset `0x06`: 1 potion, 2 projectile, 3 other. |
+| `0x06` | `type` | Bits 4–9: potion type, explosion type + 128, or other spell number. |
+| `0x06` | `disabled_ticks` | Bits 10–15: action disabled ticks after the cast. |
 
 `tables_get_base_mana_cost(step, n)` is the mana cost of symbol `n` at symbol step `step`. For steps after the first, the cost is `base × multiplier[power] >> 3`, where `multiplier` is `tables_get_mana_multiplier`.
 
@@ -190,11 +190,11 @@ Door info, 2 bytes per door type, read by `tables_get_door_attributes`. Byte 0 `
 
 | Offset | Field | Meaning |
 |---|---|---|
-| 0 | `action_indices[3]` | Action of each menu row. `0xff` = none. |
-| 3 | — | Padding. |
-| 4 | `minimum_skill_levels[2]` | Minimum skill level of actions 1 and 2. Bit 7 = the action needs charges. |
-| 6 | `flags` | Copied to `0x103fea`. No reader is known. |
-| 7 | — | Padding. |
+| `0x00` | `action_indices[3]` | Action of each menu row. `0xff` = none. |
+| `0x03` | — | Padding. |
+| `0x04` | `minimum_skill_levels[2]` | Minimum skill level of actions 1 and 2. Bit 7 = the action needs charges. |
+| `0x06` | `flags` | Copied to `0x103fea`. No reader is known. |
+| `0x07` | — | Padding. |
 
 `ActionInfo` joins seven byte tables of 44 entries each, indexed by action:
 

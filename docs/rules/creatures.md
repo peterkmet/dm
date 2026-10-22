@@ -1,6 +1,6 @@
 # Creature, projectile, and magic rules
 
-The creature rules of the port: creature groups and their AI, creature attacks, damage and death, group generators, projectiles, explosions, fluxcages, the fuse action, and spell effects. The code is in `src/engine/group.c`, `src/engine/projectile.c`, and `src/engine/magic.c`. The rules follow KAOS range 4 (GROUP.C), range 7 (PROJEXPL.C), and range 8 (MENU.C). See [range-4-6.md](../reference/symbols/range-4-6.md) and [range-7-9.md](../reference/symbols/range-7-9.md) for the record layouts and the original addresses. See [movement.md](movement.md) for the game loop and the timeline dispatch.
+The creature rules of the port: creature groups and their AI, creature attacks, damage and death, group generators, projectiles, explosions, fluxcages, the fuse action, and spell effects. The code is in `src/engine/group.c`, `src/engine/projectile.c`, and `src/engine/magic.c`. The rules follow KAOS range 4 (GROUP.C), range 7 (PROJEXPL.C), and range 8 (MENU.C). See [range-4-6.md](../reference/symbols/range-4-6.md) and [range-7-9.md](../reference/symbols/range-7-9.md) for the record layouts and the original addresses. See [Movement, sensors, and timeline rules](movement.md) for the game loop and the timeline dispatch.
 
 ## Records
 
@@ -22,7 +22,7 @@ The party map has active groups. Other maps do not.
 - `group_remove_all_active_groups()` runs when the party leaves a map. Each record gets back its cells byte and one direction. A group that flees or attacks wanders again.
 - On the party map, the cells byte of the group record holds the index of the active group. `group_get_active(group)` returns the entry; a cells byte beyond the table gives a free entry. The entry holds the cells, the directions of the creatures, the aspect (graphic offsets, flip, attack) of each creature, the home square, the prior square, the target square, the time of the last move, and the flee delay.
 - A group that enters the party map from another map becomes active. A group that leaves the party map becomes inactive.
-- More than `g_max_active_group_count` active groups is System Error 71.
+- More than `g_max_active_group_count` active groups is system error 71 (`0x47`).
 
 ## Group events
 
@@ -76,7 +76,7 @@ Smell uses the smell range of the creature. A creature smells the party directly
 - `test_movement` blocks walls, stairs, open pits (except for levitating creatures), closed fake walls, the party square, other groups, and closed doors that are too low for the creature. A wary creature avoids a teleporter to a map that does not allow its type. Lord Chaos does not enter a fluxcage.
 - A creature never turns around immediately. It turns left or right first.
 - Lord Chaos sometimes jumps two squares over a free square.
-- `move_get_move_result` moves a group through the square chain of every mover (the rule table in [movement.md](movement.md)): teleporters with the creatures scope, pits, and stairs. The group hooks are `group_turn_by_teleporter`, `group_is_killed_by_fall`, `group_remove_after_move`, and `group_enter_square`. A group that reaches a map that does not allow its creature type dies and drops its possessions. When the destination is occupied, the group waits with event 60 or 61 and tries again every 5 ticks.
+- `move_get_move_result` moves a group through the square chain of every mover (the rule table in [Movement, sensors, and timeline rules](movement.md)): teleporters with the creatures scope, pits, and stairs. The group hooks are `group_turn_by_teleporter`, `group_is_killed_by_fall`, `group_remove_after_move`, and `group_enter_square`. A group that reaches a map that does not allow its creature type dies and drops its possessions. When the destination is occupied, the group waits with event 60 or 61 and tries again every 5 ticks.
 
 ### Attack
 
@@ -128,7 +128,7 @@ Event 5 (corridor) on a group generator sensor calls `group_generate_from_sensor
 
 `group_get_generated` returns `THING_NONE` when the group becomes active on the party map, like the original. The group is on the square in that case. Use `map_find_thing((Location){x, y}, THING_GROUP)` to find it.
 
-Event 65 enables a generator again after its delay (see [movement.md](movement.md)).
+Event 65 enables a generator again after its delay (see [Movement, sensors, and timeline rules](movement.md)).
 
 ## Projectiles
 
@@ -203,7 +203,7 @@ Then the explosion disappears.
 
 ## Fixed original bugs
 
-Recorded in [dungeon.md](../formats/dungeon.md#deviations-from-the-original). Each fix has a short comment in the code.
+Recorded in [Dungeon.DAT format](../formats/dungeon.md#deviations-from-the-original). Each fix has a short comment in the code.
 
 ## Tests
 
@@ -214,4 +214,4 @@ Recorded in [dungeon.md](../formats/dungeon.md#deviations-from-the-original). Ea
 
 ## Related rules
 
-- Champion actions and the events 11, 12, 13, and 75 are in [champions.md](champions.md#actions).
+- Champion actions and the events 11, 12, 13, and 75 are in [Champion rules](champions.md#actions).

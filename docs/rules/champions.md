@@ -1,8 +1,8 @@
 # Champion rules
 
-The champion rules of the port: recruiting, skills, inventory, eating and drinking, damage, death, and the time effects. The code is in `src/engine/champion.c` and `src/engine/inventory.c`. The rules follow the decompiled `KAOS.FTL` code (CHAMPION.C, the inventory part of range 5, and `process_click_on_mouth`). The original addresses are in [kaos-symbols.csv](../reference/kaos-symbols.csv). The champion record is in [game-state.md](game-state.md#champions).
+The champion rules of the port: recruiting, skills, inventory, eating and drinking, damage, death, and the time effects. The code is in `src/engine/champion.c` and `src/engine/inventory.c`. The rules follow the decompiled `KAOS.FTL` code (CHAMPION.C, the inventory part of range 5, and `process_click_on_mouth`). The original addresses are in [kaos-symbols.csv](../reference/kaos-symbols.csv). The champion record is in [Game state](game-state.md#champions).
 
-The port reads all game tables from the KAOS image at run time ([tables.md](tables.md)). Object record fields go through the accessors in `src/engine/include/record.h`. Icon and text numbers are in `src/data/include/ids.h`.
+The port reads all game tables from the KAOS image at run time ([Static game tables](tables.md)). Object record fields go through the accessors in `src/engine/include/record.h`. Icon and text numbers are in `src/data/include/ids.h`.
 
 ## Constants
 
@@ -41,7 +41,7 @@ The possessions stay in the wall square list until the player accepts the candid
 |---|---|
 | `PANEL_CANCEL` | Removes the candidate. When it was the only champion, the party has no leader and no caster. |
 | `PANEL_RESURRECT` | Unlinks the possessions from the wall square. Disables the mirror sensor (`rec_sensor_set_type` to `SENSOR_DISABLED`). Prints "<name> RESURRECTED." |
-| `PANEL_REINCARNATE` | As resurrect, then the name entry (below). After OK, the game clears all experience. It adds 1 to the current and maximum value of a random statistic 12 times. Prints "<name> REINCARNATED." The turn-based mode skips the name entry and keeps the old name ([deviations](../formats/dungeon.md#deviations-from-the-original)). |
+| `PANEL_REINCARNATE` | As resurrect, then the name entry (below). After OK, the game clears all experience. It adds 1 to the current and maximum value of a random statistic 12 times. Prints "<name> REINCARNATED." The LLM mode skips the name entry and keeps the old name ([Dungeon.DAT format](../formats/dungeon.md#deviations-from-the-original)). |
 
 With the first champion, the time of the last party move becomes the game time.
 
@@ -205,7 +205,7 @@ The main loop calls `champion_apply_time_effects()` every 64 ticks (16 while the
 
 ## Actions
 
-The code is in `src/engine/action.c`. The rules follow `action_is_action_performed` and its helpers in KAOS range 8 (MENU.C). The per-action values come from the action tables ([tables.md](tables.md#actions)).
+The code is in `src/engine/action.c`. The rules follow `action_is_action_performed` and its helpers in KAOS range 8 (MENU.C). The per-action values come from the action tables ([Static game tables](tables.md#actions)).
 
 `action_did_click_trigger_action(list_index)` runs commands 113–115. It adds the action defense to the champion, runs the action, stores the action in `action_index`, and closes the action menu.
 
@@ -221,7 +221,7 @@ The code is in `src/engine/action.c`. The rules follow `action_is_action_perform
 | Chop, Kick, Swing, Hack, Berzerk, Bash on a closed door | Bashes the door with the action-hand strength (`event_is_door_destroyed`, destruction after 2 ticks). Disabled ticks become 6. |
 | Melee actions (the above without a door, Punch, Stab, Thrust, Jab, Parry, Disrupt, Melee, Slash, Cleave, Stun) | `is_melee_performed`. A miss (no group, no creature in reach) halves the experience and the disabled ticks. |
 | War Cry, Blow Horn, Calm, Brandish, Confuse | `is_group_frightened`. Confuse uses a charge. War Cry plays sound 17, Blow Horn sound 18. |
-| Flip | Prints heads or tails (text 0x45 or 0x46) by a random bit. |
+| Flip | Prints heads or tails (text `0x45` or `0x46`) by a random bit. |
 | Climb Down | With the rope, the party goes into the pit in front (no group there) without fall damage. Without the rope, the action adds no disabled ticks. |
 | Freeze Life | A blue magical box adds 30 freeze ticks, a green box 125; the box is used up. Other objects add 70 and use a charge. The maximum is 200. |
 | Fireball (150), Dispell (harm non-material, 150), Lightning (180), Spit (fireball, 250), Invoke | Shoots the explosion with the attack as kinetic energy. Invoke: attack `100 + random(128)`, spell by `random % 6`: 0 poison bolt, 1 poison cloud, 2 harm non-material, otherwise fireball. With less mana than the cost, attack becomes `max(2, mana × attack / cost)` and all mana is used. A failed cast halves the experience. Each uses a charge. |
@@ -238,7 +238,7 @@ Block, Hit, and the other actions only add the action defense, the disabled tick
 
 ### Melee
 
-`is_melee_performed` plays sound 13 and needs a group with a creature in reach of the champion cell (`group_get_melee_target`: the creature index, -1 for none). A champion in a back cell cannot reach when a living champion stands in the front cell before it. Then `g_session.action_damage` is -1 ("can't reach"). Disrupt hits only non-material creatures. Disrupt and the weapon with icon 40 add bit 15 to the hit probability, so the hit can reach non-material creatures. `group_get_melee_action_damage` ([creatures.md](creatures.md)) gives the damage, which goes into `g_session.action_damage` for the action area.
+`is_melee_performed` plays sound 13 and needs a group with a creature in reach of the champion cell (`group_get_melee_target`: the creature index, -1 for none). A champion in a back cell cannot reach when a living champion stands in the front cell before it. Then `g_session.action_damage` is -1 ("can't reach"). Disrupt hits only non-material creatures. Disrupt and the weapon with icon 40 add bit 15 to the hit probability, so the hit can reach non-material creatures. `group_get_melee_action_damage` ([Creature, projectile, and magic rules](creatures.md)) gives the damage, which goes into `g_session.action_damage` for the action area.
 
 ### Fear
 

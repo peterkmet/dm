@@ -1,6 +1,6 @@
 # Development
 
-How to build, test, and release the port. For the player side, see [manual.md](manual.md). For the structure of the code, see [architecture.md](architecture.md).
+How to build, test, and release the port. For the player side, see [Player manual](manual.md). For the structure of the code, see [Architecture](architecture.md).
 
 ## Build
 
@@ -20,7 +20,7 @@ uv sync
 | `make play PLAY_DIR=<dir>` | Copy a new build to `<dir>/dm`. The default is `playthroughs/local`. The saves in the folder stay. Run it with `<dir>/dm --data game --saves <dir>`. |
 | `make clean` | Remove `build/`. |
 
-Run the game with `build/dm`. The options are in [manual.md](manual.md).
+Run the game with `build/dm`. The options are in [Player manual](manual.md).
 
 ## Tests
 
@@ -76,7 +76,7 @@ git config blame.ignoreRevsFile .git-blame-ignore-revs
 
 ## Layout
 
-- `src/`: the port in five layers; see [architecture.md](architecture.md).
+- `src/`: the port in five layers; see [Architecture](architecture.md).
 - `tools/dmtools/`: the Python tools. `tools/ghidra/`: the decompile scripts. `tools/dist/`: the release scripts.
 - `tests/`: see the table above.
 - `docs/`: the documentation.
@@ -84,7 +84,7 @@ git config blame.ignoreRevsFile .git-blame-ignore-revs
 
 ## Coding standard
 
-[coding-standard.md](coding-standard.md) is the coding standard of the port. Follow it for every change in `src/`.
+[Coding standard](coding-standard.md) is the coding standard of the port. Follow it for every change in `src/`.
 
 - `make format` formats the C files. Run it before a commit.
 - `make check` runs `ruff`, `tests/standard` (with the format check), and the full suite.
@@ -93,7 +93,7 @@ git config blame.ignoreRevsFile .git-blame-ignore-revs
 
 1. Find the original function in [the KAOS symbol table](reference/kaos-symbols.csv).
 2. Write the rule in the engine module that owns the data.
-3. Name every value (rule 3.1 of [the coding standard](coding-standard.md)).
+3. Name every value (rule 3.1 of [Coding standard](coding-standard.md)).
 4. Change the user interface only through the redraw flags or a hook.
 5. Write a differential test against the emulator. When the emulator cannot reach the case, write a golden
    scenario.

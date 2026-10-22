@@ -21,9 +21,9 @@ A compressed file starts with an 8-byte header:
 
 | Offset | Size | Content |
 |---|---|---|
-| 0 | word | Signature `0x8104`. |
-| 2 | long | Decompressed size in bytes. |
-| 6 | word | Dungeon ID (`g_dungeon_id`). The DM dungeon has ID 10. |
+| `0x00` | word | Signature `0x8104`. |
+| `0x02` | long | Decompressed size in bytes. |
+| `0x06` | word | Dungeon ID (`g_dungeon_id`). The DM dungeon has ID 10. |
 
 When the first word is not `0x8104`, the file is not compressed. The loader then reads the file from offset 0.
 
@@ -63,25 +63,25 @@ All buffers keep the big-endian byte layout of the original memory. The game cod
 
 | Offset | Size | Content |
 |---|---|---|
-| 0 | word | Seed for random ornaments. |
-| 2 | word | Raw map data size in bytes. |
-| 4 | byte | Map count. |
-| 6 | word | Text data word count. |
-| 8 | word | Party start: X bits 0–4, Y bits 5–9, direction bits 10–11. |
-| 10 | word | Square first thing count. |
-| 12 | 16 words | Thing count of each thing type. |
+| `0x00` | word | Seed for random ornaments. |
+| `0x02` | word | Raw map data size in bytes. |
+| `0x04` | byte | Map count. |
+| `0x06` | word | Text data word count. |
+| `0x08` | word | Party start: X bits 0–4, Y bits 5–9, direction bits 10–11. |
+| `0x0a` | word | Square first thing count. |
+| `0x0c` | 16 words | Thing count of each thing type. |
 
-The loader sets `g_party_map_x`, `g_party_map_y`, and `g_party_direction` from offset 8. It sets `g_party_map_index` to 0.
+The loader sets `g_party_map_x`, `g_party_map_y`, and `g_party_direction` from offset `0x08`. It sets `g_party_map_index` to 0.
 
 ### Map descriptor
 
 | Offset | Size | Content |
 |---|---|---|
-| 0 | word | Raw map data offset of the map. |
-| 6 | byte | X offset of the map in the dungeon. |
-| 7 | byte | Y offset of the map. |
-| 8 | word | Bits 0–5: level. Bits 6–10: width - 1. Bits 11–15: height - 1. |
-| 10–15 | bytes | Ornament, creature, and door counts and sets. See [range-4-6.md](../reference/symbols/range-4-6.md#map-descriptor). |
+| `0x00` | word | Raw map data offset of the map. |
+| `0x06` | byte | X offset of the map in the dungeon. |
+| `0x07` | byte | Y offset of the map. |
+| `0x08` | word | Bits 0–5: level. Bits 6–10: width - 1. Bits 11–15: height - 1. |
+| `0x0a`–`0x0f` | bytes | Ornament, creature, and door counts and sets. See [range-4-6.md](../reference/symbols/range-4-6.md#map-descriptor). |
 
 ### Squares
 
@@ -143,7 +143,7 @@ The original writes all extra records, even past the limit. The port stops at th
 
 ## Text decoding
 
-`dungeon_decode_text(dst, dst_size, text_thing, mode)` ports `0x10b312`. The port adds `dst_size`. It returns false when the text offset is outside the text data, when the text has no end code, or when the text does not fit in `dst_size` bytes. The function cuts a text that does not fit and ends it with the end byte. The text string record has a word at offset 2: bit 0 is the visible flag, bits 3–15 are the word offset into the text data.
+`dungeon_decode_text(dst, dst_size, text_thing, mode)` ports `0x10b312`. The port adds `dst_size`. It returns false when the text offset is outside the text data, when the text has no end code, or when the text does not fit in `dst_size` bytes. The function cuts a text that does not fit and ends it with the end byte. The text string record has a word at offset `0x02`: bit 0 is the visible flag, bits 3–15 are the word offset into the text data.
 
 The function decodes only a visible text, or any text when bit 15 of `mode` is set. Modes:
 
@@ -187,7 +187,7 @@ This list covers every module of the port (coding standard, rule 10.5).
 - An icon below the first icon sheet draws empty (`ui_extract_icon`); the original reads the sheet table before its first entry.
 - The entrance doors open over the view of the start square; the original draws a made-up corridor (`entrance_open_doors`).
 - The panel with the eye pressed keeps the leader hand object name; the original clears it until the eye is released (`panel_draw_eye`).
-- In the turn-based mode, REINCARNATE keeps the old name, because the protocol has no name entry (`champion_click_rebirth_panel`).
+- In the LLM mode, REINCARNATE keeps the old name, because the protocol has no name entry (`champion_click_rebirth_panel`).
 - After a refused duplicate name, the name entry puts the input at the end of the name and clears the title (`champion_rename_ok`); the original points the input at the name but keeps the title state.
 - The party on a wall square runs no wall sensor of that square on a move or a turn (`sensor_process_thing_change`); only the walk through walls cheat of the advanced mode puts the party there, the original never does.
 - With the walk through walls cheat of the advanced mode on, a door that closes on the party goes back open as in the original, but the party takes no door damage (`process_door_animation`).

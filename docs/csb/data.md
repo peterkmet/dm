@@ -8,7 +8,7 @@ Inputs:
 - CSB disk A (game disk): `game-csb/`. CSB engine: `APPB.FTL` (the disk label says V3.1), decompiled to `reference/decomp/csb-a/APPB.c`. Load base `0x100000`, data base (A5) `0x10511e`.
 - CSB disk B (utility disk): `game-csb/disk-b/`.
 
-All addresses in this page are image addresses after `dm-ftl` with base `0x100000`. "Verified" means a test output or a code address supports the statement. "Unverified" marks an inference.
+All addresses in this page are image addresses after `dm-ftl` with base `0x100000`. "Unverified" marks an inference.
 
 ## Summary
 
@@ -25,14 +25,14 @@ All addresses in this page are image addresses after `dm-ftl` with base `0x10000
 
 ### Container
 
-Both files use format 1 (`0x8001`), the header of [kaos-map.md](../reference/kaos-map.md#graphicsdat), and equal compressed and decompressed sizes for every item.
+Both files use format 1 (`0x8001`), the header described in [KAOS module map](../reference/kaos-map.md#graphicsdat), and equal compressed and decompressed sizes for every item.
 
-| File | Items | Size in bytes | CRC32 |
+| File | Items | Size in bytes | CRC-32 |
 |---|---|---|---|
 | DM `game/Graphics.DAT` | 749 | 458108 | `0x04598281` |
 | CSB `game-csb/Graphics.DAT` | 728 | 402254 | `0x3bc83984` |
 
-`dmcsb` (the Dungeon Master tools by Cycl0ne, see the README) calls the DM file `amiga_csb_ml` ("CSB Amiga Multilanguage"). The CRC32 of that variant is the CRC32 of the DM v3.60 file. `dmcsb` does not know the CSB file (no CRC32 match, no structural match for 728 items).
+`dmcsb` (the Dungeon Master tools by Cycl0ne, see the README) calls the DM file `amiga_csb_ml` ("CSB Amiga Multilanguage"). The CRC-32 of that variant is the CRC-32 of the DM v3.60 file. `dmcsb` does not know the CSB file (no CRC-32 match, no structural match for 728 items).
 
 ### Item comparison
 
@@ -46,7 +46,7 @@ Changed items (same index, different content):
 |---|---|---|
 | 2–5 | Entrance doors, entrance, credits | Same sizes, CSB art |
 | 10 | Action area | Same size, different content |
-| 11 | Entrance buttons, 14 × 39 | 14 × 26 (UNVERIFIED: 2 buttons, not 3) |
+| 11 | Entrance buttons, 14 × 39 | 14 × 26 (unverified: 2 buttons, not 3) |
 | 26 | Champion portraits, 256 × 87 | 24 CSB portraits, same size |
 | 42–45, 47 | Object icon sheets (icons 0–127, 160–191) | Same sizes, CSB icons |
 | 329–330 | Wall ornament 35 (fountain) | Different size |
@@ -74,7 +74,7 @@ Object names (item 694). The CSB engine reads 199 names at `0x108280` (graphic i
 
 33 of the 199 CSB names differ from DM. Examples: 23–24 STORM (DM BOLT BLADE), 25–26 RA BLADE (FURY), 38 SIDE SPLITTER (DELTA), 41 DRAGON FANG (THE INQUISITOR), 62–64 STAFF OF IRRA, CROSS OF NETA, SERPENT STAFF, 174 SHANK (DRUMSTICK).
 
-Action names and texts (items 699 and 700). CSB has no text in these items. The CSB engine has the texts in the `APPB.FTL` data area. Examples: the action names start at `0x1048b4` as one NUL-separated list. `WAKE UP` and `GAME FROZEN` are at `0x104680`. `GAME LOADED, READY TO PLAY.` is at `0x104d70`. A pointer table refers to some texts. [engine-diff.md "Text"](engine-diff.md#text) maps the CSB texts to the DM indices of item 700. The CSB engine does not push `0x2bb` (699). DM pushes it at `0x1220b8`.
+Action names and texts (items 699 and 700). CSB has no text in these items. The CSB engine has the texts in the `APPB.FTL` data area. Examples: the action names start at `0x1048b4` as one NUL-separated list. `WAKE UP` and `GAME FROZEN` are at `0x104680`. `GAME LOADED, READY TO PLAY.` is at `0x104d70`. A pointer table refers to some texts. [CSB engine compared with the DM engine](engine-diff.md#text) maps the CSB texts to the DM indices of item 700. The CSB engine does not push `0x2bb` (699). DM pushes it at `0x1220b8`.
 
 Layout (item 696). A check compares the zone records with `dmcsb.graphics.decode_lay1`. The range `400–438` becomes `400–436`. All other records are equal. `startend.c` uses zone 437 (`ZONE_RESTART_BUTTON`) and zone 438 (`ZONE_QUIT_BUTTON`) for THE END screen.
 
@@ -112,7 +112,7 @@ Unchanged indices that the port uses: 0, 6, 7–9, 12–25, 27–41, 46, 48–32
 
 A check loads the file with `kaos_load("game/KAOS.FTL")` and `dungeon_load`. The call returns true. The thing counts include the new-game extras (groups 87 = 12 + 75).
 
-`dmcsb` identifies the file by CRC32 as `atarist_csb` (Atari ST CSB 2.x dungeon). The Amiga file is byte-identical to it.
+`dmcsb` identifies the file by CRC-32 as `atarist_csb` (Atari ST CSB 2.x dungeon). The Amiga file is byte-identical to it.
 
 Content:
 
@@ -124,11 +124,11 @@ Content:
 
 The CSB `load_dungeon` is at `0x1295a0`. It follows the DM loader and adds a copy-protection check ([CSB engine compared with the DM engine](engine-diff.md#copy-protection)).
 
-Result: the port loader reads the file. The full CSB dungeon is not on disk A. The utility disk makes the adventure from a saved start game. The utility modules `CEDT.FTL` and `HINT.FTL` refer to `DF0:MINI.DAT`, `DF0:DMGAME.DAT`, and `DF0:CSBGAME.DAT`. `MINI.DAT` (42784 bytes) has the layout of a saved game, see [MINI.DAT format](new-adventure.md#minidat-format).
+Result: the port loader reads the file. The full CSB dungeon is not on disk A. The utility disk makes the adventure from a saved start game. The utility modules `CEDT.FTL` and `HINT.FTL` refer to `DF0:MINI.DAT`, `DF0:DMGAME.DAT`, and `DF0:CSBGAME.DAT`. `MINI.DAT` (42784 bytes) has the layout of a saved game, see [Chaos Strikes Back: new adventure](new-adventure.md#minidat-format).
 
 ## Save file
 
-The CSB `save_game` is at `0x128cc0` (jump table slot `0xb6a(A5)`). The CSB `load_game` starts at `0x129b3e`. The header writer is `0x128a42`, the header reader is `0x1289c4`, the block cipher is `0x128720`, and the checksum is `0x128752`.
+The CSB `save_game` is at `0x128cc0` (jump table slot `A5+0xb6a`). The CSB `load_game` starts at `0x129b3e`. The header writer is `0x128a42`, the header reader is `0x1289c4`, the block cipher is `0x128720`, and the checksum is `0x128752`.
 
 ### File names
 
@@ -147,7 +147,7 @@ The CSB `save_game` is at `0x128cc0` (jump table slot `0xb6a(A5)`). The CSB `loa
 
 ### Header differences
 
-The offsets of the DM and CSB headers are in [save.md](../formats/save.md#csb-header).
+The offsets of the DM and CSB headers are in [Save file format](../formats/save.md#csb-header).
 
 The load and save behavior of the CSB engine is in [CSB engine compared with the DM engine](engine-diff.md#save-and-load).
 
@@ -161,10 +161,10 @@ Result: `savefile.c` reads and writes the CSB header when `g_adventure` is `ADVE
 
 | Offset | Size | Content |
 |---|---|---|
-| 0 | 2 | Tag, two ASCII characters |
-| 2 | 2 | Payload length in bytes |
-| 4 | 2 | Parameter |
-| 6 | length | Payload |
+| `0x00` | 2 | Tag, two ASCII characters |
+| `0x02` | 2 | Payload length in bytes |
+| `0x04` | 2 | Parameter |
+| `0x06` | length | Payload |
 
 The next chunk follows the payload directly. `ANIM.FTL` `0x101356` walks the chunks with this step. A walk of all four files with this step reaches the exact file end. All payload lengths are even.
 
@@ -176,7 +176,7 @@ The chunk dispatcher of `ANIM.FTL` is `0x100d1a`: a switch table at `0x100d30` (
 | `EN` | `0x100812` | Full frame: the `Graphics.DAT` packed graphic format (width, height, commands), decoded by the GRF1 function behind slot `0xea` into the back buffer. The parameter is the time in vertical blanks (50 Hz) that the frame stays. | Yes |
 | `DL` | `0x100846` | Delta frame: the blitter first copies the shown screen into the back buffer (`0x1017bc`), then the same decoder draws the frame. Skip commands keep the old pixels. Pad word `0xff81` before the size. Parameter as `EN`. | Yes |
 | `SD` | `0x10087a` | Sample: adds the payload to the sample table (max. 32). Payload: length word, then the 8-bit sample data. | Yes |
-| `SO` | `0x1008f2` | Plays sample number parameter (1-based) at Paula period 650 (`0x101406`). The two bytes after the chunk header give the volumes: (byte + 1) >> 2. `SO` has no payload in `ENDA.DAT`, so the two volume bytes are the first two bytes of the next tag, `DL` (volumes 17 and 19). | Done. UNVERIFIED: which volume is the left channel. |
+| `SO` | `0x1008f2` | Plays sample number parameter (1-based) at Paula period 650 (`0x101406`). The two bytes after the chunk header give the volumes: (byte + 1) >> 2. `SO` has no payload in `ENDA.DAT`, so the two volume bytes are the first two bytes of the next tag, `DL` (volumes 17 and 19). | Done. Unverified: which volume is the left channel. |
 | `FO` | `0x100b64` | Loop start: pushes the loop (count parameter - 1, start = the second chunk after `FO`) onto a stack of 16 loops. The chunk after `FO` runs once. | Yes |
 | `NE` | `0x100be2` | End of a pass: decrements the count. When the count was 0, it pops the loop and skips the two chunks after `NE`. | Yes |
 | `BN` | `0x100c7e` | Goes back to the loop start. | Yes |
@@ -194,7 +194,7 @@ The `SO` chunks play `SD` sample 2 (graphic item 683) three times.
 
 ### Engine use
 
-The engine path from the endgame sensor to `ANIM.FTL` is in [engine-diff.md](engine-diff.md#end-of-the-game).
+The engine path from the endgame sensor to `ANIM.FTL` is in [CSB engine compared with the DM engine](engine-diff.md#end-of-the-game).
 
 Port: `startend_run_endgame_sensor` in `src/ui/startend.c` sets `g_session.won`, plays `ENDA.DAT` from the disk A folder with `anim_play`, waits for a key or a click, and shows the CSB screen.
 
@@ -223,8 +223,8 @@ A stop is not immediate in the original. The shown frame stays for the rest of i
 
 | Offset | Content |
 |---|---|
-| 0 | `n` = 6, the item count. `MI` rejects the file when bit 7 of byte 0 is set. |
-| 2 | Table 1: `n` item sizes. `MI` checks only that the first entry equals the first entry of table 2. |
+| `0x00` | `n` = 6, the item count. `MI` rejects the file when bit 7 of byte 0 is set. |
+| `0x02` | Table 1: `n` item sizes. `MI` checks only that the first entry equals the first entry of table 2. |
 | `2 + 2n` | Table 2: the `n` item sizes in bytes. |
 | `2 + 4n` | The items, one after another. |
 
@@ -242,7 +242,7 @@ The CSB engine has no new sound in `Graphics.DAT`. New samples exist only in the
 
 ## Engine tables
 
-The port reads all rule and view tables from the `KAOS.FTL` image. CSB has no `KAOS.FTL`; `csb_image.c` builds a KAOS-layout image from the `APPB.FTL` tables. [engine-diff.md](engine-diff.md#equal-tables-at-new-addresses) lists the CSB addresses of the view tables, the input tables, and the escape tables. `g_csb_copies` (`src/data/csb_image.c`) copies them.
+The port reads all rule and view tables from the `KAOS.FTL` image. CSB has no `KAOS.FTL`; `csb_image.c` builds a KAOS-layout image from the `APPB.FTL` tables. [CSB engine compared with the DM engine](engine-diff.md#equal-tables-at-new-addresses) lists the CSB addresses of the view tables, the input tables, and the escape tables. `g_csb_copies` (`src/data/csb_image.c`) copies them.
 
 ## Loaders
 

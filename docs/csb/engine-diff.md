@@ -5,14 +5,14 @@ The differences between the Chaos Strikes Back (CSB) engine and the Dungeon Mast
 - DM engine: `game/KAOS.FTL`. Image `reference/decomp/dm/KAOS.bin`, base `0x100000`, data base (A5) `0x104160`. Names: [kaos-symbols.csv](../reference/kaos-symbols.csv).
 - CSB engine: `game-csb/APPB.FTL`. Image `reference/decomp/csb-a/APPB.bin`, base `0x100000`, data base (A5) `0x10511e`, code base `0x105ede`. Names: [csb-appb-symbols.csv](../reference/csb-appb-symbols.csv).
 
-All addresses are image addresses. "K" marks a DM address, "C" marks a CSB address. "UNVERIFIED" marks a claim that the code reading did not prove.
+All addresses are image addresses. "K" marks a DM address, "C" marks a CSB address. "Unverified" marks a claim that the code reading did not prove.
 
 ## Summary
 
 - The CSB engine is the DM engine with a small set of changes. The game rule tables are byte-identical, except the action sets, the action experience gain, and the spells.
 - The two modules come from different compilers. CSB keeps local variables on the stack, and DM keeps them in registers. A byte compare of the code does not work. The function mapping uses code-generation independent features (see [Function mapping](#function-mapping)).
 - The large CSB changes are: inline English text instead of the string table in `Graphics.DAT`, the save file header, the end of the game (an `ENDA.DAT` animation in place of the DM victory screen), no Fuse and no Lord Chaos, a magic map (four new spells), and copy protection.
-- The CSB adventure starts from `CSBGAME.DAT`, which the utility disk (disk B, module `CEDT.FTL`) makes. A new game on disk A starts the prison (`Dungeon.DAT`, dungeon ID 12, see [new-adventure.md](new-adventure.md)). Champion import is in `CEDT.FTL`, not in the engine.
+- The CSB adventure starts from `CSBGAME.DAT`, which the utility disk (disk B, module `CEDT.FTL`) makes. A new game on disk A starts the prison (`Dungeon.DAT`, dungeon ID 12, see [Chaos Strikes Back: new adventure](new-adventure.md)). Champion import is in `CEDT.FTL`, not in the engine.
 
 ## Function mapping
 
@@ -344,14 +344,14 @@ Port: `magic.c` `cast_magic_map` (spell kind 4, failure message 11), `spells.c` 
 
 The file names, the cipher, the checksum, and the blocks are in [Chaos Strikes Back data files](data.md#save-file).
 
-The header differs (`save_read_header` C`0x1289c4`, `load_game` C`0x129b3e`); the offsets are in [save.md](../formats/save.md#csb-header).
+The header differs (`save_read_header` C`0x1289c4`, `load_game` C`0x129b3e`); the offsets are in [Save file format](../formats/save.md#csb-header).
 
-`save_game` (C`0x128cc0`) writes the fields at the CSB offsets: dialog choice `0x132`, extra header `0x17c` (`0x84` bytes), game ID `0x134`, platform `0x12d` = 5, header byte `0x12c`, save format `0x178`, dungeon ID `0x17a`, block keys `0x138`, block checksums `0x158`. Then it calls `save_write_header` (C`0x128a42`). A prison save has dungeon ID 12; a save of the adventure has 13 (see [new-adventure.md](new-adventure.md#summary)).
+`save_game` (C`0x128cc0`) writes the fields at the CSB offsets: dialog choice `0x132`, extra header `0x17c` (`0x84` bytes), game ID `0x134`, platform `0x12d` = 5, header byte `0x12c`, save format `0x178`, dungeon ID `0x17a`, block keys `0x138`, block checksums `0x158`. Then it calls `save_write_header` (C`0x128a42`). A prison save has dungeon ID 12; a save of the adventure has 13 (see [Chaos Strikes Back: new adventure](new-adventure.md#summary)).
 
 Other load and save differences:
 
 - The CSB load checks the checksum of block 2. DM ignores it.
-- On a restart (`-0xe2(A5)` set), the CSB load compares the game ID and shows THAT'S NOT THE SAME GAME on a mismatch.
+- On a restart (`A5-0xe2` set), the CSB load compares the game ID and shows THAT'S NOT THE SAME GAME on a mismatch.
 - `load_game` opens `CSBGAME.DAT`, then `CSBGAME.BAK`. Then it tries `DungeonMaster:Dungeon.FTL` (C`0x129d74`), which is not on the disk. A new game loads `Dungeon.DAT` of disk A: the prison (2622 bytes, compressed, signature `0x8104`).
 - The save dialog has CANCEL, SAVE AND PLAY, SAVE AND QUIT, and FORMAT FLOPPY (`save_game` C`0x128cc0`, `reference/decomp/csb-a/APPB.c` from line 36964). Without the floppy option (`A5-0x4b6` = 0), the dialog has 3 choices: 1 CANCEL, 2 SAVE AND PLAY, 3 SAVE AND QUIT. With the option, it has 4: 1 SAVE AND PLAY, 2 SAVE AND QUIT, 3 FORMAT FLOPPY, 4 CANCEL.
   - CANCEL closes the dialog.
@@ -360,12 +360,12 @@ Other load and save differences:
   - After a successful SAVE AND QUIT, `A5-0xe0` becomes 0 and `endgame(0)` (C`0x128374`) runs: the credits, then `quit_game`.
   - When the save fails, a message dialog with one button shows (C`0x1294f8`), then the game continues.
   - No code path quits without a save, and the save dialog has no plain QUIT.
-  - Port (`src/ui/startend.c` `save_game_csb`): the 3-choice dialog. The port writes dialog choice 1 for both saves. SAVE AND QUIT shows the credits and then the CSB screen (turn-based: the entrance picture).
+  - Port (`src/ui/startend.c` `save_game_csb`): the 3-choice dialog. The port writes dialog choice 1 for both saves. SAVE AND QUIT shows the credits and then the CSB screen (LLM mode: the entrance picture).
 - `load_dungeon` (C`0x1295a0`) reads the same format. Its extra calls are copy protection.
 
 Port changes: `src/engine/savefile.c` (header offsets, file names), `src/engine/savegame.c` (active group count, champion bytes `0x118`–`0x11d`), `src/ui/startend.c` (save dialog).
 
-Port start of a game: NEW ADVENTURE starts the prison, and a save in the prison creates the adventure ([manual](../manual.md#chaos-strikes-back)).
+Port start of a game: NEW ADVENTURE starts the prison, and a save in the prison creates the adventure ([Player manual](../manual.md#chaos-strikes-back)).
 
 ### Entrance and start
 
@@ -376,7 +376,7 @@ CSB has an entrance screen with doors (`process_entrance`, C`0x12a44e`). It diff
 - The choice is in `g_entrance_choice` (C`0x10017a`): two buttons (zones `0x1b3`, `0x1b4`). Value `0xcb` repeats the screen after the credits (C`0x12a6d8`).
 - `initialize_game` (C`0x12b7ee`) runs the title (`show_title`), the entrance, then `load_game` until it succeeds.
 
-Port: `src/ui/startend.c`, `src/ui/gameloop.c`. UNVERIFIED: the labels of the two buttons (they are in the pictures).
+Port: `src/ui/startend.c`, `src/ui/gameloop.c`. Unverified: the labels of the two buttons (they are in the pictures).
 
 ### End of the game
 
@@ -384,16 +384,16 @@ DM: wall sensor type 18 waits, clears the saved-game flag, and calls `endgame(1)
 
 CSB (each address checked in the APPB, APPA, and ANIM disassembly):
 
-1. Wall sensor type 18 (C`0x123970`) sets the game-won flag `-0x4f9c(A5)` (C`0x100182`) to 1 and calls `quit_game` (C`0x1285e8`) through slot `0xb42`. There is no delay, and the saved-game flag stays.
+1. Wall sensor type 18 (C`0x123970`) sets the game-won flag `A5-0x4f9c` (C`0x100182`) to true and calls `quit_game` (C`0x1285e8`) through slot `0xb42`. There is no delay, and the saved-game flag stays.
 2. `quit_game_to_ending` (C`0x1285ee`) waits until the pointer is hidden, closes `Graphics.DAT`, fills zones 401, 13, 11, 9 with color 0, and writes the module tag `ENDA` (`0x454e4441`) into the module arguments (C`0x12863a`). Then `system_shutdown` and `rt_longjmp` leave the engine.
-3. The launcher (`APPA.c` line 355) runs `ANIM.FTL` for the tags `ANIM`, `TITL`, and `ENDA`. `ANIM.FTL` (C`0x100e96` of ANIM) builds the file name `<tag>.DAT`, plays `ENDA.DAT`, and then loops forever on the last frame. The chunk format: [data.md "ENDA.DAT and the endgame"](data.md#endadat-and-the-endgame).
-4. When the won flag is 0, `quit_game_to_ending` stops in an endless loop (C`0x128600`: `beq` to itself). This is the frozen screen after the credits of SAVE AND QUIT and after the credits of a death without a saved game.
+3. The launcher (`APPA.c` line 355) runs `ANIM.FTL` for the tags `ANIM`, `TITL`, and `ENDA`. `ANIM.FTL` (C`0x100e96` of ANIM) builds the file name `<tag>.DAT`, plays `ENDA.DAT`, and then loops forever on the last frame. The chunk format: [Chaos Strikes Back data files](data.md#endadat-and-the-endgame).
+4. When the won flag is false, `quit_game_to_ending` stops in an endless loop (C`0x128600`: `beq` to itself). This is the frozen screen after the credits of SAVE AND QUIT and after the credits of a death without a saved game.
 
 CSB `endgame` (C`0x128374`) is only the death screen and the quit screen:
 
 - Party dead and not won: sound 7 (scream) at the party, 240 frames.
 - THE END: graphic 6 in zone 5, palette with 16 × `0x004` and color 15 `0xfff` (C`0x12842e`–`0x128464`), 300 frames (only the first time).
-- With a saved game (`-0xe0(A5)`): RESTART THIS GAME. `fill_screen_box` of the box at C`0x100dcc` (x 103, y 145, width 115, height 15) with color 1 and of the box at C`0x100dd4` (105, 147, 111, 11) with color 0, `text_print_to_screen`(110, 154, color 4, color 0, text 77). Colors 1 = `0x86f` and 4 = `0xfff`. The endgame mouse table (C`0x103c60`) has RESTART only, with the outer box. No QUIT button, no champion list.
+- With a saved game (`A5-0xe0`): RESTART THIS GAME. `fill_screen_box` of the box at C`0x100dcc` (x 103, y 145, width 115, height 15) with color 1 and of the box at C`0x100dd4` (105, 147, 111, 11) with color 0, `text_print_to_screen`(110, 154, color 4, color 0, text 77). Colors 1 = `0x86f` and 4 = `0xfff`. The endgame mouse table (C`0x103c60`) has RESTART only, with the outer box. No QUIT button, no champion list.
 - 900 frames, or RESTART: `load_game`, then `start_game`. When the load fails, the credits.
 - The credits: graphic 5, palette C`0x100f18`, wait for input. Then, with a saved game and a dead party, THE END again (without the 300 frames); otherwise `quit_game`.
 
@@ -405,13 +405,13 @@ CSB contains copy protection. The port leaves it out and acts as if every check 
 
 - Disk access through CIA and `DSKPT` inside `sound_request_play` (`protect_disk_access`, C`0x1097e6`).
 - Track bit pattern checks: `protect_compare_track_bits` (C`0x1244f8`), timeline event 22 (`protect_check_10c2b0`, every 500 ticks from `process_new_party_map` C`0x107f7a`).
-- A dungeon check: before it builds the column pointers, `load_dungeon` (C`0x1295a0`) compares a value from `0xa02(A5)` with `DAT_00129a42`. When the values differ, it does not build them (unverified).
+- A dungeon check: before it builds the column pointers, `load_dungeon` (C`0x1295a0`) compares a value from `A5+0xa02` with `DAT_00129a42`. When the values differ, it does not build them (unverified).
 - A disk check at the start of `save_game` (C`0x128cc0`) reads raw MFM data from the drive (custom chip and CIA access) (unverified).
 - Code checksums: C`0x120b4e` (over C`0x128ca0`–`0x129580`, from `load_dungeon`), C`0x1245b4` (from `move_get_move_result` on maps above 2), C`0x128676`.
 - Self-modifying hooks: `protect_install_hook` (C`0x11e248`) patches `champion_apply_time_effects` and runs graphic 21 as code (from `decrease_torches_light_power` C`0x111018`, and C`0x11c896`, `0x125cac`, `0x125da0`).
 - Penalties when a check fails: `timeline_add_event` adds no event (C`0x122d46`), `timeline_is_first_event_expired` returns 0 (C`0x122e54`), movement destinations change (C`0x1216e6`), the timeline dispatcher uses a stale event type (C`0x124148`).
 
-UNVERIFIED: the complete list of penalties.
+Unverified: the complete list of penalties.
 
 ### Platform and other code
 

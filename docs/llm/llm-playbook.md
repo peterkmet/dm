@@ -20,7 +20,7 @@ Your files in `playthroughs/current/player/` are your memory. Keep each file sho
 ## The party
 
 - The party has up to 4 champions in 2 rows. The front row fights hand to hand and takes most of the hits from the front. The back row casts spells, throws objects, or shoots.
-- Each champion has health, stamina, and mana, and the attributes strength, dexterity, wisdom, vitality, anti-magic, anti-fire, and luck.
+- Each champion has health, stamina, and mana, and the statistics strength, dexterity, wisdom, vitality, antimagic, antifire, and luck.
 - Champions can swap their places in the party. A champion in the back row is safer from attacks from the front.
 - The party turns as one. A creature attacks the champions on the side that faces it. A creature behind the party hits the back row.
 - The leader carries the object in the hand and uses it on walls and doors.
@@ -121,7 +121,7 @@ This port is under test. When something looks wrong, write it in `bugs.md` with 
 - Do not start or stop the game program. The coordinator runs it.
 - The user watches the window. Before each `dm-play` call, write one short line of text: what you do next and why.
 - Each call costs tokens. Use `--brief` for each call. Plan several steps per call: a whole route or a whole fight in one `act_many`, a long rest in one `wait`. Keep your text and your thinking per call short: do not repeat the state, decide the next steps.
-- Plan a corridor or a fight in one `act_many` call. It stops early when something happens (see [Batches](llm-mode.md#batches)). Check why it stopped before you continue.
+- Plan a corridor or a fight in one `act_many` call. It stops early when something happens (see [LLM mode: turn-based play over MCP](llm-mode.md#batches)). Check why it stopped before you continue.
 - One `wait` with many ticks stops by itself on damage, a new creature, or a message.
 - A script must not loop over `get_state`, `get_view`, `wait`, or `choose_action`. Each turn is your decision.
 - Ask for `get_map` only when you plan a route: one `get_map` per route plan, not one per step. A script reads the map once and sends the whole route as one `act_many`. The `act`, `act_many`, and `wait` responses already contain the state and the view.
