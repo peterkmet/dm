@@ -140,7 +140,7 @@ After the loop:
 | 5 | The party on a stairs square. | `add` |
 | 7 | A group (type ≤ 4, not the party), no other group. | `add` |
 | 8 | The party. | The party holds an object of the data type (all slots of the living champions, the leader hand, and chest contents). |
-| 9 | The party enters, party not on the square. | Data < 37. |
+| 9 (version checker) | The party enters, party not on the square. | Data < 37. CSB: [CSB engine compared with the DM engine](../csb/engine-diff.md#sensors-and-timeline). |
 
 A wall sensor in the cell of the thing triggers on these conditions:
 

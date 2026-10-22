@@ -7,7 +7,7 @@ The port has two modules:
 - `src/engine/savefile.c` handles the container: the header, the cipher, and the checksums.
 - `src/engine/savegame.c` copies the game state into the blocks and back. `src/engine/dungeon.c` writes and reads the dungeon part.
 
-The English version removes `~` from the file name. The port writes `DMGAME.DAT` and `DMGAME.BAK`. The save slots of the advanced mode use the same format: slot 1 is `DMGAME.DAT`, slots 2–8 are `DMGAME2.DAT`–`DMGAME8.DAT` with the backups `DMGAME2.BAK`–`DMGAME8.BAK` (Chaos Strikes Back, CSB: `CSBGAME`).
+The English version removes `~` from the file name. The port writes `DMGAME.DAT` and `DMGAME.BAK`. The save slots of the advanced mode use the same format: slot 1 is `DMGAME.DAT`, slots 2–8 are `DMGAME2.DAT`–`DMGAME8.DAT` with the backups `DMGAME2.BAK`–`DMGAME8.BAK` (Chaos Strikes Back, CSB: `CSBGAME`). The quick save `QUICK.DAT` uses the same format.
 
 ## Byte order
 
