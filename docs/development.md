@@ -65,7 +65,8 @@ Each test module owns its state, so the tests run in any order and in parallel.
 - `state_get_string` (`control/state_json.h`) gives the state, the view or the map as JSON.
 - The tests set `g_frame_hook` to run the frames of a sequence, for example in
   `tests/differential/test_csb_ending.py`.
-- The tests set the os hooks. `dmtest.lib.set_folder_hooks` sets the folder hooks.
+- The tests replace the OS hooks of `data/os.h`. `dmtest.lib.set_folder_hooks` sets the folder hooks to Python
+  functions, because `main.c` sets them with SDL.
 
 To hide the format commit in `git blame`:
 

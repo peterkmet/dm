@@ -253,7 +253,7 @@ Cast (`menus_get_champion_spell_cast_result`, C`0x126e0e`, case kind 4 at C`0x12
 
 1. `is_magic_map_in_hand` (C`0x111080`) must be true for the object in the action hand (champion slot word `0xd6`). Otherwise the spell fails with message 11 and the function returns 3.
 2. `D6 = (power + 1) × 4`, power = power symbol - `0x5f`.
-3. Type 0: byte `0x118` += 1, duration 2·D6². Type 1: byte `0x119` += 1, D6 -= 2, duration 2·D6². Type 2: byte `0x11a` += 1, D6 -= (D6 >> 2) - 1, duration 2·D6².
+3. Types 0–2 add 1 to their byte: type 0 `0x118`, type 1 `0x119`, type 2 `0x11a`. Type 1 subtracts 2 from D6. Type 2 subtracts `(D6 >> 2) - 1` from D6. The duration is 2·D6² with the new D6.
 4. Type 3 (C`0x1270de`): delete the first event 83 of this champion. Byte `0x11b` = party direction + 1. Word `0x11c` = x << 11 | y << 6 | map. Action disabled ticks = D6² >> 1, event duration = 4 × that value.
 5. C`0x1272d4`: the event time is game time + duration, on the party map. `timeline_add_event`. The event priority byte holds the champion index.
 

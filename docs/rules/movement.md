@@ -129,10 +129,10 @@ Movement calls these functions of `src/engine/champion.c` and `src/engine/invent
 
 ### Floor and wall sensors
 
-`sensor_process_thing_change(x, y, thing, party_on_square, add)` runs when a thing enters (`add` 1) or leaves (`add` 0) a square. `thing` `0xffff` is the party.
+`sensor_process_thing_change(x, y, thing, party_on_square, add)` runs when a thing enters (`add` is true) or leaves (`add` is false) a square. `thing` `0xffff` is the party.
 
 1. The function scans the square: a group present, objects present, objects of the same type, objects of another type. On a wall square it only scans the cell of the thing.
-2. On a floor square, the party entering a square prints the visible texts on the square (`dungeon_decode_text` mode 1, color 15). Not when the party only turns.
+2. On a floor square, the party entering a square prints the visible texts on the square (`dungeon_decode_text` mode 1, color 15). A turn on the square prints nothing.
 3. The function runs each sensor with a type other than 0. A floor sensor triggers on these conditions:
 
 | Type | Condition | Value |

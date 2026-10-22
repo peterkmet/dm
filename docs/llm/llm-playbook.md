@@ -54,7 +54,7 @@ Your files in `playthroughs/current/player/` are your memory. Keep each file sho
 - Each champion has 4 skills: fighter, ninja, priest, and wizard. A skill gets a new level when the champion uses it.
 - Fighter: hand-to-hand attacks. Ninja: fast attacks, throwing, shooting. Priest: priest spells and potions. Wizard: wizard spells.
 - A new level gives more health, stamina, or mana and better attributes.
-- Before the stairs down to a new level, follow the training rule in `progress.md`.
+- Before you take the stairs down to a new level, follow the training rule in `progress.md`.
 
 ## Magic
 
@@ -65,7 +65,7 @@ Your files in `playthroughs/current/player/` are your memory. Keep each file sho
 
 ## Fights
 
-- Each champion attacks with the object in the hand. The action menu of the object shows the attacks.
+- Each champion attacks with the object in the action hand. The action menu of the object shows the attacks.
 - Some creatures take damage only from magic or special weapons.
 - A closed door blocks creatures. A door that closes on a creature hurts it.
 - Before a fight with a creature type that is in `bestiary.md`, read its section again. Use what works against it, and avoid what does not work.

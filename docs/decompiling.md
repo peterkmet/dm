@@ -22,7 +22,7 @@ How to decompile Dungeon Master v3.60 (Amiga) from your own disk image with Ghid
    uv sync
    ```
 
-3. Extract the disk image to `game/` with the Python tools (`uv sync` once). Replace `<disk.adf>` with the path to your ADF file. The command prints one line per file: SHA-256, size, and path.
+3. Extract the disk image to `game/` with the Python tools. Replace `<disk.adf>` with the path to your ADF file. The command prints one line per file: SHA-256, size, and path.
 
    ```sh
    uv run dm-extract <disk.adf> game

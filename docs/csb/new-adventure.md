@@ -127,7 +127,7 @@ The header has the same structure as the DM header: 32 groups of 4 noise words, 
 
 - `0x109e4c` copies the 4 champion records (`0x500` bytes) and the 4 portraits of the game to mini. The party record (`0x80`), block 0, the timeline, the active groups, and the dungeon stay from `MINI.DAT`.
 - Mini champion count (block 0, offset 10) = game champion count.
-- The load step `0x109c20` clears the name bytes after the first NUL (8 bytes) and the title bytes after the first NUL (20 bytes).
+- The load step `0x109c20` clears the bytes after the first NUL in the 8-byte name and in the 20-byte title.
 
 Then for each champion (record offsets of [game-state.md](../rules/game-state.md)):
 

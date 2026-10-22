@@ -231,7 +231,7 @@ The random header words come after the copy of the globals. Thus the saved rando
 1. Read `DMGAME.DAT`. When it is missing, read `DMGAME.BAK`.
 2. `savefile_decode`. Then `dungeon_load_saved` on the dungeon part. A failure gives `SAVEGAME_DAMAGED`.
 3. Copy block 0 into the globals. `g_session.last_load_time` gets the game time.
-4. Allocate the timeline for `g_timeline.capacity` events and the active groups for at least 110 entries. Copy blocks 1–4. Raise `g_max_active_group_count` to at least 110. `timeline_reset`. CSB allocates exactly the saved count and keeps it. A new CSB game has 60 entries.
+4. Allocate the timeline for `g_timeline.capacity` events and the active groups for at least 110 entries. Copy blocks 1–4. Raise `g_max_active_group_count` to at least 110. `timeline_reset`. CSB allocates exactly the saved `g_max_active_group_count` and keeps it. A new CSB game has 60 entries.
 5. Decode the portrait of each champion into `ChampionRuntime.portrait` (see Portraits). Copy the game ID, the dungeon ID, and the extra header bytes.
 6. Clear `g_session.party_dead` and the sleep flag. Set `g_session.saved_game_exists`.
 7. When the file was the backup, rename it to `DMGAME.DAT`.
@@ -256,7 +256,7 @@ The slot list (`savegame_read_slot_info`) reads each file without a load:
 - Block 0: the globals of the table above. The unused bytes are 0.
 - Block 1: `ActiveGroup` in its original 16-byte order. `group_index` is a big-endian word.
 - Block 2: `champion_pack` for the 4 champions, then the party record ([game-state.md](../rules/game-state.md)). The bytes from `0x58` to `0x7f` of the party part are not traced. The port writes 0 and ignores them on load.
-- Block 3: 10 bytes per event: `map_time` (long), `type`, `priority`, `b`, `c`. A free slot has the next free index in the high word, as `timeline_reset` writes it.
+- Block 3: 10 bytes per event: `map_time` (long), `type`, `priority`, `b`, `c`. A free slot has the next free index in the high word, as in the original. The load rebuilds the free list (`timeline_reset`).
 - Block 4: the heap of slot indices.
 
 ### Extension blocks

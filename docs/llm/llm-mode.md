@@ -227,6 +227,8 @@ A chest in the action hand (slot 1) of the open inventory opens in the panel. `s
 
 The response of `look` has `look: {name, lines}`. These are the texts of the eye panel: the name, then the description lines (burnt out, compass direction, waterskin level, attributes, and the weight, in the form `WEIGHS <kg>.<tenth> KG.`). With the advanced features, a weapon also has `ATTACK <value>` and an armour `DEFENSE <value>`, the values of the stat meters. A scroll and a chest also give the name and the weight; the scroll text is in the state.
 
+### Damage fields
+
 `action_damage`: a value above 0 is the damage, 0 is no damage, -1 is "can't reach", -2 is "need ammo". After `act_many` it is a list with one value for each `choose_action`, in order.
 
 `health_lost`: a list with one value for each champion: the health that the champion lost since the start of the request (`act`, `act_many`, or `wait`). It is only in the response when a champion lost health.

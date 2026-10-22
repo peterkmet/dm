@@ -1,6 +1,6 @@
 # Game state
 
-The game state of the port: the structs and globals in `src/engine/include/game.h` and `src/engine/include/random.h`. It gives the original KAOS address of each item. The names come from [kaos-symbols.csv](../reference/kaos-symbols.csv). The field meanings come from [range-4-6.md](../reference/symbols/range-4-6.md) and [range-7-9.md](../reference/symbols/range-7-9.md).
+The game state of the port: the structs and globals in `src/engine/include/game.h` and `src/engine/include/random.h`. Each table gives the original KAOS address of each item. The names come from [kaos-symbols.csv](../reference/kaos-symbols.csv). The field meanings come from [range-4-6.md](../reference/symbols/range-4-6.md) and [range-7-9.md](../reference/symbols/range-7-9.md).
 
 The port uses native C types for this state. It does not keep the big-endian byte layout. The dungeon data from `dungeon.c` keeps the big-endian layout, see [Dungeon.DAT format](../formats/dungeon.md). A save file reader or writer must convert between the two layouts.
 
@@ -160,7 +160,7 @@ A free slot keeps the index of the next free slot in `map_time`. The value `0xff
 |---|---|---|
 | `timeline_init` | `0x11f16a` | New game only. Allocates the arrays, builds the free list, and adds the watchdog event. |
 | `timeline_get_index` | `0x11f26c` | Finds a slot in the heap. A missing slot is fatal error `0x46`. |
-| `timeline_fix_chronology` | `0x11f296` | Moves a heap entry up. When it does not move up, moves it down. |
+| `timeline_fix_chronology` | `0x11f296` | Moves a heap entry up, or down when it cannot move up. |
 | `timeline_delete_event` | `0x11f3d0` | Frees a slot and removes it from the heap. |
 | `find_mergeable` | `0x11f43c` | See [Merge rules](#merge-rules). |
 | `timeline_add_event` | `0x11f59c` | Type 0 returns -1. A full timeline is fatal error `0x2d`. Merges or takes a free slot. Returns the slot index. |

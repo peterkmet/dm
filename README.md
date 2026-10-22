@@ -38,8 +38,8 @@ Download the [latest release](https://github.com/peterkmet/dmmac/releases/latest
 - **Windows 10+:** Run `dm.exe`. If Windows SmartScreen warns about an unknown publisher, select "More info",
   then "Run anyway".
 
-On first launch, the game extracts the disk images into `game/` and `game-csb/`. The saves go to the same
-folders, in the original Amiga format.
+On first launch, the game extracts the disk images into `game/` and `game-csb/`. Each adventure keeps its
+saves in its own folder, in the original Amiga format.
 
 Keys of the advanced mode (in the dungeon view):
 

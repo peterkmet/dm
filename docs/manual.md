@@ -10,7 +10,7 @@ Unpack a release (see the [README](../README.md)) or build the game (see [develo
 build/dm
 ```
 
-On startup, the game extracts each disk image once: the Dungeon Master v3.60 disk to `game/`, Chaos Strikes Back (CSB) disk A to `game-csb/`, CSB disk B to `game-csb/disk-b/`. The game checks the files against the Amiga disks; a wrong file stops the game with a message in the log.
+On startup, the game extracts each disk image once: the Dungeon Master v3.60 disk to `game/`, Chaos Strikes Back (CSB) disk A to `game-csb/`, CSB disk B to `game-csb/disk-b/`. The game compares the CRC-32 checksum of each required file with the known value of the Amiga file; a wrong file stops the game with a message in the log.
 
 ## Options
 
@@ -54,7 +54,7 @@ Click ENTER or press Return to start a new game. Click RESUME to continue the sa
 In the advanced mode, the stairs down of the prison also start the new adventure, without a save. The automap shows the stairs down in orange and the hidden passages to them checkered. In vanilla, the stairs lead to the lower level of the prison, as in the original.
 
 - RESUME continues the saved adventure.
-- In vanilla, the save dialog shows CANCEL, SAVE AND PLAY, and SAVE AND QUIT. CSB has no quit without a save, as in the original. SAVE AND QUIT shows the credits and the CSB screen.
+- In the vanilla mode, the CSB save dialog shows CANCEL, SAVE AND PLAY, and SAVE AND QUIT. CSB has no quit without a save, as in the original. SAVE AND QUIT shows the credits and the CSB screen.
 - When the party dies, THE END shows with RESTART THIS GAME. When the party wins, the game plays the ending animation; a key or a click then shows the CSB screen.
 
 ## Saved games
@@ -68,7 +68,7 @@ The game saves to `DMGAME.DAT` in `game/`; Chaos Strikes Back saves to `CSBGAME.
 
 ### Save slots (advanced mode)
 
-The advanced mode has 8 save slots. Slot 1 is the file of the other modes (`DMGAME.DAT`); slots 2 to 8 are `DMGAME2.DAT` to `DMGAME8.DAT`, each with its own backup. CSB uses `CSBGAME*.DAT` in the same way.
+The advanced mode has 8 save slots. Slot 1 is `DMGAME.DAT`, the file of the vanilla and turn-based modes; slots 2 to 8 are `DMGAME2.DAT` to `DMGAME8.DAT`, each with its own backup. CSB uses `CSBGAME*.DAT` in the same way.
 
 - The save dialog (the save icon, Ctrl+S) shows LOAD, SAVE, CONTINUE, and QUIT. LOAD and SAVE open the slot list: one row per slot with the level and the date of the file, `EMPTY`, or `DAMAGED`. Click a row to load or save; CANCEL or Escape goes back.
 - A save over a used slot asks nothing. The backup of the slot keeps the previous game.
@@ -115,7 +115,7 @@ The game rules are the same in all modes.
 |---|---|
 | `vanilla` | Default. The original game. The advanced keys do nothing. |
 | `advanced` | The original game with the advanced features below. |
-| `turnbased` | The advanced rules without the keys (8 sounds, colored icons, stat meters), and a program plays through a Unix socket. See [llm-mode.md](llm/llm-mode.md). Not on Windows. |
+| `turnbased` | The advanced features without the keys (8 sounds, colored icons, stat meters). A program plays through a Unix socket. See [llm-mode.md](llm/llm-mode.md). Not on Windows. |
 
 ### Advanced features
 
@@ -136,7 +136,7 @@ The game rules are the same in all modes.
 - Action icons in their own colors.
 - Stat meters in the object description (hold the eye with an object in the hand): attack, defense, and weight.
 - A click on a fountain with an empty hand lets every living champion drink.
-- The damage that a champion deals stays in the action area for two ticks. A click during the second tick starts the next action without a wait.
+- The damage that a champion deals stays in the action area for two ticks. A click during the second tick shows the action icons immediately.
 - Smooth projectile flight between two game ticks.
 - The save file keeps the explored squares of the automap and the cheats that are on. Vanilla loads the file and ignores them.
 
@@ -144,12 +144,12 @@ The game rules are the same in all modes.
 
 Escape in the dungeon view opens the menu; the game time stops. Rows: SOUND (volume 0 to 7), MUSIC VOLUME (0 to 7), MUSIC (ORIGINAL, SUPER NES, or FM-TOWNS), FILTER (NONE, SCALE2X, or SCALE3X), CONTINUE. Click `-` or `+` to change a volume. Click a row for its next value. Keys: Up and Down (W, S) select a row, Left and Right (A, D) change it. Escape closes the menu.
 
-The game writes the values to `SETTINGS.TXT` in the saves folder and reads them at each start of the advanced mode. The other modes play at full volume without music.
+The game writes the values to `SETTINGS.TXT` in the saves folder and reads them at each start of the advanced mode. The vanilla and turn-based modes play at full volume without music.
 
 Music (ORIGINAL plays no music):
 
 - FM-Towns Dungeon Master: each level has a track. FM-Towns Chaos Strikes Back: each zone has a track. Super NES (Dungeon Master only): 22 trigger squares start a track. A track plays once and does not loop, as in those versions.
-- The MP3 files go into `music/` of the game folder (`game/music/`, `game-csb/music/`), named `FM-Towns,Track_01,Music.mp3` or `Super_NES,Track_01,Music.mp3` with the track number. A missing file gives silence.
+- The MP3 files go into `music/` of the game folder (`game/music/`, `game-csb/music/`), named `FM-Towns,Track_01,Music.mp3` or `Super_NES,Track_01,Music.mp3` with the track number in two digits. A missing file gives silence.
 
 ### Cheat screen
 
@@ -162,5 +162,5 @@ C in the dungeon view opens the cheat screen; the game time stops. Click a row, 
 - WALK THROUGH WALLS: the party moves into walls, fake walls, and closed doors. The map border and creatures stop the party.
 - REVEAL MAP: the automap shows all squares of the level. The explored squares do not change.
 - QUICK SAVE F5, QUICK LOAD F9.
-- SPELLS: the spell pages, for example `FUL IR (X,4,4) FIREBALL`. X means any power; a number is the place of the rune in its row. A click on a line casts the spell with the caster of the rune area at power MON, without mana cost or experience. The normal conditions stay: a potion needs an empty flask, a CSB map spell needs the magic map in the action hand.
+- SPELLS: the spell pages, for example `FUL IR (X,4,4) FIREBALL`. NEXT and BACK change the page. X means any power; a number is the place of the rune in its row. A click on a line casts the spell with the caster of the rune area at power MON, without mana cost or experience. The normal conditions stay: a potion needs an empty flask, a CSB map spell needs the magic map in the action hand.
 - CLOSE: closes the screen.

@@ -93,7 +93,7 @@ The loader builds `g_dungeon_map_data`. `g_dungeon_map_data[map][x]` points to c
 
 Each word of the column table is the index of the first square-first-thing entry of that column. To find the first thing of square (x, y), start at the column entry and add 1 for each square above `y` that has bit 4 set. `map_get_first_thing_at((Position){map, x, y})` does this. It returns `0xfffe` when the square has no things.
 
-A thing is a word: bits 0–9 index, bits 10–13 type, bits 14–15 cell. Each record starts with the word of the next thing. `0xfffe` ends a list. `rec_write(thing)` returns the record.
+A thing is a word: bits 0–9 index, bits 10–13 type, bits 14–15 cell. Each record starts with the word of the next thing. `0xfffe` ends a list. `rec_write(thing)` returns a pointer to the record bytes.
 
 Record sizes (`g_thing_data_byte_count`):
 
@@ -143,7 +143,7 @@ The original writes all extra records, even past the limit. The port stops at th
 
 ## Text decoding
 
-`dungeon_decode_text(dst, dst_size, text_thing, mode)` ports `0x10b312`. The port adds `dst_size`. It returns false when the text offset is outside the text data, when the text has no end code, or when the text does not fit in `dst_size` bytes. A text that does not fit is cut; the end byte is written. The text string record has a word at offset 2: bit 0 is the visible flag, bits 3–15 are the word offset into the text data.
+`dungeon_decode_text(dst, dst_size, text_thing, mode)` ports `0x10b312`. The port adds `dst_size`. It returns false when the text offset is outside the text data, when the text has no end code, or when the text does not fit in `dst_size` bytes. The function cuts a text that does not fit and ends it with the end byte. The text string record has a word at offset 2: bit 0 is the visible flag, bits 3–15 are the word offset into the text data.
 
 The function decodes only a visible text, or any text when bit 15 of `mode` is set. Modes:
 

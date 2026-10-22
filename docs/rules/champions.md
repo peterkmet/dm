@@ -196,7 +196,7 @@ The main loop calls `champion_apply_time_effects()` every 64 ticks (16 while the
 1. Scents that are not on the party square lose 1 strength. A first scent at strength 0 is deleted.
 2. A chance value is made from bits 6–8 of the game time (0–112).
 3. For each living champion that is not the candidate:
-   - Mana: when the wizard and priest levels plus wisdom are above the chance, mana increases by `max_mana / 40 + 1` (doubled while sleeping) and stamina decreases by `max(7, 16 - levels)` times that gain. Mana above the maximum decreases by 1.
+   - Mana: when the wizard and priest levels plus wisdom are above the chance, mana increases by `max_mana / 40 + 1` (doubled while sleeping) and stamina decreases by `max(7, 16 - levels)` times that gain, where `levels` is the wizard level plus the priest level. Mana above the maximum decreases by 1.
    - Temporary experience decreases by 1 in each skill.
    - Food and water decrease. Fed champions regain stamina; starving champions (below -512) lose stamina. Food and water stop at -1024.
    - Health: when stamina is at least a quarter of the maximum and vitality + 12 is above the chance, health increases by `max_health / 128 + 1` (doubled while sleeping, +50 % + 1 with the Ekkhard Cross).
@@ -228,7 +228,7 @@ The code is in `src/engine/action.c`. The rules follow `action_is_action_perform
 | Shoot | The bow (class 16–31) or sling (class 32–47) in the action hand shoots the arrow (class 10) or stone (class 11) of the ready hand. Kinetic energy is the sum of both weapons. Attack is `(shoot level + launcher attributes low byte) × 2`. Step energy is the launcher class minus 16 or 32. Without ammunition: `g_session.action_damage = -2`, no experience. |
 | Spellshield, Fireshield | `magic_cast_party_spell` for 280 ticks with mana. Success uses a charge. Failure quarters the experience and halves the disabled ticks. |
 | Fluxcage | `projectile_fluxcage_action` on the square in front. |
-| Heal | While mana remains: health + `min(10, heal level)`, mana - 2, experience + 2 (start 2). |
+| Heal | The experience starts at 2. While the champion is hurt and has mana: health + `min(10, heal level, missing health)`, mana - 2, experience + 2. |
 | Light | Light power 2 now, event 70 takes it back after 2500 ticks. Uses a charge. |
 | Window | Thieves eye (event 73) for `random % (level + 8) + 5` ticks. Uses a charge. |
 | Throw | `is_object_thrown` from the action hand. The event 11 gets byte 6 = 2: when it runs, the next weapon of the quiver goes to the action hand. |

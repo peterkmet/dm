@@ -7,7 +7,7 @@ The creature rules of the port: creature groups and their AI, creature attacks, 
 | Thing type | Size | Accessors | Content |
 |---|---|---|---|
 | 4 group | 16 bytes | `record.h` | Next thing, possessions, creature type, cells byte, 4 health words, flags in word 14 (direction, last creature index, behavior). |
-| 14 projectile | 8 bytes | `record.h` | Next thing, flying thing (slot), kinetic energy, attack, timeline event index. |
+| 14 projectile | 8 bytes | `record.h` | Next thing, flying thing with its cell, kinetic energy, attack, timeline event index. |
 | 15 explosion | 4 bytes | `record.h` | Next thing, attack, type in bits 0–6, centered flag in bit 7. |
 
 The flying thing of a spell projectile is an explosion thing `0xff80 + type` (`EXPLOSION_THING(type)`), not a record.
@@ -67,7 +67,7 @@ Bits 0–3 of group word 14 hold the behavior.
 3. Outside the sight range the creature can still notice the party by a random roll. Next to the party, the roll also adds the hearing and smell ranges.
 4. A wall, a solid fake wall, or a closed door that is not see-through on the line from the party to the creature blocks the view.
 
-Smell uses the smell range of the creature. A creature smells the party directly within half the smell range when only walls do not block the line. Otherwise it follows the scent trail of the party (`g_party.scents`).
+Smell uses the smell range of the creature. A creature smells the party directly within half the smell range when no wall and no solid fake wall blocks the line. Otherwise it follows the scent trail of the party (`g_party.scents`).
 
 ### Movement
 
@@ -148,7 +148,7 @@ Event 48 or 49 (`projectile_process_move_event`) moves a projectile one cell for
 - Creature: damage `impact attack × 64 / creature defense` plus poison. A non-material creature takes damage only from Harm Non-Material. A Black Flame gains health from a fireball. Some creatures catch a thrown dagger, arrow, slayer, poison dart, or throwing star.
 - Door: an Open Door spell toggles a door with a button. A door grate can let a projectile pass. Otherwise the projectile bashes the door.
 - A Ful bomb or Ven bomb flask explodes into a fireball or a poison cloud.
-- A spell projectile becomes an explosion of its type. A lightning bolt keeps half its kinetic energy as attack, a poison bolt a quarter.
+- A spell projectile becomes an explosion of its type. The kinetic energy becomes the attack of the explosion: half for a lightning bolt, a quarter for a poison bolt.
 
 `projectile_get_impact_attack` returns an `Impact`: the attack, the attack type, and the poison attack of the hit. It and `projectile_get_launch_object` match the original exactly (differential tests).
 
