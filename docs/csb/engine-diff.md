@@ -142,7 +142,7 @@ Port:
 - The 29 CSB spells are at `0x104160`, after the KAOS data. `spells.c` and `tables.c` read 29 spells from there for CSB.
 - `adventure_get(g_adventure)->engine` gives the module file name: `KAOS.FTL` or `APPB.FTL`.
 
-Addresses that the tables above do not list. Each is verified by a code reference (the CSB function that reads it) or by [csb-appb-symbols.csv](../reference/csb-appb-symbols.csv):
+The code references of more addresses. Each is verified by a code reference (the CSB function that reads it) or by [csb-appb-symbols.csv](../reference/csb-appb-symbols.csv):
 
 | Port name | DM | CSB | Reference |
 |---|---|---|---|
@@ -341,7 +341,7 @@ Port: `magic.c` `cast_magic_map` (spell kind 4, failure message 11), `spells.c` 
 
 ### Champions
 
-- `champion_click_rebirth_panel` (C`0x11668e`), REINCARNATE: before the 12 random points, CSB sets each statistic 1–6 (current and maximum) to max(minimum, value - value/8) (C`0x1167e0`–`0x116854`). Then it divides health, stamina, and mana (current and maximum) by 4 (C`0x116856`–`0x11688e`). Port: `src/engine/champion.c` `reincarnate`. The CSB dungeon has no mirrors, so this code does not run in a normal CSB game (unverified).
+- `champion_click_rebirth_panel` (C`0x11668e`), REINCARNATE: before the 12 random points, CSB sets each statistic 1–6 (current and maximum) to max(minimum, value - value/8) (C`0x1167e0`–`0x116854`). Then it divides health, stamina, and mana (current and maximum) by 4 (C`0x116856`–`0x11688e`). Port: `src/engine/champion.c` `reincarnate`. The CSB adventure has no mirrors, so only the prison runs this code (unverified).
 - All other champion functions differ only in code generation: object modifiers, skill level, skill experience, luck, time effects, candidate, food and potions, object icons.
 
 ### Save and load

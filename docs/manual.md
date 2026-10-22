@@ -66,9 +66,9 @@ The game saves to `DMGAME.DAT` in `game/`; Chaos Strikes Back saves to `CSBGAME.
 
 The advanced mode has 8 save slots. Slot 1 is `DMGAME.DAT`, the file of the vanilla and LLM modes; slots 2–8 are `DMGAME2.DAT`–`DMGAME8.DAT`, each with its own backup. CSB uses `CSBGAME*.DAT` in the same way.
 
-- The save dialog (the save icon, Ctrl+S) shows LOAD, SAVE, CONTINUE, and QUIT. LOAD and SAVE open the slot list: one row per slot with the level and the date of the file, `EMPTY`, or `DAMAGED`. Click a row to load or save; CANCEL or Escape goes back.
+- The save dialog (the save icon, Ctrl+S) shows LOAD, SAVE, CONTINUE, and QUIT. LOAD and SAVE open the slot list: one row per slot with the level and the file time, `EMPTY`, or `DAMAGED`. The load list ends with QUICK, the quick save. Click a row to load or save; CANCEL or Escape goes back.
 - A save over a used slot asks nothing. The backup of the slot keeps the previous game.
-- RESUME at the entrance opens the slot list; the last row is QUICK, the quick save.
+- RESUME at the entrance opens the load list.
 - RESTART THIS GAME loads the slot of the last save or load.
 
 ## Controls

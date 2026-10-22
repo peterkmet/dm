@@ -239,7 +239,7 @@ this document names.
 
 ## 10. Data and errors
 
-1. `data/` and `engine/` never write to stderr and never exit. They log through `g_os_log_hook` and fail
+1. Only `platform/` and `data/os.c` write to stderr or exit. `data/` and `engine/` log through `g_os_log_hook` and fail
    through `g_os_fatal_hook` of `data/os.h`; `data/os.c` holds the default (stderr and `exit`), `platform/`
    and the tests replace it; `os_fatal` never returns. [platform]
 2. A loader returns `false` on a bad file. An image address outside the image is a port bug and calls `os_fatal`.

@@ -85,7 +85,7 @@ Layout (item 696). A check compares the zone records with `dmcsb.graphics.decode
 | `GFX_ENTRANCE_LEFT_DOOR`, `GFX_ENTRANCE_RIGHT_DOOR`, `GFX_ENTRANCE` | 2, 3, 4 | `ids.h` | CSB entrance art. Button zones not checked. |
 | `GFX_CREDITS` | 5 | `startend.c` | CSB credits art. The CSB engine does not show credits at the end. |
 | `GFX_ACTION_AREA_NAMES` | 10 | `ids.h` | Different content, same size. |
-| `GFX_CHAMPION_PORTRAITS` | 26 | `ids.h` | CSB portraits. `savegame.c` matches saved portraits against this sheet (see [Save file](#save-file)). |
+| `GFX_CHAMPION_PORTRAITS` | 26 | `ids.h` | CSB portraits. `savegame.c` keeps the saved portrait bitmaps (see [Loaders](#loaders)). |
 | `GFX_OBJECT_ICONS_BEFORE_FIRST` + 1–4, 6 | 42–45, 47 | `ids.h` | CSB icons. The `ICON_*` names of DM items name the CSB items at the same indices, for example `ICON_BOLT_BLADE`, `ICON_FURY`, `ICON_DELTA`, `ICON_INQUISITOR`. |
 | `GFX_OBJECT_NAMES` | 694 | `ids.h`, `ui.c` | TXT1 encoding. |
 | `GFX_ACTION_NAMES` | 699 | `ids.h`, `ui.c` | Empty. |
@@ -143,7 +143,7 @@ The CSB `save_game` is at `0x128cc0` (jump table slot `A5+0xb6a`). The CSB `load
 - Block 1: `max_active_group_count × 16`. Block 2: `0x580` bytes (4 × `0x140` champions, then `0x80` party). Block 3: `event_max_count × 10`. Block 4: `event_max_count × 2`.
 - Portraits: 32 × 29 (`0x1032bc`), interleaved before the write.
 - Dungeon part: the same parts in the same order, thing record sizes as DM.
-- The leader load does not count the hand object.
+- The saved leader load does not count the hand object.
 
 ### Header differences
 

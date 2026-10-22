@@ -19,7 +19,7 @@ Code reads globals with `d16(A5)`. A negative offset reaches the initialized dat
 
 Entry `i` is at `0x104180 + 8 * i`. Bytes 2–7 hold `JMP abs.l` to export `i`. Code calls an export with `JSR d16(A5)`. The target of the call is the `JMP` instruction at `entry + 2`.
 
-Ghidra shows this call as an indirect call through a global, for example `(*DAT_0010465a)()`. The slot `S` points to export `(S - 0x104182) / 8`. Examples:
+Without the symbol scripts of [Decompiling](../decompiling.md), Ghidra shows this call as an indirect call through a global, for example `(*DAT_0010465a)()`. The slot `S` points to export `(S - 0x104182) / 8`. Examples:
 
 | Ghidra global | Export | Target | Name |
 |---|---|---|---|
@@ -32,7 +32,7 @@ Ghidra shows this call as an indirect call through a global, for example `(*DAT_
 
 Seven slots are also function pointers: interrupt handlers and callbacks (`0x1041d2`, `0x104282`, `0x104552`, `0x10456a`, `0x10457a`, `0x104582`, `0x104a32`). Ghidra turns them into thunk functions, so `reference/decomp/dm/KAOS.c` has 756 function headers.
 
-Ghidra drops most arguments of a jump-table call. For example, `game_loop` pushes direction, X, and Y before `jt_draw_dungeon_view`, but the C output shows one argument. Read the disassembly for jump-table calls.
+Without the symbol scripts, Ghidra drops most arguments of a jump-table call. For example, `game_loop` pushes direction, X, and Y before `jt_draw_dungeon_view`, but the C output shows one argument. Read the disassembly for jump-table calls.
 
 ## Entry and startup
 

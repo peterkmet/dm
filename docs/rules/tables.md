@@ -113,7 +113,7 @@ Each table ends where the next named table starts. The tests check this.
 | `0x0b` | `poison_attack` | Poison attack strength. |
 | `0x0c` | `dexterity` | Dexterity. |
 | `0x0d` | — | Padding. |
-| `0x0e` | `ranges` | Bits 0–3 sight, bits 8–11 smell, bits 12–15 attack. |
+| `0x0e` | `ranges` | Bits 0–3 sight, bits 4–7 hearing, bits 8–11 smell, bits 12–15 attack. |
 | `0x10` | `properties` | Bits 4–7 fear resistance, bits 8–11 experience, bits 12–15 wariness. |
 | `0x12` | `resistances` | Bits 8–11 poison. |
 | `0x14` | `animation_ticks` | Bits 4–7 non-attack, bits 8–11 attack. |

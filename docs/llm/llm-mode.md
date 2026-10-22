@@ -262,7 +262,7 @@ The champion `position` uses `front_left`, `front_right`, `back_right`, `back_le
   - `slots[]`: `slot`, `where`, `object`.
   - `actions`: the action menu of the action hand. `runes`: the chosen runes.
 
-  Units: the values are the units of the game screen. `stamina` is the shown value (the game stores ten times that). `load_kg` is in kilograms with one decimal (the game stores tenths and shows `nn.n/ mm KG`). Health, mana, and statistics are not scaled. `food` and `water` are the stored values (the game shows them only as bars). The maximum is 2048; below 0 the champion starves or dies of thirst.
+  Units: the values are the units of the game screen. `stamina` is the shown value (the game stores ten times that). `load_kg` is in kilograms with one decimal (the game stores tenths and shows `nn.n/ mm KG`). Health, mana, and statistics are not scaled. `food` and `water` are the stored values (the game shows them only as bars). The maximum is 2048; below -512 the champion starves or dies of thirst.
 - `action_menu`: `{champion, actions}` while a menu is open, otherwise `null`.
 - `spell`: `{caster, chosen, available[{symbol, name, mana}]}`, or `null`.
 - `inventory`: `{champion, panel, chest?}`, or `null`.
@@ -289,7 +289,7 @@ An object is `{name, kind}`. A scroll that a champion holds also has `text`.
 
 Visibility rule: the view has the party row (depth 0) and the rows ahead up to the first center square that blocks sight: a wall, a fake wall that looks closed, or a closed door. The row of that square is in the view, with its side squares. Nothing behind it is in the view. A side square is in the view only when the center square of its row or the side square one row nearer is open. The screen does not draw a side square behind walls. Facing a wall at depth 1, the view has at most 6 squares. A square outside the map (for example `y` -1) is the border wall of the level; the screen draws its ornaments too.
 
-The view shows what a player sees. Creature health is not in the view, because the original does not show it. Creature names and rune names do not come from the game data, because the original shows only pictures.
+The view shows what a player sees. Creature health is not in the view, because the original does not show it. The port names the creatures and the runes of the protocol, because the original screen shows only pictures.
 
 ### Map fields
 
@@ -553,7 +553,7 @@ The values of `action` for `act` and `act_many`.
 - `eat`: eat the object of the hand
 - `drink`: drink the object of the hand
 - `choose_action`: choose an action of the weapon in the hand
-- `pass`: do nothing for one turn
+- `pass`: close the open action menu
 - `set_caster`: choose the champion that casts
 - `add_rune`: add a rune to the spell
 - `delete_rune`: delete the last rune

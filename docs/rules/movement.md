@@ -254,7 +254,7 @@ Movement rules that the event table does not cover:
 
 - Groups move through `move_get_move_result`. A group that falls drops its dead creatures (`GroupFallDrops`).
 - Wall launchers (sensor types 7–10, 14, 15) launch in `projectile_trigger_launcher`. `projectile_is_killed_by_impact` runs in `move_get_move_result`.
-- A blocked move damages the two front champions (`bump_into_wall`, `group_get_target_champion_index`).
+- A blocked move damages the two champions on the side of the move (`bump_into_wall`, `group_get_target_champion_index`).
 - Wall sensor type 12 creates an object (`projectile_get_launch_object`).
 - Wall sensor type 18 ends the game (`startend_run_endgame_sensor`).
 

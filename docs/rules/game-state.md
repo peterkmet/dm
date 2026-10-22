@@ -97,7 +97,7 @@ The portrait pointer (`0x114`) is not in the struct. The port keeps the portrait
 | `g_projectile_disabled_movement_ticks` | `0x1001f4` | `int16_t` |
 | `g_last_projectile_disabled_movement_direction` | `0x1001f6` | `int16_t` |
 
-These globals are the values that block 0 of the save file stores ([Save file format](../formats/save.md#block-0-globals)).
+Block 0 of the save file stores these globals, except `g_game_id`, which is in the header ([Save file format](../formats/save.md#block-0-globals)).
 
 ## Session
 

@@ -81,7 +81,7 @@ git config blame.ignoreRevsFile .git-blame-ignore-revs
 - `tools/dmtools/`: the Python tools. `tools/ghidra/`: the decompile scripts. `tools/dist/`: the release scripts.
 - `tests/`: see the table above.
 - `docs/`: the documentation.
-- Git-ignored data: `game/`, `game-csb/` (original files), `reference/` (Ghidra output), `playthroughs/`.
+- Git-ignored data: `game/`, `game-csb/` (original files), `reference/` (Ghidra output and original material), `playthroughs/` except `playthroughs/template/`.
 
 ## Coding standard
 
