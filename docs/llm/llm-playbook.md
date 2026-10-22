@@ -136,7 +136,7 @@ When something looks wrong, write it in `bugs.md` with the steps and the state. 
 |---|---|
 | State in short form | `uv run dm-play --brief get_state` |
 | What is ahead | `uv run dm-play --brief get_view` |
-| Explored map | `uv run dm-play get_map` |
+| Explored map | `uv run dm-play --brief get_map` |
 | Several actions | `uv run dm-play act_many '["move_forward","turn_left","move_forward"]'` |
 | Pass time | `uv run dm-play wait '{"ticks":50}'` |
 | Save, load | `uv run dm-play save`, `uv run dm-play load` |

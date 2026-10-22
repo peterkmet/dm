@@ -2,7 +2,7 @@
 
 The Dungeon Master v3.60 save file `DMGAME~.DAT` and the port code that reads and writes it. The original routines are `save_game` (`0x125a44`) and `load_game` (`0x1265d4`) in `KAOS.FTL`.
 
-The C code has two layers:
+The port has two modules:
 
 - `src/engine/savefile.c` handles the container: the header, the cipher, and the checksums.
 - `src/engine/savegame.c` copies the game state into the blocks and back. `src/engine/dungeon.c` writes and reads the dungeon part.
@@ -26,7 +26,7 @@ All words and longs are big-endian. The cipher and the checksums operate on big-
 | Portraits | 4 × 464 | No | No |
 | Dungeon | Variable | No | Byte sum word at the end |
 
-The globals block gives the sizes of blocks 1, 3, and 4. The reader decrypts block 0 first. Then it reads the two counts. The original computes the sizes as 16-bit values. The C code does the same.
+The globals block gives the sizes of blocks 1, 3, and 4. The reader decrypts block 0 first. Then it reads the two counts. The sizes are 16-bit values, as in the original.
 
 ## Header
 
@@ -78,7 +78,7 @@ for (i = count; i != 0; i--) {
 
 The checksum adds the plain word and the encrypted word. Thus the checksum is the same before and after encryption. The original `save_block_checksum` (`0x125542`) computes the same sum without a change to the data.
 
-The original loop is a `do`/`while` loop. A count of 0 runs 65536 times. The C code runs 0 times for a count of 0. A valid save does not have an empty block.
+The original loop is a `do`/`while` loop. A count of 0 runs 65536 times. The port runs 0 times for a count of 0. A valid save does not have an empty block.
 
 The checksum is weak. A change that sets a bit in the plain word and clears the same bit in the encrypted word does not change the sum.
 
@@ -149,7 +149,7 @@ The header `src/engine/include/savefile.h` declares the API.
 | `header` | 512 bytes. The payload at `0x100` is plain. |
 | `block[5]`, `block_size[5]` | Plain blocks 0–4 and their sizes in bytes. |
 | `portraits` | 4 × 464 bytes. |
-| `dungeon`, `dungeon_size` | Dungeon parts and the byte sum word. The C code does not parse them. |
+| `dungeon`, `dungeon_size` | Dungeon parts and the byte sum word. The port does not parse them here. |
 
 ### `bool savefile_decode(const uint8_t *file, uint32_t size, SaveFile *s)`
 
@@ -264,7 +264,7 @@ In the advanced and LLM modes, the port adds extension blocks after the original
 | Cheat block | `advanced` | `CHTS`, version 1, one byte of cheat bits: bit 0 full light, 1 immortal, 2 food and water, 3 one-hit kill, 4 walk through walls, 5 reveal map (`CHEAT_*`, `engine/game.h`) |
 | Automap block | `advanced`, `turnbased` | `AMAP`, version 1, map count, width and height of each map, one byte per square (`explored_save`) |
 
-`savegame_load_from` reads the blocks from the end. It strips each block whose length fits the file and whose magic is `AMAP` or `CHTS`, in any order. When a magic occurs twice, the last block in the file counts. The scan stops at the first block that does not fit; the bytes before it go to `savefile_decode`. After a successful load, the automap block sets the explored squares; without the block, the automap is empty. In the `advanced` mode, the cheat block sets the cheats. Without the cheat block, with a damaged one (size, version, or an unknown bit), or in the other modes, all cheats are off. A failed load keeps the cheats of the running game.
+`savegame_load_from` reads the blocks from the end. It strips each block whose length fits the file and whose magic is `AMAP` or `CHTS`, in any order. When a magic occurs twice, the last block in the file counts. The scan stops at the first block that does not fit; the bytes before it go to `savefile_decode`. After a successful load, the automap block sets the explored squares; without the block, the automap is empty. In the advanced mode, the cheat block sets the cheats. Without the cheat block, with a damaged one (size, version, or an unknown bit), or in the other modes, all cheats are off. A failed load keeps the cheats of the running game.
 
 ### Portrait pixels
 

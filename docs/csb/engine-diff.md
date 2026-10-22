@@ -16,7 +16,7 @@ All addresses are image addresses. "K" marks a DM address, "C" marks a CSB addre
 
 ## Function mapping
 
-`docs/reference/csb-appb-symbols.csv` holds the CSB-to-DM function mapping.
+[csb-appb-symbols.csv](../reference/csb-appb-symbols.csv) holds the CSB-to-DM function mapping.
 
 The mapping compares the disassembly (`machine68k`) of both modules: the function starts, and for each function its call targets, immediates, stack arguments, referenced globals, and branch count. An alignment of the two address-ordered function lists gives the pairs, because the linkers keep the source file order. Call-graph passes and the Amiga library vector offsets (LVO) add more pairs. A list of pairs from code readings corrects the rest. Globals pair by equal data bytes and by their position in paired functions.
 
@@ -170,7 +170,7 @@ Not in the CSB image:
 
 ### Text
 
-DM 3.60 takes all text from `Graphics.DAT` item 700 (`get_string`), action names from item 699, and object names from item 694. CSB has inline English text in the APPB data section. The texts are the same except those under "Text that differs".
+DM takes all text from `Graphics.DAT` item 700 (`get_string`), action names from item 699, and object names from item 694. CSB has inline English text in the APPB data section. The texts are the same except those under "Text that differs".
 
 | DM string (port id) | CSB source |
 |---|---|

@@ -254,7 +254,7 @@ this document names.
 
 ## 11. Tests
 
-`docs/development.md` describes the test layout. The rules that the standard check enforces: [tests]
+[Development](development.md#tests) describes the test layout. The rules that the standard check enforces: [tests]
 
 1. A test module imports helpers from `tests/dmtest/` only, never from another test module.
 2. A C constant comes from the headers through `dmtest.constants`; no hand-mirrored value.

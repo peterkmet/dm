@@ -198,8 +198,8 @@ This list covers every module of the port ([Coding standard](../coding-standard.
 - Event 65 stops at the end of the thing list; the original stops only at `0xffff` (`event.c`).
 - `sensor_process_rotation_effect` stops when the cell has no sensor; the original reads past the list.
 - Wall sensor type 16 does not exchange when the square has no object; the original puts `0xfffe` into the leader hand.
-- `group_get_generated`: a group of several creatures starts its cell value from 0, not from a stale register.
-- `group_get_melee_action_damage`: a champion without strength uses base 0, not a stale register.
+- A group of several creatures starts its cell value from 0, not from a stale register (`group_get_generated`).
+- A champion without strength uses base 0, not a stale register (`group_get_melee_action_damage`).
 - Group reaction events set byte 8 (ticks) to 0; the original leaves it uninitialized.
 - The square object search of a launcher stops at the end of the list.
 - The new-game extras stop at the record limit (`dungeon_load`); the original writes past it.

@@ -42,7 +42,7 @@ The image accessors read the loaded image at call time. They need `tables_load`.
 | `tables_get_object_scale`, `tables_get_projectile_scale`, `tables_get_explosion_scale` | `0x102e24`, `0x102e2a`, `0x102e32` | uint8 × 5, × 7, × 5 | View row, view row, depth |
 | `tables_get_rebirth_scale` | `0x102fe8` (step 2), `0x102ff0` (step 1) | uint8 × 7 | Rebirth step, coordinate set |
 | `tables_get_group_directions` | `0x10192a` | uint8 × 4 | Direction |
-| `tables_get_view_square` | `0x102a7e` + 24·n (7 tables) | int8 × 23 each | View square |
+| `tables_get_view_square` | `0x102a7e` + 24 × n (7 tables) | int8 × 23 each | View square |
 | `tables_get_wall_layout_id` | `0x102a22` | int16 × 46 | Wall set entry |
 | `tables_get_wall_ornament_depth` | `0x102ba6` | uint8 × 14 | Wall ornament view |
 | `tables_get_plaque_height` | `0x102c57` (one byte before the table) | uint8 × 3 × 5 | Line count 1–3, depth |
@@ -51,9 +51,9 @@ The image accessors read the loaded image at call time. They need `tables_load`.
 | `tables_get_wall_ornament_coords`, `tables_get_floor_ornament_coords`, `tables_get_door_ornament_coords`, `tables_get_door_button_coords` | `0x102bc4`, `0x102c00`, `0x102c0a`, `0x102c16` | uint8 | Ornament graphic, — |
 | `tables_get_glyph_width`, `tables_get_glyph_height` | `0x10296e`, `0x102970` | int16 | — |
 | `tables_get_viewport_x`, `tables_get_viewport_y`, `tables_get_viewport_width`, `tables_get_viewport_height` | `0x10293a`, `0x10293c`, `0x102948`, `0x10294a` | int16 | — |
-| `tables_get_layout_bitmap` | `0x1025f2` | 14-byte record (x, y, w, h at +2 … +8) | Layout bitmap slot |
+| `tables_get_layout_bitmap` | `0x1025f2` | 14-byte record (x, y, w, h at +2–+8) | Layout bitmap slot |
 | `tables_get_palette`, `tables_get_palette_color` | `0x100170`, `0x100190`, `0x100a46`, `0x100a66`, `0x100aa6` | uint16 × 16 | `TABLES_PALETTE_*` (dungeon + light level), color |
-| `tables_get_palette_changes` | `0x102c18` … `0x102fc0`, `0x10247a`, `0x103ffa`, `0x1005fe` | uint8 × 16 (pointer) | `TABLES_CHANGES_*` |
+| `tables_get_palette_changes` | `0x102c18`–`0x102fc0`, `0x10247a`, `0x103ffa`, `0x1005fe` | uint8 × 16 (pointer) | `TABLES_CHANGES_*` |
 | `tables_get_icon_sheet_first` | `0x100b92` | int16 × 7 | Icon sheet |
 | `tables_get_slot_box_zone` | `0x100bb0` | 4-byte record × 46 (zone word) | Slot box |
 | `tables_get_slot_box_border`, `tables_get_bar_shadow` | `0x102956`, `0x102980` | int16 | — |
@@ -68,7 +68,7 @@ The image accessors read the loaded image at call time. They need `tables_load`.
 | `tables_get_pointer_hotspot_x`, `tables_get_pointer_hotspot_y` | `0x1005c8` | 8-byte record × 4 | Pointer shape |
 | `tables_get_pointer_shadow_dx`, `tables_get_pointer_shadow_dy` | `0x102952`, `0x102954` | int16 | — |
 | `tables_get_pointer_bitmap` | `0x1002b0` (arrow), `0x1003d4` (hand) | 4 bit planes (pointer), size words before | Hand |
-| `tables_get_mouse_input`, `tables_set_mouse_input_box` | `0x10318c` … `0x10378c` (14 tables), dialog tables through the pointers at `0x103bd4` | 12-byte entry (command, x1, x2, y1, y2, buttons); command 0 ends a table | `TABLES_MOUSE_*` table, entry |
+| `tables_get_mouse_input`, `tables_set_mouse_input_box` | `0x10318c`–`0x10378c` (14 tables), dialog tables through the pointers at `0x103bd4` | 12-byte entry (command, x1, x2, y1, y2, buttons); command 0 ends a table | `TABLES_MOUSE_*` table, entry |
 | `tables_get_key_command` | `0x10393c`, `0x103948`, `0x103964`, `0x103980`, `0x10398c` | 4-byte entry (command, key); command 0 ends a table | `TABLES_KEYS_*`, key |
 
 ## Table list

@@ -138,7 +138,7 @@ Event 5 (corridor) on a group generator sensor calls `group_generate_from_sensor
 - Each creature gets `base health × multiplier + random(base health / 4 + 1)` health.
 - The group enters the square with a random direction and plays a buzz sound.
 
-`group_get_generated` returns `THING_NONE` when the group becomes active on the party map, like the original. The group is on the square in that case; `map_find_thing((Location){x, y}, THING_GROUP)` finds it.
+`group_get_generated` returns `THING_NONE` when the group becomes active on the party map, as in the original. The group is on the square in that case; `map_find_thing((Location){x, y}, THING_GROUP)` finds it.
 
 Event 65 enables a generator again after its delay (see [Movement, sensors, and timeline rules](movement.md)).
 
@@ -213,7 +213,7 @@ Then the explosion disappears.
 - `wander_step` reads the party-blocked result of the last step test, also when it skips the test. The value survives between turns; `group_reset` does not clear it.
 - A group turn remembers its square and group thing (`last_turn` in `group.c`) until the next group turn. A group that becomes active plays its flip sound at this square, and a group off the party map tests teleporters with this thing.
 
-## Fixed original bugs
+## Deviations from the original
 
 Recorded in [Dungeon.DAT format](../formats/dungeon.md#deviations-from-the-original).
 

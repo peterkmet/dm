@@ -541,7 +541,7 @@ The values of `action` for `act` and `act_many`.
 - `move_right`: one square right, same facing
 - `turn_left`: turn 90° left
 - `turn_right`: turn 90° right
-- `click_wall_ahead`: click the wall ahead (switch, lock, mirror)
+- `click_wall_ahead`: click the wall ahead (mirror, switch, lock, door button, fountain)
 - `take_object`: take an object from the floor into the hand
 - `drop_object`: drop the object of the hand
 - `open_inventory`: open the inventory of a champion

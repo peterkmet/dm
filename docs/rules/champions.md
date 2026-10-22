@@ -262,7 +262,7 @@ The influence roll is `random16() % (influence level + bonus)`. The bonus and th
 
 | Event | Handler | Effect |
 |---|---|---|
-| 11 | `enable_champion_action` | The action hand works again. The action defense of `action_index` ends. After Shoot with an empty ready hand, the first matching ammunition of the quiver (slot 12, then 7–9) goes to the ready hand. Byte 6 ≠ 0 then moves the next weapon of the quiver to slot `byte 6 - 1` (`action_refill_from_quiver`). |
+| 11 | `enable_champion_action` | The action hand works again. The action defense of `action_index` ends. After Shoot with an empty ready hand, the first matching ammunition of the quiver (slot 12, then 7–9) goes to the ready hand. When byte 6 is not 0, the game moves the next weapon of the quiver to slot `byte 6 - 1` (`action_refill_from_quiver`). |
 | 12 | `hide_damage_received` | Hides the damage number of the champion. |
 | 13 | `process_vi_altar_rebirth` | Cell byte = step. Step 2: rebirth explosion, next step after 5 ticks. Step 1: the bones of the champion (junk icon 147, champion index in the charges, in the event cell) disappear, next step after 1 tick; without bones the rebirth stops. Step 0: `champion_resurrect`. |
 | 75 | `champion_poison` | One poison step: the poison event count decreases, then `champion_poison(champion, word 6)`. |

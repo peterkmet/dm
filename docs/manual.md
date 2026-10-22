@@ -47,7 +47,7 @@ Click ENTER or press Return to start a new game. Click RESUME to continue the sa
 2. Recruit one to four champions at the 24 mirrors.
 3. Save the game. In the prison, the save creates the new adventure and continues in the CSB dungeon. The original needs a restart with the utility disk for this step. The save needs at least one champion, and each champion needs a unique first name; otherwise a dialog gives the reason.
 
-In the advanced mode, the stairs down of the prison also start the new adventure, without a save. The automap shows the stairs down in orange and the hidden passages to them checkered. In vanilla, the stairs lead to the lower level of the prison, as in the original.
+In the advanced mode, the stairs down of the prison also start the new adventure, without a save. The automap shows the stairs down in orange and the imaginary walls on the way to them checkered. In vanilla, the stairs lead to the lower level of the prison, as in the original.
 
 - RESUME continues the saved adventure.
 - In the vanilla mode, the CSB save dialog shows CANCEL, SAVE AND PLAY, and SAVE AND QUIT. CSB has no quit without a save, as in the original. SAVE AND QUIT shows the credits and the CSB screen.
@@ -133,7 +133,7 @@ The game rules are the same in all modes. The advanced mode adds the cheats and 
 - A click on a fountain with an empty hand lets every living champion drink.
 - The damage that a champion deals stays in the action area for two ticks. A click during the second tick shows the action icons immediately.
 - Smooth projectile flight between two game ticks.
-- The save file keeps the explored squares of the automap and the cheats that are on. Vanilla loads such a file but does not use the automap or the cheats.
+- The save file keeps the explored squares of the automap and the cheats that are on. The vanilla mode loads such a file but does not use the automap or the cheats.
 
 ### Options menu
 
@@ -148,7 +148,7 @@ Music (ORIGINAL plays no music):
 
 ### Cheat screen
 
-C in the dungeon view opens the cheat screen; the game time stops. Click a row, or select it with Up and Down (W and S) and press Return. C and Escape close the screen. A new game turns all cheats off.
+C in the dungeon view opens the cheat screen; the game time stops. Click a row, or select it with Up and Down (W, S) and press Return. C and Escape close the screen. A new game turns all cheats off.
 
 - FULL LIGHT: the view is always bright. The creatures keep the real light.
 - IMMORTAL: the health of a champion stops at 1. Wounds, poison, hunger, and thirst stay.
@@ -157,5 +157,5 @@ C in the dungeon view opens the cheat screen; the game time stops. Click a row, 
 - WALK THROUGH WALLS: the party moves into walls, fake walls, and closed doors. The map border and creatures stop the party.
 - REVEAL MAP: the automap shows all squares of the level. The explored squares do not change.
 - QUICK SAVE F5, QUICK LOAD F9.
-- SPELLS: the spell pages, for example `FUL IR (X,4,4) FIREBALL`. NEXT and BACK change the page. X means any power; a number is the place of the rune in its row. A click on a line casts the spell with the caster of the rune area at power MON, without mana cost or experience. The normal conditions stay: a potion needs an empty flask, a CSB map spell needs the magic map in the action hand.
+- SPELLS: the spell pages, for example `FUL IR (X,4,4) FIREBALL`. NEXT and BACK change the page. X means any power; a number is the place of the rune in its row. A click on a line casts the spell with the caster of the spell area at power MON, without mana cost or experience. The normal conditions stay: a potion needs an empty flask, a CSB map spell needs the magic map in the action hand.
 - CLOSE: closes the screen.

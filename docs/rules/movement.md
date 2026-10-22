@@ -67,7 +67,7 @@ After `dungeon_load`, call `map_reset()`; `move_party_enter_dungeon` does it. Th
 
 `move_party(command)`:
 
-1. Each living champion loses `load * 3 / maximum_load + 1` stamina (`champion_decrement_stamina`).
+1. Each living champion loses `load × 3 / maximum_load + 1` stamina (`champion_decrement_stamina`).
 2. On stairs, a backward move takes the stairs (`take_stairs`).
 3. The target square is the party square plus the step counts of the arrow (`0x103c56`: forward 1, 0, -1, 0; `0x103c5e`: right 0, 1, 0, -1), relative to the party direction.
 4. A stairs target: the party leaves its square, moves onto the stairs square, and takes the stairs.
@@ -197,7 +197,7 @@ The door state is bits 0–2 of the door square: 0 open, 1–3 partly closed, 4 
 
 ## Square events on corridors and walls
 
-- Event 5 (corridor): each text thing changes visibility (byte 3 bit 0). A text that becomes visible on the party square prints as a message. A group generator sensor (type 6) plays sound 14 when audible and disables itself. A generator that is not once-only and has a delay (byte 6) comes back with event 65 after the delay. A delay above 127 means `(delay - 126) * 64` ticks.
+- Event 5 (corridor): each text thing changes visibility (byte 3 bit 0). A text that becomes visible on the party square prints as a message. A group generator sensor (type 6) plays sound 14 when audible and disables itself. A generator that is not once-only and has a delay (byte 6) comes back with event 65 after the delay. A delay above 127 means `(delay - 126) × 64` ticks.
 - Event 65: the first disabled sensor of the square becomes type 6 again.
 - Event 6 (wall): texts in the event cell change visibility. A counter (sensor type 6) with data not 0 counts up (effect 0, up to 511) or down. It triggers at 0, or on each event with effect 3. An AND/OR gate (type 5) sets, clears, or toggles bit `cell` of its data, and compares bits 4–7 with bits 0–3. After the sensors, the cell sensors rotate when a local effect asked for it.
 
@@ -218,7 +218,7 @@ Event types of this page:
 | 9 | `process_pit` |
 | 10 | `process_door` |
 | 20 | `sound_request_play(c, at, SOUND_MODE_AFTER_TICK, 0)` |
-| 24 | Unlinks and frees the fluxcage thing in `c`, unless `g_session.won` is set. |
+| 24 | Unlinks and frees the fluxcage thing in `c`, unless `g_session.won` is true. |
 | 53 | `timeline_add_watchdog_event` |
 | 65 | `enable_group_generator` |
 | 70 | `process_light`: one step of the light table (`0x100cb4`), the rest after 4 ticks. |

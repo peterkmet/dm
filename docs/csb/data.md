@@ -176,7 +176,7 @@ The chunk dispatcher of `ANIM.FTL` is `0x100d1a`: a switch table at `0x100d30` (
 | `EN` | `0x100812` | Full frame: the `Graphics.DAT` packed graphic format (width, height, commands), decoded by the GRF1 function behind slot `0xea` into the back buffer. The parameter is the time in vertical blanks (50 Hz) that the frame stays. | Yes |
 | `DL` | `0x100846` | Delta frame: the blitter first copies the shown screen into the back buffer (`0x1017bc`), then the same decoder draws the frame. Skip commands keep the old pixels. Pad word `0xff81` before the size. Parameter as `EN`. | Yes |
 | `SD` | `0x10087a` | Sample: adds the payload to the sample table (max. 32). Payload: length word, then the 8-bit sample data. | Yes |
-| `SO` | `0x1008f2` | Plays sample number parameter (1-based) at Paula period 650 (`0x101406`). The two bytes after the chunk header give the volumes: (byte + 1) >> 2. `SO` has no payload in `ENDA.DAT`, so the two volume bytes are the first two bytes of the next tag, `DL` (volumes 17 and 19). | Done. Unverified: which volume is the left channel. |
+| `SO` | `0x1008f2` | Plays sample number parameter (1-based) at Paula period 650 (`0x101406`). The two bytes after the chunk header give the volumes: (byte + 1) >> 2. `SO` has no payload in `ENDA.DAT`, so the two volume bytes are the first two bytes of the next tag, `DL` (volumes 17 and 19). | Yes. Unverified: which volume is the left channel. |
 | `FO` | `0x100b64` | Loop start: pushes the loop (count parameter - 1, start = the second chunk after `FO`) onto a stack of 16 loops. The chunk after `FO` runs once. | Yes |
 | `NE` | `0x100be2` | End of a pass: decrements the count. When the count was 0, it pops the loop and skips the two chunks after `NE`. | Yes |
 | `BN` | `0x100c7e` | Goes back to the loop start. | Yes |
@@ -226,7 +226,7 @@ In the original, a stop takes effect after a delay. The shown frame stays for th
 | `2 + 2n` | Table 2: the `n` item sizes in bytes. |
 | `2 + 4n` | The items, one after another. |
 
-Item 0 is the sequence: item numbers, ended by `0xff` (`1,1,2,2,1,1,2,2,3,4,3,4,3,5,3,4`). Items 1 to 5 are samples (length word, signed 8-bit data). `MI` queues the sequence 6 times (96 writes) on pair B (channels 0 and 1, the same data on both), period 328, volume 30, one after another without a gap. One pass is 48.9 s; the music ends after the sixth pass (293.5 s), so the animation ends first.
+Item 0 is the sequence: item numbers, ended by `0xff` (`1,1,2,2,1,1,2,2,3,4,3,4,3,5,3,4`). Items 1–5 are samples (length word, signed 8-bit data). `MI` queues the sequence 6 times (96 writes) on pair B (channels 0 and 1, the same data on both), period 328, volume 30, one after another without a gap. One pass is 48.9 s; the music ends after the sixth pass (293.5 s), so the animation ends first.
 
 ## Sounds
 

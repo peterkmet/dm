@@ -68,7 +68,7 @@ paragraph. A module with several `.c` files has one `<module>_internal.h` for it
 | `engine/dungeon.h` | `dungeon_` | The loaded dungeon: header, maps, squares and thing records, in the big-endian byte layout of the original memory. |
 | `engine/event.h` | `event_` | Timeline event types and the handlers of the square events. |
 | `engine/explored.h` | `explored_` | Explored squares: the squares the party has seen, for the automap. |
-| `engine/game.h` | `game_` | The game session: the clock, the run flags, the modes and cheats, and the redraw flags that the rules raise. |
+| `engine/game.h` | `game_` | The game session: the clock, the run flags, the modes and cheats, and the redraw flags that the rules set. |
 | `engine/group.h` | `group_` `creature_` | Creature groups (KAOS range 4, GROUP.C, and the group helpers of range 7). |
 | `engine/inventory.h` | `inventory_` `object_` | Objects, slots, and the leader hand. |
 | `engine/magic.h` | `magic_` | Spell casting: the effect of a spell from the champion symbols (KAOS range 8, MENU.C). |
@@ -97,7 +97,7 @@ The modules `advanced`, `automap`, `cheats`, `music`, `optmenu`, `rows`, and `sl
 | `ui/audio.h` | `audio_` | The audio output: eight stereo pairs of voices (the Amiga has two), the CSB intro music, and the mixer. `platform/` calls the mixer on the game thread. The mixer scales the mix by the sound volume and applies the low-pass filters of the Amiga 500 output (the fixed RC filter and the LED filter). |
 | `ui/automap.h` | `automap_` | Automap: draws the squares the party has seen (engine/explored owns them) as a top-down map. |
 | `ui/cheats.h` | `cheats_` | The cheat screen of the advanced mode: it switches the cheats, offers quick save and quick load, and lists the spells of the loaded game with their runes; a spell line casts its spell. |
-| `ui/command.h` | `command_` | Player input as the command table of the original: clicks and keys become queued commands; command_process_queue runs them. |
+| `ui/command.h` | `command_` | Player input as the command table of the original: clicks and keys become queued commands; `command_process_queue` runs them. |
 | `ui/dialog.h` | `dialog_` | The message box with one to four choices: it draws the dialog in the viewport and waits for a click on a choice. |
 | `ui/draw.h` | `draw_` | Pixel operations on bitmaps: blit, fill, flip, shrink, and the masked fill. |
 | `ui/entrance.h` | `entrance_` | The entrance of Dungeon Master: the doors, the ENTER and RESUME buttons, the door animation, the credits. |
@@ -108,7 +108,7 @@ The modules `advanced`, `automap`, `cheats`, `music`, `optmenu`, `rows`, and `sl
 | `ui/menus.h` | `menus_` | The action area, the spell area and the movement arrows at the right of the screen. |
 | `ui/music.h` | `music_` | Music of the advanced mode: the soundtracks of the FM-Towns and Super NES versions from MP3 files, scaled by the music volume. |
 | `ui/optmenu.h` | `optmenu_` | The options menu of the advanced mode: sound volume, music volume, music choice, and upscale filter in the viewport. `platform/` sets the filter hook. A change writes `SETTINGS.TXT`. |
-| `ui/palette.h` | `palette_` | The palette fade of the original: it changes both palette halves of g_screen step by step, one frame for each step through g_frame_hook. |
+| `ui/palette.h` | `palette_` | The palette fade of the original: it changes both palette halves of `g_screen` step by step, one frame for each step through `g_frame_hook`. |
 | `ui/panel.h` | `panel_` | The inventory panel: slots, the eye and the mouth, food and water, skills and statistics, the object description, the scroll, the chest. |
 | `ui/rows.h` | `rows_` | The rows of text of the viewport screens: it draws a title and rows in the game font and maps a click to a row and a text column. |
 | `ui/select.h` | `select_` | The start screens in the DM font: adventure, mode, and the CSB entrance. |
@@ -116,7 +116,7 @@ The modules `advanced`, `automap`, `cheats`, `music`, `optmenu`, `rows`, and `sl
 | `ui/startend.h` | `startend_` | Sequences outside the game loop: the save dialog, resuming a saved game, the endgame screens, and the fuse sequence with Lord Chaos. |
 | `ui/status.h` | `status_` | The champion status boxes at the top of the screen: name, bars, hands, shields, damage, the party icons. |
 | `ui/text.h` | `text_` | The DM font: it draws text and measures it. |
-| `ui/ui.h` | `ui_` | Interface drawing on g_screen: zones, blits, palette, object icons, hit tests, message area, action and spell areas. |
+| `ui/ui.h` | `ui_` | Interface drawing on `g_screen`: zones, blits, palette, object icons, hit tests, message area, action and spell areas. |
 | `ui/video.h` | `video_` | The screen pixels and palettes (g_screen) and the Amiga color conversion. |
 | `ui/view.h` | `view_` | Draws the dungeon view and the CSB magic map from game state and changes no game state. |
 
@@ -136,7 +136,7 @@ The modules `advanced`, `automap`, `cheats`, `music`, `optmenu`, `rows`, and `sl
 | Header | Prefixes | Purpose |
 |---|---|---|
 | `platform/app.h` | `app_` | The application: the start screens, the choice of the adventure and the mode, the frame loop, and the control socket. |
-| `platform/debug_view.h` | `debug_view_` | The developer modes: --show draws one graphic, --view draws the dungeon view with free movement. |
+| `platform/debug_view.h` | `debug_view_` | The developer modes: `--show` draws one graphic, `--view` draws the dungeon view with free movement. |
 | `platform/options.h` | `options_` | The command line of the game: one table of options, --help, and an error for an unknown option or a bad value. |
 | `platform/platform.h` | `plat_` | The SDL layer of the game: the window, the picture, the input events, the 50 Hz tick, the audio output, and the mouse pointer. |
 | `platform/scale.h` | `scale2x` `scale3x` `output_` | The pixel-art upscale filters and the placement of the game screen in the window. |
